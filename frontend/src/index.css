@@ -1,0 +1,105 @@
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gov-light text-slate-900 antialiased selection:bg-gov-navy selection:text-white;
+    font-family: 'Segoe UI', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  }
+}
+
+/* Indian National Flag Top Accent Band */
+.tiranga-bar {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    #FF9933 0%,
+    #FF9933 33.33%,
+    #FFFFFF 33.33%,
+    #FFFFFF 66.66%,
+    #138808 66.66%,
+    #138808 100%
+  );
+}
+
+/* Government Watermark / Official Seal Pattern */
+.gov-pattern {
+  background-color: #F8F9FA;
+  background-image: radial-gradient(#E2E8F0 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+}
+
+/* Official Gazette & Advisory Card Style */
+.gov-card {
+  @apply bg-white border border-slate-300 rounded-xl shadow-sm transition-all duration-200;
+}
+
+.gov-card-header {
+  @apply bg-slate-50 border-b border-slate-200 px-4 py-3 rounded-t-xl font-bold text-slate-900 flex items-center justify-between;
+}
+
+/* Custom Accessibility Font Scaling */
+html.font-scale-sm {
+  font-size: 14px;
+}
+html.font-scale-md {
+  font-size: 16px;
+}
+html.font-scale-lg {
+  font-size: 18px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  z-index: 10;
+}
+
+.custom-pulsing-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-ring {
+  border-radius: 50%;
+  position: absolute;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
