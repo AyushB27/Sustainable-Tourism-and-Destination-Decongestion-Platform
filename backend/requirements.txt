@@ -1,0 +1,7 @@
+# Optional high-performance web framework dependencies
+# The backend runs natively with 0 dependencies using standard Python libraries,
+# but installing these enables asynchronous speed and the interactive Swagger /docs UI.
+fastapi>=0.110.0
+uvicorn>=0.28.0
+pydantic>=2.6.0
+requests>=2.31.0

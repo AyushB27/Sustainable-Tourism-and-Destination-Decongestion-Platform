@@ -26,15 +26,15 @@ export const AuthorityView: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Official State Authority Command Center Header */}
-      <div className="bg-white rounded-xl border-2 border-slate-300 p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border-2 border-slate-300 p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gov-navy text-amber-300 flex items-center justify-center font-bold text-2xl border-2 border-gov-gold shrink-0 shadow-inner">
+          <div className="w-12 h-12 rounded-2xl bg-gov-navy text-amber-300 flex items-center justify-center font-bold text-2xl border-2 border-gov-gold shrink-0 shadow-inner">
             🛡️
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                आपदा व यातायात नियंत्रण कक्ष | Command HQ
+                Disaster & Traffic Command HQ
               </span>
               <span className="text-xs font-mono text-slate-500">
                 PUNE-RAIGAD-SATARA DISTRICT CELL
@@ -55,7 +55,7 @@ export const AuthorityView: React.FC = () => {
           <button
             onClick={fetchLiveBackendFeed}
             disabled={liveBackendStatus === 'syncing'}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition shadow-sm border ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm border ${
               liveBackendStatus === 'connected'
                 ? 'bg-emerald-50 text-emerald-900 border-emerald-400 hover:bg-emerald-100'
                 : liveBackendStatus === 'offline'

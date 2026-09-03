@@ -9,12 +9,11 @@ import {
   Tag, 
   TrendingDown, 
   Navigation,
-  Zap,
-  CheckCircle2
+  CheckCircle2,
+  ThumbsUp
 } from 'lucide-react';
 import type { Destination, TwinRecommendation, DCCMetrics } from '../../types';
 import { useCorridorStore } from '../../store/useCorridorStore';
-import { TRANSLATIONS } from '../../lib/i18n';
 
 interface TwinAlternativeCardsProps {
   targetDestination?: Destination;
@@ -26,8 +25,7 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
   targetMetrics,
   recommendations
 }) => {
-  const { rerouteToDestination, language } = useCorridorStore();
-  const t = TRANSLATIONS[language];
+  const { rerouteToDestination } = useCorridorStore();
   const isCritical = targetMetrics.status === 'CRITICAL';
 
   const handleReroute = (destination: Destination) => {
@@ -54,31 +52,31 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-300">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-gov-navy text-amber-300 shadow-sm">
+          <div className="p-2 rounded-xl bg-gov-navy text-amber-300 shadow-sm">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl flex items-center gap-2 flex-wrap">
-              <span>{t.twinTitle}</span>
-              <span className="text-xs bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded">
-                प्रमाणित सुगम विकल्प | Certified Twins
+              <span>Recommended Less-Crowded Alternatives</span>
+              <span className="text-xs bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold px-2 py-0.5 rounded">
+                Certified Twin Spots
               </span>
             </h3>
             <p className="text-xs text-slate-600">
-              AI vector matching with identical natural characteristics & certified carrying capacity &lt; 0.70
+              Same natural beauty, waterfalls, and scenic viewpoints — with up to 80% fewer tourist crowds
             </p>
           </div>
         </div>
 
         {isCritical && (
           <div className="bg-rose-50 text-rose-900 text-xs font-bold px-3 py-1.5 rounded-lg border border-rose-300 flex items-center gap-1.5 self-start sm:self-auto">
-            <Zap className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>Avoid ~{targetMetrics.waitTimeMinutes} mins Checkpoint Queues</span>
+            <ThumbsUp className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Avoid ~{targetMetrics.waitTimeMinutes} mins of traffic jams</span>
           </div>
         )}
       </div>
 
-      {/* Alternatives Grid Container */}
+      {/* Alternatives Grid */}
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -94,34 +92,34 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
               <motion.div
                 key={destination.id}
                 whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                className="bg-white rounded-xl border-2 border-slate-300 hover:border-gov-navy shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
+                className="bg-white rounded-2xl border-2 border-slate-300 hover:border-gov-navy shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
               >
-                {/* Image Header with Official Badges */}
+                {/* Image Header with Friendly Badges */}
                 <div className="relative h-44 sm:h-48 overflow-hidden bg-slate-900">
                   <img
                     src={destination.imageUrl}
                     alt={destination.name}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
 
                   {/* Top Matching Pills */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 flex-wrap">
-                    <span className="bg-white/95 backdrop-blur-md text-gov-navy text-xs font-bold px-2.5 py-1 rounded shadow-sm flex items-center gap-1">
+                    <span className="bg-white/95 backdrop-blur-md text-gov-navy text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-gov-green" />
-                      {simPercentage}% {t.vibeMatch} (समान अनुभव)
+                      {simPercentage}% Experience Match
                     </span>
 
-                    <span className="bg-gov-green text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm flex items-center gap-1">
+                    <span className="bg-gov-green text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
                       <TrendingDown className="w-3.5 h-3.5" />
-                      {crowdReductionPct}% {t.fewerTourists}
+                      {crowdReductionPct}% Fewer Tourists
                     </span>
                   </div>
 
                   {/* Destination Label */}
                   <div className="absolute bottom-3 left-3 right-3 text-white">
                     <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
-                      सुगम विकल्प #{idx + 1} • {destination.district}
+                      Recommended Alternative #{idx + 1} • {destination.district}
                     </span>
                     <h4 className="text-xl font-black leading-tight">
                       {destination.name}
@@ -141,7 +139,7 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
                       {destination.highlights.slice(0, 3).map((hl, i) => (
                         <span
                           key={i}
-                          className="bg-slate-100 text-slate-800 text-[11px] font-semibold px-2 py-0.5 rounded border border-slate-200"
+                          className="bg-slate-100 text-slate-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-md border border-slate-200"
                         >
                           {hl}
                         </span>
@@ -149,21 +147,21 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
                     </div>
                   </div>
 
-                  {/* Metric Comparison Table */}
+                  {/* Crowd & Travel Delta Summary */}
                   <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-slate-200 text-xs">
-                    <div className="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                    <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
                       <span className="text-[10px] text-emerald-900 font-bold uppercase block">
-                        भीड़ स्थिति | Crowd Status
+                        Crowd Level
                       </span>
                       <span className="font-extrabold text-emerald-950 text-sm flex items-center gap-1 mt-0.5">
                         <Users className="w-3.5 h-3.5 text-gov-green" />
-                        {destination.currentInflow.toLocaleString()} (अनुकूल)
+                        {destination.currentInflow.toLocaleString()} (Comfortable)
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                       <span className="text-[10px] text-slate-700 font-bold uppercase block">
-                        मार्ग अंतर | Travel Delta
+                        Driving Time
                       </span>
                       <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1 mt-0.5">
                         <Clock className="w-3.5 h-3.5 text-slate-500" />
@@ -172,9 +170,9 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
                     </div>
                   </div>
 
-                  {/* Official MTDC Homestay Subsidy Coupon */}
+                  {/* MTDC Homestay Subsidy Coupon */}
                   {activePromo && (
-                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-start gap-2.5">
+                    <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 flex items-start gap-2.5">
                       <Tag className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -195,10 +193,10 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
                   {/* Action Button: Reroute Travel */}
                   <button
                     onClick={() => handleReroute(destination)}
-                    className="w-full bg-gov-navy hover:bg-gov-navy-light text-white font-bold py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center gap-2 text-sm border-2 border-transparent hover:border-gov-gold"
+                    className="w-full bg-gov-navy hover:bg-gov-navy-light text-white font-bold py-3 px-4 rounded-xl shadow transition flex items-center justify-center gap-2 text-sm border-2 border-transparent hover:border-gov-gold"
                   >
                     <Navigation className="w-4 h-4 text-gov-gold" />
-                    <span>{t.rerouteCta} {destination.name.split(' ')[0]} (मार्ग बदलें)</span>
+                    <span>Choose {destination.name.split(' ')[0]} & Get Free Travel Pass</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

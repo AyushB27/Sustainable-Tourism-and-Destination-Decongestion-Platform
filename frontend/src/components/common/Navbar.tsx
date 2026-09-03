@@ -9,8 +9,13 @@ import {
   Languages,
   Menu,
   X,
-  PhoneCall,
-  AlertTriangle
+  AlertTriangle,
+  UserCheck,
+  LogOut,
+  Lock,
+  RefreshCw,
+  CheckCircle2,
+  WifiOff
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { PresetScenario } from '../../store/useCorridorStore';
@@ -21,7 +26,10 @@ import type { Language } from '../../lib/i18n';
 export const Navbar: React.FC = () => {
   const {
     role,
-    setRole,
+    requestRoleChange,
+    currentUser,
+    logoutUser,
+    setAuthModalOpen,
     destinations,
     advisories,
     activeScenario,
@@ -30,7 +38,9 @@ export const Navbar: React.FC = () => {
     divertedTripsCount,
     totalCarbonSavedKg,
     language,
-    setLanguage
+    setLanguage,
+    liveBackendStatus,
+    fetchLiveBackendFeed
   } = useCorridorStore();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,16 +50,16 @@ export const Navbar: React.FC = () => {
   const metrics = calculateCorridorMetrics(destinations, activeAdvisoriesCount);
 
   const scenarioLabels: Record<PresetScenario, string> = {
-    monsoon_surge: '⛈️ Monsoon Weekend Surge (Lonavala Peak)',
-    khandala_landslide: '⚠️ Rockfall Alert (Khandala Emergency)',
-    normal_balanced: '🌱 Balanced Decongested Corridor',
-    coastal_rush: '🏖️ Coastal Weekend Surge (Alibaug Rush)'
+    monsoon_surge: 'Monsoon Weekend Peak (Lonavala Congested)',
+    khandala_landslide: 'Rockfall & Heavy Rain Alert (Khandala)',
+    normal_balanced: 'Normal Balanced Corridor Flow',
+    coastal_rush: 'Coastal Weekend Rush (Alibaug Peak)'
   };
 
   const languages: { key: Language; label: string; flag: string }[] = [
     { key: 'en', label: 'English', flag: '🇬🇧' },
-    { key: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-    { key: 'mr', label: 'मराठी', flag: '🚩' },
+    { key: 'hi', label: 'Hindi', flag: '🇮🇳' },
+    { key: 'mr', label: 'Marathi', flag: '🚩' },
   ];
 
   const handleFontSize = (size: 'sm' | 'md' | 'lg') => {
@@ -58,28 +68,27 @@ export const Navbar: React.FC = () => {
     document.documentElement.classList.add(`font-scale-${size}`);
   };
 
-  const navItems: { key: UserRole; labelEn: string; labelHi: string; labelMr: string; icon: React.ReactNode; badge?: string }[] = [
+  const navItems: { key: UserRole; label: string; description: string; icon: React.ReactNode; badge?: string; isProtected?: boolean }[] = [
     {
       key: 'tourist',
-      labelEn: 'Citizen & Tourist Portal',
-      labelHi: 'नागरिक व पर्यटक सेवा',
-      labelMr: 'नागरिक व पर्यटक सेवा',
+      label: 'Tourist & Citizen Portal',
+      description: 'Check Live Crowds & Travel Passes',
       icon: <Compass className="w-4 h-4" />
     },
     {
       key: 'authority',
-      labelEn: 'District GIS Command Center',
-      labelHi: 'जिला आपदा व भीड़ नियंत्रण कक्ष',
-      labelMr: 'जिल्हा आपत्ती व गर्दी नियंत्रण कक्ष',
+      label: 'District GIS Command Center',
+      description: 'Official District Administration',
       icon: <ShieldAlert className="w-4 h-4" />,
-      badge: metrics.criticalCount > 0 ? `${metrics.criticalCount} Red Alert` : undefined
+      badge: metrics.criticalCount > 0 ? `${metrics.criticalCount} Red Alert` : undefined,
+      isProtected: true
     },
     {
       key: 'provider',
-      labelEn: 'Tourism Providers & Homestays',
-      labelHi: 'पर्यटन सेवा प्रदाता केंद्र',
-      labelMr: 'पर्यटन सेवा प्रदाता केंद्र',
-      icon: <Building2 className="w-4 h-4" />
+      label: 'Homestays & Local Operators',
+      description: 'MTDC Operator Console',
+      icon: <Building2 className="w-4 h-4" />,
+      isProtected: true
     }
   ];
 
@@ -88,56 +97,109 @@ export const Navbar: React.FC = () => {
       {/* 1. National Flag Top Accent Stripe */}
       <div className="tiranga-bar" />
 
-      {/* 2. Top Accessibility & Official Helpline Strip */}
-      <div className="bg-slate-100 border-b border-slate-200 px-3 sm:px-6 py-1 text-[11px] sm:text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2">
+      {/* 2. Top Accessibility & Official Information Bar */}
+      <div className="bg-slate-100 border-b border-slate-200 px-3 sm:px-6 py-1.5 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2">
         {/* Left: Government Ownership Statement */}
         <div className="flex items-center gap-2 font-medium">
-          <span className="text-gov-navy font-bold flex items-center gap-1">
+          <span className="text-gov-navy font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-gov-green" />
-            भारत सरकार | Government of India
+            Government of India
           </span>
           <span className="text-slate-300 hidden sm:inline">|</span>
           <span className="text-slate-600 hidden md:inline">
-            पर्यटन मंत्रालय | Ministry of Tourism
+            Ministry of Tourism & Maharashtra Tourism (MTDC)
           </span>
         </div>
 
-        {/* Right: Accessibility Controls, Helpline & Language */}
+        {/* Right: Live Status, Active User Profile & Settings */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {/* Emergency Helplines */}
-          <div className="hidden lg:flex items-center gap-2 text-[11px] font-semibold text-gov-maroon bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-            <PhoneCall className="w-3 h-3 text-rose-600" />
-            <span>24x7 Tourist Helpline: <strong>1363</strong></span>
-            <span className="text-rose-300">|</span>
-            <span>Emergency: <strong>112</strong></span>
+          {/* Live Sensor Connection Indicator */}
+          <button
+            onClick={fetchLiveBackendFeed}
+            title="Click to refresh live sensor feed"
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold border transition ${
+              liveBackendStatus === 'connected'
+                ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                : liveBackendStatus === 'syncing'
+                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                : 'bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300'
+            }`}
+          >
+            {liveBackendStatus === 'syncing' ? (
+              <RefreshCw className="w-3 h-3 animate-spin text-amber-600" />
+            ) : liveBackendStatus === 'connected' ? (
+              <CheckCircle2 className="w-3 h-3 text-gov-green" />
+            ) : (
+              <WifiOff className="w-3 h-3 text-slate-500" />
+            )}
+            <span>
+              {liveBackendStatus === 'connected'
+                ? 'Live Sensors Active'
+                : liveBackendStatus === 'syncing'
+                ? 'Syncing...'
+                : 'Simulator Mode'}
+            </span>
+          </button>
+
+          {/* Active User Profile Pill */}
+          <div className="flex items-center gap-1.5 bg-white px-2.5 py-0.5 rounded border border-slate-300 shadow-sm text-xs">
+            <UserCheck className="w-3.5 h-3.5 text-gov-navy" />
+            <span className="font-bold text-slate-800 truncate max-w-[140px] sm:max-w-[200px]">
+              {currentUser.role === 'tourist' ? 'Citizen Tourist' : currentUser.name}
+            </span>
+            {currentUser.role !== 'tourist' && (
+              <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-1.5 rounded uppercase">
+                {currentUser.role === 'authority' ? 'Officer' : 'MTDC'}
+              </span>
+            )}
           </div>
 
-          {/* Text Size Resizer (GIGW Compliant) */}
-          <div className="flex items-center bg-white rounded border border-slate-300 overflow-hidden text-[10px] font-bold">
+          {/* Portal Switcher / Login */}
+          <button
+            onClick={() => setAuthModalOpen(true)}
+            className="flex items-center gap-1 bg-gov-navy hover:bg-gov-navy-light text-amber-300 px-2.5 py-1 rounded text-xs font-bold shadow-sm transition"
+            title="Switch stakeholder portal or sign in"
+          >
+            <Lock className="w-3 h-3" />
+            <span>Switch Portal</span>
+          </button>
+
+          {currentUser.role !== 'tourist' && (
+            <button
+              onClick={logoutUser}
+              title="Sign out to citizen mode"
+              className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Text Size Controls */}
+          <div className="hidden sm:flex items-center bg-white rounded border border-slate-300 overflow-hidden text-[10px] font-bold">
             <button
               onClick={() => handleFontSize('sm')}
-              className={`px-1.5 py-0.5 hover:bg-slate-100 ${fontSizeScale === 'sm' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
-              title="Decrease Font Size"
+              className={`px-2 py-0.5 hover:bg-slate-100 ${fontSizeScale === 'sm' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
+              title="Smaller Text"
             >
               A-
             </button>
             <button
               onClick={() => handleFontSize('md')}
-              className={`px-1.5 py-0.5 border-x border-slate-200 hover:bg-slate-100 ${fontSizeScale === 'md' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
-              title="Normal Font Size"
+              className={`px-2 py-0.5 border-x border-slate-200 hover:bg-slate-100 ${fontSizeScale === 'md' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
+              title="Default Text Size"
             >
               A
             </button>
             <button
               onClick={() => handleFontSize('lg')}
-              className={`px-1.5 py-0.5 hover:bg-slate-100 ${fontSizeScale === 'lg' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
-              title="Increase Font Size"
+              className={`px-2 py-0.5 hover:bg-slate-100 ${fontSizeScale === 'lg' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
+              title="Larger Text"
             >
               A+
             </button>
           </div>
 
-          {/* Language Switcher */}
+          {/* Language Selector */}
           <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-300">
             <Languages className="w-3 h-3 text-gov-navy" />
             <select
@@ -157,69 +219,53 @@ export const Navbar: React.FC = () => {
           {/* Reset Baseline Button */}
           <button
             onClick={resetToDefault}
-            title="Reset system to default corridor baseline"
-            className="flex items-center gap-1 text-slate-500 hover:text-gov-navy px-1.5 py-0.5 rounded hover:bg-slate-200 transition text-[11px]"
+            title="Reset to default corridor state"
+            className="flex items-center gap-1 text-slate-500 hover:text-gov-navy px-1.5 py-0.5 rounded hover:bg-slate-200 transition text-xs"
           >
             <RotateCcw className="w-3 h-3" />
-            <span className="hidden sm:inline">Reset</span>
+            <span className="hidden lg:inline">Reset</span>
           </button>
         </div>
       </div>
 
-      {/* 3. Main Indian Government Brand Header */}
-      <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5">
+      {/* 3. Main Government Portal Brand Header */}
+      <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           {/* Official Emblem & Portal Title */}
-          <div className="flex items-center gap-3">
-            {/* Ashoka Lion Capital Representation */}
-            <div className="flex flex-col items-center justify-center p-1.5 bg-slate-50 border border-slate-300 rounded-lg shadow-sm">
-              <div className="w-8 h-8 flex items-center justify-center text-gov-navy font-serif font-black text-sm border-2 border-gov-navy rounded-full bg-amber-50">
+          <div className="flex items-center gap-3.5">
+            <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm">
+              <div className="w-9 h-9 flex items-center justify-center text-gov-navy font-serif font-black text-base border-2 border-gov-navy rounded-full bg-amber-50">
                 🏛️
               </div>
               <span className="text-[7px] font-bold text-slate-600 uppercase tracking-tighter mt-0.5">
-                सत्यमेव जयते
+                SATYAMEVA JAYATE
               </span>
             </div>
 
-            {/* Bilingual Header Titles */}
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-extrabold text-base sm:text-xl text-gov-navy tracking-tight leading-tight">
-                  {language === 'hi'
-                    ? 'सुगम पर्यटन व गंतव्य भार प्रबंधन प्रणाली'
-                    : language === 'mr'
-                    ? 'सुगम पर्यटन व गर्दी नियंत्रण प्रणाली'
-                    : 'EcoRoute Bharat — Sustainable Tourism Platform'}
+                  EcoRoute Bharat — Sustainable Tourism & Smart Travel Portal
                 </h1>
                 <span className="hidden sm:inline bg-gov-green/10 text-gov-green text-[10px] font-bold px-2 py-0.5 rounded border border-gov-green/30 uppercase">
-                  Govt. of India
+                  Official Portal
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-600 font-medium">
-                {language === 'hi'
-                  ? 'पर्यटन मंत्रालय, भारत सरकार व महाराष्ट्र पर्यटन विकास महामंडळ (MTDC)'
-                  : language === 'mr'
-                  ? 'पर्यटन मंत्रालय, भारत सरकार व महाराष्ट्र पर्यटन (MTDC)'
-                  : 'Ministry of Tourism, Govt. of India • Western Ghats Decongestion Initiative'}
+              <p className="text-xs text-slate-600 font-medium mt-0.5">
+                Ministry of Tourism, Govt. of India • Western Ghats & Maharashtra Corridor
               </p>
             </div>
           </div>
 
-          {/* Right Badges & Mobile Hamburger Toggle */}
+          {/* Right Campaign Badges & Mobile Menu Toggle */}
           <div className="flex items-center gap-3">
-            {/* National Initiative Badges (Desktop) */}
             <div className="hidden md:flex items-center gap-2">
-              <div className="px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                <span className="text-[10px] font-bold text-amber-900 block leading-none">Incredible !ndia</span>
-                <span className="text-[8px] text-amber-700">अतुल्य भारत</span>
-              </div>
-              <div className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
-                <span className="text-[10px] font-bold text-emerald-900 block leading-none">Dekho Apna Desh</span>
-                <span className="text-[8px] text-emerald-700">देखो अपना देश</span>
+              <div className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                <span className="text-xs font-bold text-amber-900 block leading-none">Incredible !ndia</span>
+                <span className="text-[9px] text-amber-700 font-medium">Dekho Apna Desh</span>
               </div>
             </div>
 
-            {/* Mobile Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 rounded-lg bg-gov-navy text-white hover:bg-gov-navy-light focus:outline-none"
@@ -231,28 +277,30 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Deep Navy Primary Government Navigation Bar */}
+      {/* 4. Deep Navy Primary Navigation Bar */}
       <nav className="bg-gov-navy text-white shadow-inner hidden lg:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          {/* Main Navigation Links */}
+          {/* Main Navigation Tabs */}
           <div className="flex items-center space-x-1">
             {navItems.map((item) => {
               const isActive = role === item.key;
-              const title = language === 'hi' ? item.labelHi : language === 'mr' ? item.labelMr : item.labelEn;
               return (
                 <button
                   key={item.key}
-                  onClick={() => setRole(item.key)}
-                  className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold transition border-b-2 ${
+                  onClick={() => requestRoleChange(item.key)}
+                  className={`flex items-center gap-2 px-4 py-3.5 text-xs sm:text-sm font-semibold transition border-b-2 ${
                     isActive
                       ? 'bg-gov-navy-dark text-amber-300 border-gov-gold shadow-sm'
                       : 'text-slate-200 border-transparent hover:bg-gov-navy-light hover:text-white'
                   }`}
                 >
                   {item.icon}
-                  <span>{title}</span>
+                  <span>{item.label}</span>
+                  {item.isProtected && currentUser.role !== item.key && (
+                    <Lock className="w-3 h-3 text-slate-400 opacity-70" />
+                  )}
                   {item.badge && (
-                    <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse">
+                    <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
                       {item.badge}
                     </span>
                   )}
@@ -261,10 +309,9 @@ export const Navbar: React.FC = () => {
             })}
           </div>
 
-          {/* Right Simulation & Corridor Status */}
+          {/* Right Simulation Preset & Cumulative Savings */}
           <div className="flex items-center gap-3 py-1.5">
-            {/* Quick Simulation Scenario */}
-            <div className="flex items-center gap-1.5 bg-gov-navy-dark/90 px-2.5 py-1 rounded border border-slate-700 text-xs">
+            <div className="flex items-center gap-2 bg-gov-navy-dark px-3 py-1 rounded border border-slate-700 text-xs">
               <Sparkles className="w-3.5 h-3.5 text-gov-gold shrink-0" />
               <span className="text-slate-300 text-[11px] font-medium hidden xl:inline">Scenario:</span>
               <select
@@ -281,50 +328,54 @@ export const Navbar: React.FC = () => {
               </select>
             </div>
 
-            {/* Carbon & Diversions Counter */}
-            <div className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 px-2.5 py-1 rounded text-xs font-medium">
+            <div className="flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 border border-emerald-700 px-3 py-1 rounded text-xs font-medium">
               <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
-              <span><strong>{divertedTripsCount}</strong> Diversions ({totalCarbonSavedKg.toFixed(0)} kg CO₂ Saved)</span>
+              <span><strong>{divertedTripsCount}</strong> Trips Diverted • {totalCarbonSavedKg.toFixed(0)} kg CO₂ Saved</span>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* 5. Live Public Broadcast Gazette / Corridor Status Ticker */}
-      <div className="bg-amber-50 border-b border-amber-200 px-3 sm:px-6 py-1.5 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 max-w-4xl overflow-hidden text-ellipsis whitespace-nowrap">
-          <span className="bg-amber-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded uppercase shrink-0 flex items-center gap-1">
+      {/* 5. Live Public Broadcast Advisory Strip */}
+      <div className="bg-amber-50 border-b border-amber-200 px-3 sm:px-6 py-2 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 max-w-4xl overflow-hidden text-ellipsis whitespace-nowrap">
+          <span className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
-            राजपत्र बुलेटिन | LIVE GAZETTE
+            LIVE ADVISORY
           </span>
           <span className="text-slate-700 font-medium truncate">
             {metrics.criticalCount > 0
-              ? `⚠️ Western Ghats Corridor Alert: ${metrics.criticalCount} destinations exceeding physical carrying capacity (DCC > 0.85). Diversions active for Lonavala & Mahabaleshwar.`
-              : `✅ Corridor Traffic Flow Optimal. Green corridors open with no checkpoint queuing delays across Western Ghats.`}
+              ? `Western Ghats Corridor Alert: Heavy weekend congestion in Lonavala and Khandala. Diversion schemes active for Matheran and Bhandardara.`
+              : `Corridor traffic flow is normal. Green highway corridors are open with zero checkpoint delays.`}
           </span>
         </div>
 
         <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium">
-          <span>Active Influx: <strong className="text-gov-navy">{metrics.totalInflow.toLocaleString()}</strong></span>
-          <span>Red Zones: <strong className={metrics.criticalCount > 0 ? 'text-rose-600 font-bold' : 'text-gov-green'}>{metrics.criticalCount} ({metrics.redPercentage}%)</strong></span>
+          <span>Active Tourists: <strong className="text-gov-navy">{metrics.totalInflow.toLocaleString()}</strong></span>
+          <span>Red Zones: <strong className={metrics.criticalCount > 0 ? 'text-rose-600 font-bold' : 'text-gov-green'}>{metrics.criticalCount} Destinations</strong></span>
         </div>
       </div>
 
       {/* 6. Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-gov-navy border-b border-gov-navy-dark px-4 py-4 space-y-3 text-white animate-in slide-in-from-top duration-200">
-          <div className="text-xs font-bold text-gov-gold uppercase tracking-wider pb-1 border-b border-slate-700">
-            पोर्टल सेवा चयन | Select Portal
+          <div className="text-xs font-bold text-gov-gold uppercase tracking-wider pb-1 border-b border-slate-700 flex items-center justify-between">
+            <span>Select Portal View</span>
+            <button
+              onClick={() => { setAuthModalOpen(true); setMobileMenuOpen(false); }}
+              className="text-xs text-amber-300 underline font-bold"
+            >
+              Switch Role
+            </button>
           </div>
           <div className="space-y-1.5">
             {navItems.map((item) => {
               const isActive = role === item.key;
-              const title = language === 'hi' ? item.labelHi : language === 'mr' ? item.labelMr : item.labelEn;
               return (
                 <button
                   key={item.key}
                   onClick={() => {
-                    setRole(item.key);
+                    requestRoleChange(item.key);
                     setMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center justify-between p-3 rounded-lg text-sm font-semibold transition ${
@@ -335,22 +386,43 @@ export const Navbar: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     {item.icon}
-                    <span>{title}</span>
+                    <span>{item.label}</span>
                   </div>
-                  {item.badge && (
-                    <span className="bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {item.isProtected && currentUser.role !== item.key && (
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    )}
+                    {item.badge && (
+                      <span className="bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
           </div>
 
+          {/* Mobile User Profile Section */}
+          <div className="p-3 bg-slate-800 rounded-lg text-xs space-y-1">
+            <div className="text-slate-400 text-[10px] font-bold uppercase">Active Stakeholder Profile</div>
+            <div className="font-bold text-white flex items-center justify-between">
+              <span>{currentUser.name}</span>
+              {currentUser.role !== 'tourist' && (
+                <button
+                  onClick={() => { logoutUser(); setMobileMenuOpen(false); }}
+                  className="text-rose-400 text-xs hover:underline flex items-center gap-1"
+                >
+                  <LogOut className="w-3 h-3" /> Sign Out
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Mobile Scenario Selector */}
-          <div className="pt-3 border-t border-slate-700 space-y-1">
+          <div className="pt-2 border-t border-slate-700 space-y-1">
             <label className="text-xs font-bold text-slate-300 block">
-              सिमुलेशन मोड | Simulation Mode:
+              Simulation Scenario:
             </label>
             <select
               value={activeScenario}

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type {
   Destination,
   UserRole,
+  AuthUser,
   Advisory,
   Promotion,
   DestinationCategory,
@@ -15,7 +16,26 @@ import {
 
 export type PresetScenario = 'monsoon_surge' | 'khandala_landslide' | 'normal_balanced' | 'coastal_rush';
 
+// Default Citizen Guest User
+export const DEFAULT_CITIZEN_USER: AuthUser = {
+  id: 'CITIZEN-GUEST-01',
+  name: 'Citizen Tourist (नागरिक)',
+  role: 'tourist',
+  designation: 'General Traveler / Eco-Pass Holder',
+  department: 'National Tourism Citizen Gateway',
+  badgeNumber: 'IND-YATRA-2026',
+  isAuthenticated: true
+};
+
 interface CorridorStore {
+  // Authentication & Stakeholder Identity
+  currentUser: AuthUser;
+  authModalOpen: boolean;
+  authModalTargetRole: UserRole | null;
+  setAuthModalOpen: (open: boolean, targetRole?: UserRole) => void;
+  loginUser: (user: AuthUser) => void;
+  logoutUser: () => void;
+
   // Localization
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -23,6 +43,7 @@ interface CorridorStore {
   // Navigation & Role
   role: UserRole;
   setRole: (role: UserRole) => void;
+  requestRoleChange: (targetRole: UserRole) => void;
   
   // Destination Data
   destinations: Destination[];
@@ -75,12 +96,77 @@ interface CorridorStore {
   resetToDefault: () => void;
 }
 
+// Load persisted user or default
+const getSavedUser = (): AuthUser => {
+  try {
+    const saved = localStorage.getItem('ecoroute_auth_user');
+    if (saved) return JSON.parse(saved);
+  } catch {
+    // ignore
+  }
+  return DEFAULT_CITIZEN_USER;
+};
+
 export const useCorridorStore = create<CorridorStore>((set, get) => ({
+  currentUser: getSavedUser(),
+  authModalOpen: false,
+  authModalTargetRole: null,
+
+  setAuthModalOpen: (open, targetRole) => set({ 
+    authModalOpen: open, 
+    authModalTargetRole: targetRole || null 
+  }),
+
+  loginUser: (user) => {
+    try {
+      localStorage.setItem('ecoroute_auth_user', JSON.stringify(user));
+    } catch {
+      // ignore
+    }
+    set({
+      currentUser: user,
+      role: user.role,
+      authModalOpen: false,
+      authModalTargetRole: null
+    });
+  },
+
+  logoutUser: () => {
+    try {
+      localStorage.removeItem('ecoroute_auth_user');
+    } catch {
+      // ignore
+    }
+    set({
+      currentUser: DEFAULT_CITIZEN_USER,
+      role: 'tourist'
+    });
+  },
+
   language: 'en',
   setLanguage: (language) => set({ language }),
 
-  role: 'tourist',
+  role: getSavedUser().role,
   setRole: (role) => set({ role }),
+
+  requestRoleChange: (targetRole) => {
+    const { currentUser } = get();
+    // If target is tourist / citizen, always allow
+    if (targetRole === 'tourist') {
+      set({ role: 'tourist' });
+      return;
+    }
+    // If user already authenticated for this role, allow
+    if (currentUser.role === targetRole && currentUser.isAuthenticated) {
+      set({ role: targetRole });
+      return;
+    }
+    // Otherwise, open auth modal requesting login for target role
+    set({
+      authModalOpen: true,
+      authModalTargetRole: targetRole
+    });
+  },
   
   destinations: INITIAL_DESTINATIONS,
   selectedDestinationId: 'LON', // Default to overloaded Lonavala hotspot

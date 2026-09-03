@@ -13,7 +13,6 @@ import { TrendingUp, Clock, Sparkles } from 'lucide-react';
 import type { Destination, HourlyForecastPoint } from '../../types';
 import { generate12HourForecast } from '../../lib/engine';
 import { useCorridorStore } from '../../store/useCorridorStore';
-import { TRANSLATIONS } from '../../lib/i18n';
 
 interface DemandCurveChartProps {
   destination: Destination;
@@ -26,45 +25,44 @@ interface CustomTooltipProps {
 }
 
 export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination }) => {
-  const { language, selectedTimeSlot, setSelectedTimeSlot } = useCorridorStore();
-  const t = TRANSLATIONS[language];
+  const { selectedTimeSlot, setSelectedTimeSlot } = useCorridorStore();
   const forecastData = generate12HourForecast(destination);
   const capacity = destination.physicalCapacity;
 
-  // Time-slot options
+  // Friendly Time-Slot Options
   const timeSlots = [
-    { time: '07:00 AM', label: 'भोर स्लॉट (Dawn)', status: 'अनुकूल', delay: '0 min wait', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-    { time: '10:00 AM', label: 'सुबह भीड़ (Morning)', status: 'मध्यम', delay: '25 min wait', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
-    { time: '02:00 PM', label: 'शिखर जाम (Peak)', status: 'अतिभारित', delay: '85 min wait', badge: 'bg-rose-100 text-rose-900 border-rose-300' },
-    { time: '05:00 PM', label: 'संध्या स्लॉट (Evening)', status: 'अनुकूल', delay: '5 min wait', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+    { time: '07:00 AM', label: 'Early Morning (Dawn)', status: 'Best Time', delay: '0 min wait', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+    { time: '10:00 AM', label: 'Mid Morning', status: 'Moderate', delay: '25 min wait', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
+    { time: '02:00 PM', label: 'Peak Afternoon', status: 'Heavy Rush', delay: '85 min wait', badge: 'bg-rose-100 text-rose-900 border-rose-300' },
+    { time: '05:00 PM', label: 'Sunset & Evening', status: 'Comfortable', delay: '5 min wait', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
   ];
 
-  // Custom tooltip
+  // Custom Tooltip
   const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const isOverCapacity = data.inflow > data.capacity;
       return (
-        <div className="bg-gov-navy text-white p-3 rounded-lg shadow-xl border border-slate-600 text-xs">
+        <div className="bg-gov-navy text-white p-3.5 rounded-xl shadow-xl border border-slate-600 text-xs">
           <p className="font-bold text-amber-300 mb-1">{label} ({data.hour})</p>
           <div className="space-y-1">
             <p className="flex justify-between gap-4">
-              <span className="text-slate-300">पूर्वानुमानित आमद (Inflow):</span>
+              <span className="text-slate-300">Expected Visitors:</span>
               <strong className="text-white">{data.inflow.toLocaleString()}</strong>
             </p>
             <p className="flex justify-between gap-4">
-              <span className="text-slate-300">अधिकतम क्षमता (Cap):</span>
+              <span className="text-slate-300">Comfortable Limit:</span>
               <span className="text-slate-300">{data.capacity.toLocaleString()}</span>
             </p>
             <p className="flex justify-between gap-4">
-              <span className="text-slate-300">DCC सूचकांक:</span>
+              <span className="text-slate-300">Crowd Status:</span>
               <span className={`font-bold ${data.dccScore >= 0.85 ? 'text-rose-400' : data.dccScore >= 0.7 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                {data.dccScore.toFixed(2)} ({data.dccScore >= 0.85 ? 'अतिभारित' : data.dccScore >= 0.7 ? 'मध्यम' : 'अनुकूल'})
+                {data.dccScore >= 0.85 ? 'Heavily Crowded' : data.dccScore >= 0.7 ? 'Moderate' : 'Comfortable Flow'}
               </span>
             </p>
             {isOverCapacity && (
               <p className="text-[11px] text-rose-300 pt-1 border-t border-slate-700 font-bold">
-                ⚠️ क्षमता से +{(data.inflow - data.capacity).toLocaleString()} पर्यटक अधिक
+                ⚠️ Over capacity by +{(data.inflow - data.capacity).toLocaleString()} visitors
               </p>
             )}
           </div>
@@ -75,18 +73,18 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
   };
 
   return (
-    <div className="bg-white rounded-xl border-2 border-slate-300 p-4 sm:p-5 shadow-sm space-y-4">
+    <div className="bg-white rounded-2xl border-2 border-slate-300 p-4 sm:p-5 shadow-sm space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
         <div>
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-gov-navy" />
             <h3 className="font-bold text-slate-900 text-base">
-              {t.hourlyCurveTitle} (समय-आधारित आवागमन पूर्वानुमान)
+              Hourly Crowd Prediction & Best Time to Visit
             </h3>
           </div>
           <p className="text-xs text-slate-600 mt-0.5">
-            AI velocity forecasting based on National Highway toll plaza data & diurnal travel curves
+            Forecasted tourist arrivals throughout the day to help you plan a queue-free trip
           </p>
         </div>
 
@@ -94,11 +92,11 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
         <div className="flex items-center gap-3 text-xs text-slate-700 self-start sm:self-auto font-medium">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-gov-green" />
-            <span>अनुमानित आवागमन</span>
+            <span>Expected Visitors</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 bg-rose-600 border-b border-dashed border-rose-600" />
-            <span>क्षमता सीमा ({capacity.toLocaleString()})</span>
+            <span>Comfort Limit ({capacity.toLocaleString()})</span>
           </div>
         </div>
       </div>
@@ -135,7 +133,7 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
               strokeDasharray="4 4" 
               strokeWidth={2}
               label={{ 
-                value: 'Max Capacity Limit', 
+                value: 'Max Capacity', 
                 fill: '#dc2626', 
                 fontSize: 10, 
                 position: 'insideTopRight' 
@@ -158,12 +156,12 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-gov-navy" />
-            {t.timeSlotTitle} (सुझावित यात्रा समय)
+            Select Your Planned Departure Time:
           </span>
-          <span className="text-[10px] text-slate-500 font-medium">Click slot to view impact</span>
+          <span className="text-[10px] text-slate-500 font-medium">Click a time slot to see traffic impact</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {timeSlots.map((slot) => {
             const isSelected = selectedTimeSlot === slot.time;
             return (
@@ -171,7 +169,7 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
                 key={slot.time}
                 type="button"
                 onClick={() => setSelectedTimeSlot(slot.time)}
-                className={`p-2.5 rounded-lg border text-left transition-all space-y-1 ${
+                className={`p-3 rounded-xl border text-left transition-all space-y-1 ${
                   isSelected
                     ? 'border-gov-navy bg-amber-50/90 shadow-sm ring-2 ring-gov-navy'
                     : 'border-slate-300 bg-slate-50 hover:bg-slate-100'
@@ -179,11 +177,11 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
               >
                 <div className="flex items-center justify-between">
                   <span className="font-black text-xs text-slate-900">{slot.time}</span>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${slot.badge}`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${slot.badge}`}>
                     {slot.status}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-600 flex items-center justify-between">
+                <div className="text-xs text-slate-600 flex items-center justify-between">
                   <span>{slot.label}</span>
                   <span className="font-bold text-slate-800">{slot.delay}</span>
                 </div>
@@ -193,12 +191,12 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
         </div>
       </div>
 
-      {/* Official Advisory Banner */}
-      <div className="bg-slate-100 border border-slate-300 rounded-lg p-3 flex items-start gap-2.5 text-xs text-slate-800">
+      {/* Smart Advisory Tip */}
+      <div className="bg-slate-100 border border-slate-300 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-slate-800">
         <Sparkles className="w-4 h-4 text-gov-navy shrink-0 mt-0.5" />
         <div>
-          <strong className="text-slate-900">{t.optimalWindow} (अनुकूल समय):</strong>{' '}
-          Departing between 06:00 AM – 09:00 AM or after 04:30 PM avoids 80% of mountain corridor traffic checkpoints and viewpoint overcrowding.
+          <strong className="text-slate-900">Recommended Travel Window:</strong>{' '}
+          Departing between <strong>06:00 AM – 09:00 AM</strong> or after <strong>04:30 PM</strong> avoids over 80% of ghat traffic checkpoints and viewpoint overcrowding.
         </div>
       </div>
     </div>

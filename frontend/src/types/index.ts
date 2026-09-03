@@ -4,6 +4,17 @@ export type DCCStatus = 'OPTIMAL' | 'MODERATE' | 'CRITICAL';
 
 export type UserRole = 'tourist' | 'authority' | 'provider';
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  role: UserRole;
+  designation: string;
+  department: string;
+  badgeNumber: string;
+  isAuthenticated: boolean;
+  token?: string;
+}
+
 export interface LocalPressure {
   parkingSaturationPct: number;
   waterStressIndex: number; // 0.0 to 1.0
