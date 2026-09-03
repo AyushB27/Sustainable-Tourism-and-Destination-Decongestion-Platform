@@ -53,7 +53,10 @@ Based on an audit of the current codebase:
 Explore the dedicated documentation files below:
 
 - [Problem Statement & Traceability Matrix](./PROBLEM_STATEMENT.md) — Official Smart India Hackathon PS (SIH26204), background, and requirement mapping.
-- [TODO Guide](./TODO.md) — Feature-oriented task management, completed milestones, and remaining action items.
+- [Task Management Index (TODO)](./TODO.md) — Master task tracker and project status breakdown:
+  - 🟢 [Completed Tasks (TODO_DONE.md)](./TODO_DONE.md) — 6 fully operational and verified features.
+  - 🟡 [Partially Executed Tasks (TODO_PARTIAL.md)](./TODO_PARTIAL.md) — 12 active features requiring final wiring.
+  - 🔵 [Future Roadmap Tasks (TODO_FUTURE.md)](./TODO_FUTURE.md) — 4 not started / planned infrastructure features.
 - [Features Specification](./FEATURES.md) — Plain-language guide to all platform capabilities, user flows, and current operational states.
 - [System Architecture](./ARCHITECTURE.md) — Architectural design, data flow diagrams, state management, and backend-frontend interaction.
 - [API Reference](./API.md) — Complete specification of all REST endpoints, request/response schemas, and integration notes.

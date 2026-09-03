@@ -12,7 +12,7 @@ All comprehensive project documentation is organized in the [`docs/`](./docs) di
 
 - 🎯 **[Problem Statement & Traceability Matrix](./docs/PROBLEM_STATEMENT.md)** — Official Smart India Hackathon PS (SIH26204) & 14-requirement mapping.
 - 📖 **[Main Documentation Entry Point](./docs/README.md)** — Project overview, current audit status, and index.
-- 📋 **[Project Task Management (TODO)](./docs/TODO.md)** — Feature-by-feature status, completed tasks, and actionable next steps.
+- 📋 **[Project Task Management (TODO)](./docs/TODO.md)** — Master task tracker ([Completed](./docs/TODO_DONE.md) • [Partially Executed](./docs/TODO_PARTIAL.md) • [Future Roadmap](./docs/TODO_FUTURE.md)).
 - 🌟 **[Features Specification](./docs/FEATURES.md)** — Plain-language guide to all platform capabilities, user flows, and limitations.
 - 🏗️ **[System Architecture & Design](./docs/ARCHITECTURE.md)** — Architecture diagrams, data flow pipelines, and mathematical models.
 - 🔌 **[REST API Reference](./docs/API.md)** — Complete endpoint directory, request/response examples, and schemas.
