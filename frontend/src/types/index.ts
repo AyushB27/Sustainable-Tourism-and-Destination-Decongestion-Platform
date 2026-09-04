@@ -2,7 +2,7 @@ export type DestinationCategory = 'Hill Station' | 'Coastal' | 'Heritage' | 'Pil
 
 export type DCCStatus = 'OPTIMAL' | 'MODERATE' | 'CRITICAL';
 
-export type UserRole = 'tourist' | 'authority' | 'provider';
+export type UserRole = 'tourist' | 'authority' | 'provider' | 'developer';
 
 export interface AuthUser {
   id: string;

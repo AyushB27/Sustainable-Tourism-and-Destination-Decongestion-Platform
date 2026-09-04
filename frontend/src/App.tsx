@@ -4,6 +4,7 @@ import { Navbar } from './components/common/Navbar';
 import { TouristView } from './components/tourist/TouristView';
 import { AuthorityView } from './components/authority/AuthorityView';
 import { ProviderView } from './components/provider/ProviderView';
+import { DevPortal } from './components/developer/DevPortal';
 import { AuthModal } from './components/auth/AuthModal';
 import { AiHelplineBot } from './components/common/AiHelplineBot';
 import { 
@@ -11,7 +12,8 @@ import {
   ShieldAlert, 
   Building2,
   ExternalLink,
-  Lock
+  Lock,
+  Code2
 } from 'lucide-react';
 
 export function App() {
@@ -52,6 +54,7 @@ export function App() {
         {role === 'tourist' && <TouristView />}
         {role === 'authority' && <AuthorityView />}
         {role === 'provider' && <ProviderView />}
+        {role === 'developer' && <DevPortal />}
       </main>
 
       {/* Official Government Portal Footer */}
@@ -88,6 +91,7 @@ export function App() {
                 <li><button onClick={() => requestRoleChange('tourist')} className="hover:text-white hover:underline text-left">Citizen Travel Advisory & Green Yatra</button></li>
                 <li><button onClick={() => requestRoleChange('authority')} className="hover:text-white hover:underline text-left">District GIS Emergency Command</button></li>
                 <li><button onClick={() => requestRoleChange('provider')} className="hover:text-white hover:underline text-left">Homestay & Tour Operator Registry</button></li>
+                <li><button onClick={() => requestRoleChange('developer')} className="text-cyan-400 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Developer Production Portal <Code2 className="w-3 h-3" /></button></li>
                 <li><button onClick={() => setAuthModalOpen(true)} className="text-amber-300 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Stakeholder Portal Gateway <Lock className="w-3 h-3" /></button></li>
                 <li><a href="https://tourism.gov.in" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">Ministry of Tourism <ExternalLink className="w-3 h-3 text-slate-400" /></a></li>
               </ul>
@@ -165,6 +169,16 @@ export function App() {
             Providers
             {currentUser.role !== 'provider' && <Lock className="w-2.5 h-2.5 text-slate-400" />}
           </span>
+        </button>
+
+        <button
+          onClick={() => requestRoleChange('developer')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-lg text-[10px] font-bold transition ${
+            role === 'developer' ? 'text-cyan-300 bg-slate-800' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Code2 className="w-4 h-4 mb-0.5" />
+          <span>Dev</span>
         </button>
       </nav>
     </div>

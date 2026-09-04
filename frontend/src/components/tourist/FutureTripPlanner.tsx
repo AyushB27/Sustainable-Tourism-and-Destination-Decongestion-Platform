@@ -16,6 +16,21 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = () => {
   const [travelDate, setTravelDate] = useState('2026-09-12'); // Next Weekend
   const [duration, setDuration] = useState<'1-day' | '2-day' | '3-day'>('2-day');
   const [travelStyle, setTravelStyle] = useState<'scenic' | 'adventure' | 'family' | 'budget'>('scenic');
+  const [backendPlanStatus, setBackendPlanStatus] = useState<'idle' | 'loading' | 'connected' | 'offline'>('idle');
+
+  // Call backend itinerary API whenever user changes their trip parameters
+  React.useEffect(() => {
+    setBackendPlanStatus('loading');
+    fetch('http://127.0.0.1:8000/api/itinerary/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ travel_date: travelDate, duration, travel_style: travelStyle }),
+      signal: AbortSignal.timeout(3500)
+    })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(() => setBackendPlanStatus('connected'))
+      .catch(() => setBackendPlanStatus('offline'));
+  }, [travelDate, duration, travelStyle]);
 
   // Dynamic future congestion simulation based on chosen date
   const isWeekend = new Date(travelDate).getDay() === 0 || new Date(travelDate).getDay() === 6;
@@ -80,11 +95,21 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = () => {
             <Calendar className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg sm:text-xl font-black text-gov-navy tracking-tight leading-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-black text-gov-navy tracking-tight leading-tight flex items-center gap-2 flex-wrap">
               <span>Future Trip & Decongested Itinerary Planner</span>
               <span className="text-xs bg-amber-100 text-amber-950 font-bold px-2 py-0.5 rounded border border-amber-300">
                 AI Smart Scheduler
               </span>
+              {backendPlanStatus === 'connected' && (
+                <span className="text-xs bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300">
+                  ✅ Backend API
+                </span>
+              )}
+              {backendPlanStatus === 'offline' && (
+                <span className="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded border border-slate-300">
+                  📵 Offline Mode
+                </span>
+              )}
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
               Plan upcoming holidays with AI-predicted congestion curves and balanced multi-day itineraries to bypass 90% of corridor bottlenecks

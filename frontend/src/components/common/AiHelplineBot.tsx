@@ -43,7 +43,38 @@ export const AiHelplineBot: React.FC = () => {
     { label: '🌿 How does the Green Pass work?', query: 'How does the Green Yatra Pass work?' }
   ];
 
-  const handleSendMessage = (textToSend?: string) => {
+  const generateClientFallback = (text: string): string => {
+    const lower = text.toLowerCase();
+    const lonavala = destinations.find(d => d.id === 'LON');
+    const alibaug = destinations.find(d => d.id === 'ALB');
+    const kashid = destinations.find(d => d.id === 'KAS');
+    const mahabaleshwar = destinations.find(d => d.id === 'MAH');
+
+    if (lower.includes('lonavala') || lower.includes('khandala')) {
+      if (lonavala) {
+        const metrics = calculateDCCMetrics(lonavala);
+        return `📍 **Lonavala & Khandala Live Status:**\n• Crowd Status: **${metrics.status === 'CRITICAL' ? '🔴 Heavily Crowded' : '🟡 Moderate'}**\n• Tourist Inflow: **${lonavala.currentInflow.toLocaleString()} visitors** (Limit: ${lonavala.physicalCapacity.toLocaleString()})\n• Estimated Checkpoint Delay: **${metrics.waitTimeMinutes} minutes** on ghat road.\n\n🌿 **Recommendation:** We suggest rerouting to **Matheran Eco-Zone** or **Bhandardara** to save over 1 hour of traffic delays.`;
+      }
+    } else if (lower.includes('alibaug') || lower.includes('beach')) {
+      if (alibaug && kashid) {
+        const kashidMetrics = calculateDCCMetrics(kashid);
+        return `🏖️ **Coastal Corridor Recommendation:**\nAlibaug currently has heavy footfall on Varsoli and Nagaon beaches.\n\n✨ **Certified Twin:** We recommend **Kashid & Murud Waters** (Crowd: ${kashidMetrics.status === 'OPTIMAL' ? '🟢 Low / Comfortable' : '🟡 Moderate'}). It features clean white sands, the historic Murud-Janjira sea fort, and 75% fewer tourist crowds!`;
+      }
+    } else if (lower.includes('weather') || lower.includes('rain') || lower.includes('landslide')) {
+      if (lonavala) {
+        return `⛈️ **Live Weather & Road Condition:**\n• Current Western Ghats Rainfall: **${lonavala.weatherHazardScore > 0.5 ? 'Heavy Rain (>15mm/hr)' : 'Light pleasant showers'}**\n• Landslide / Road Hazard Risk: **${(lonavala.weatherHazardScore * 100).toFixed(0)}%**\n• Temperature: **~21.5°C** (Misty & cool)\n\n⚠️ **Advisory:** Drive cautiously along NH-48 Khandala curves and ghat roads.`;
+      }
+    } else if (lower.includes('green') || lower.includes('pass') || lower.includes('eco')) {
+      return `🌿 **Digital Green Travel Pass:**\nWhen you select any certified under-visited twin destination on this portal, a free Green Travel Pass is generated with a Fast-Track QR code for highway toll checkpoints, helping reduce highway congestion and carbon footprint!`;
+    } else if (lower.includes('mahabaleshwar')) {
+      if (mahabaleshwar) {
+        return `🍓 **Mahabaleshwar Plateau Live Status:**\n• Current Visitors: **${mahabaleshwar.currentInflow.toLocaleString()}**\n• Parking Status: **${mahabaleshwar.localPressure.parkingSaturationPct}% full**.\n\n✨ **Twin Alternative:** Visit **Tapola Backwaters (Mini Kashmir)** located 25 km away, offering pristine lake boating with minimal crowds.`;
+      }
+    }
+    return `🏛️ **Tourism 24x7 AI Assistant:**\nI am tracking live signals from 7 Western Ghats destinations using Open-Meteo, TomTom Traffic, and Open Government Data (data.gov.in).\n\nFeel free to ask me:\n• "Is Lonavala crowded?"\n• "Which destination has zero queues today?"\n• "Weather in Mahabaleshwar?"\n• "How to get a green travel pass?"`;
+  };
+
+  const handleSendMessage = async (textToSend?: string) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
@@ -58,50 +89,33 @@ export const AiHelplineBot: React.FC = () => {
     if (!textToSend) setInputText('');
     setIsTyping(true);
 
-    // AI Knowledge response grounded in live sensor data
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let botResponse = '';
-
-      const lonavala = destinations.find(d => d.id === 'LON');
-      const alibaug = destinations.find(d => d.id === 'ALB');
-      const kashid = destinations.find(d => d.id === 'KAS');
-      const mahabaleshwar = destinations.find(d => d.id === 'MAH');
-
-      if (lower.includes('lonavala') || lower.includes('khandala')) {
-        if (lonavala) {
-          const metrics = calculateDCCMetrics(lonavala);
-          botResponse = `📍 **Lonavala & Khandala Live Status:**\n• Crowd Status: **${metrics.status === 'CRITICAL' ? '🔴 Heavily Crowded' : '🟡 Moderate'}**\n• Tourist Inflow: **${lonavala.currentInflow.toLocaleString()} visitors** (Limit: ${lonavala.physicalCapacity.toLocaleString()})\n• Estimated Checkpoint Delay: **${metrics.waitTimeMinutes} minutes** on ghat road.\n\n🌿 **Recommendation:** We suggest rerouting to **Matheran Eco-Zone** or **Bhandardara** to save over 1 hour of traffic delays.`;
-        }
-      } else if (lower.includes('alibaug') || lower.includes('beach')) {
-        if (alibaug && kashid) {
-          const kashidMetrics = calculateDCCMetrics(kashid);
-          botResponse = `🏖️ **Coastal Corridor Recommendation:**\nAlibaug currently has heavy footfall on Varsoli and Nagaon beaches.\n\n✨ **Certified Twin:** We recommend **Kashid & Murud Waters** (Crowd: ${kashidMetrics.status === 'OPTIMAL' ? '🟢 Low / Comfortable' : '🟡 Moderate'}). It features clean white sands, the historic Murud-Janjira sea fort, and 75% fewer tourist crowds!`;
-        }
-      } else if (lower.includes('weather') || lower.includes('rain') || lower.includes('landslide')) {
-        if (lonavala) {
-          botResponse = `⛈️ **Live Weather & Road Condition:**\n• Current Western Ghats Rainfall: **${lonavala.weatherHazardScore > 0.5 ? 'Heavy Rain (>15mm/hr)' : 'Light pleasant showers'}**\n• Landslide / Road Hazard Risk: **${(lonavala.weatherHazardScore * 100).toFixed(0)}%**\n• Temperature: **~21.5°C** (Misty & cool)\n\n⚠️ **Advisory:** Drive cautiously along NH-48 Khandala curves and ghat roads.`;
-        }
-      } else if (lower.includes('green') || lower.includes('pass') || lower.includes('eco')) {
-        botResponse = `🌿 **Digital Green Travel Pass:**\nWhen you select any certified under-visited twin destination on this portal, a free Green Travel Pass is generated with a Fast-Track QR code for highway toll checkpoints, helping reduce highway congestion and carbon footprint!`;
-      } else if (lower.includes('mahabaleshwar')) {
-        if (mahabaleshwar) {
-          botResponse = `🍓 **Mahabaleshwar Plateau Live Status:**\n• Current Visitors: **${mahabaleshwar.currentInflow.toLocaleString()}**\n• Parking Status: **${mahabaleshwar.localPressure.parkingSaturationPct}% full**.\n\n✨ **Twin Alternative:** Visit **Tapola Backwaters (Mini Kashmir)** located 25 km away, offering pristine lake boating with minimal crowds.`;
-        }
+    let botResponse = '';
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, destination_id: 'LON' }),
+        signal: AbortSignal.timeout(3500)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        botResponse = data.response || generateClientFallback(text);
       } else {
-        botResponse = `🏛️ **Tourism 24x7 AI Assistant:**\nI am tracking live signals from 7 Western Ghats destinations using Open-Meteo, TomTom Traffic, and Open Government Data (data.gov.in).\n\nFeel free to ask me:\n• "Is Lonavala crowded?"\n• "Which destination has zero queues today?"\n• "Weather in Mahabaleshwar?"\n• "How to get a green travel pass?"`;
+        botResponse = generateClientFallback(text);
       }
+    } catch {
+      botResponse = generateClientFallback(text);
+    }
 
-      const botMsg: Message = {
-        id: `bot-${Date.now()}`,
-        sender: 'bot',
-        text: botResponse,
-        timestamp: 'Just now'
-      };
+    const botMsg: Message = {
+      id: `bot-${Date.now()}`,
+      sender: 'bot',
+      text: botResponse,
+      timestamp: 'Just now'
+    };
 
-      setMessages((prev) => [...prev, botMsg]);
-      setIsTyping(false);
-    }, 500);
+    setMessages((prev) => [...prev, botMsg]);
+    setIsTyping(false);
   };
 
   return (

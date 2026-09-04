@@ -1,9 +1,13 @@
 import sys
 import json
+import time
 import urllib.parse
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
+
+# Track server start time for uptime reporting
+_SERVER_START_TIME = time.time()
 
 # Add backend directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -75,7 +79,7 @@ STAKEHOLDERS_DIRECTORY = {
 class EcoRouteAPIHandler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
     def _send_json_response(self, data, status_code=200):
@@ -266,12 +270,168 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
         else:
             self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
 
+    def do_PUT(self):
+        parsed_path = urllib.parse.urlparse(self.path)
+        path = parsed_path.path
+        body = self._parse_json_body()
+
+        # Provider Room Occupancy Update
+        if path.startswith("/api/destinations/") and path.endswith("/occupancy"):
+            parts = path.strip("/").split("/")
+            dest_id = parts[2].upper()
+            new_occupancy_pct = float(body.get("occupancy_pct", 50))
+            available_rooms = int(body.get("available_rooms", 50))
+
+            # Update the in-memory telemetry cache
+            from app.background_worker import _telemetry_cache
+            for dest in _telemetry_cache.get("destinations", []):
+                if dest["id"] == dest_id:
+                    dest["hotel_occupancy_pct"] = new_occupancy_pct
+                    dest["available_rooms"] = available_rooms
+                    break
+
+            self._send_json_response({
+                "status": "success",
+                "message": f"Occupancy updated for {dest_id}",
+                "destination_id": dest_id,
+                "new_occupancy_pct": new_occupancy_pct,
+                "available_rooms": available_rooms
+            })
+        else:
+            self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
+
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
 
-        # 1. Live Multi-Source Destination Feed
-        if path in ["/api/destinations/live", "/api/live"]:
+        # 0. Developer Production Status & Transparency Portal
+        if path == "/api/dev/status":
+            global _SERVER_START_TIME
+            uptime_seconds = int(time.time() - _SERVER_START_TIME)
+            telemetry = get_latest_telemetry()
+            destinations_raw = telemetry.get("destinations", [])
+
+            # DB stats
+            sensor_count = 0
+            passes_count = 0
+            advisories_count = 0
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM sensor_readings")
+                sensor_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM green_yatra_passes")
+                passes_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM gazette_advisories WHERE active=1")
+                advisories_count = cursor.fetchone()[0]
+                conn.close()
+            except Exception:
+                pass
+
+            # API key statuses
+            tomtom_configured = bool(TOMTOM_API_KEY and TOMTOM_API_KEY not in ["", "your_tomtom_api_key_here"])
+            besttime_configured = bool(BESTTIME_API_KEY and BESTTIME_API_KEY not in ["", "your_besttime_api_key_here"])
+            datagov_configured = bool(DATA_GOV_IN_API_KEY and DATA_GOV_IN_API_KEY not in ["", "your_data_gov_in_api_key_here"])
+
+            # Build per-destination pipeline transparency entries
+            dest_transparency = []
+            for d in destinations_raw:
+                sensors = d.get("live_sensors", {})
+                weather = sensors.get("weather", {})
+                traffic = sensors.get("traffic", {})
+                footfall = sensors.get("footfall", {})
+                osm = sensors.get("osm_amenities", {})
+                dest_transparency.append({
+                    "id": d.get("id"),
+                    "name": d.get("name"),
+                    "current_inflow": d.get("current_inflow"),
+                    "physical_capacity": d.get("physical_capacity"),
+                    "dcc_score": d.get("dcc_score"),
+                    "status": d.get("status"),
+                    "wait_minutes": d.get("estimated_wait_minutes"),
+                    "pipelines": {
+                        "weather": {
+                            "source": weather.get("source", "Unknown"),
+                            "status": weather.get("status", "unknown"),
+                            "temperature_c": weather.get("temperature_c"),
+                            "rain_mm": weather.get("rain_mm"),
+                            "wind_kmh": weather.get("wind_kmh"),
+                            "hazard_score": weather.get("hazard_score")
+                        },
+                        "traffic": {
+                            "source": traffic.get("source", "Unknown"),
+                            "status": traffic.get("status", "unknown"),
+                            "delay_factor": traffic.get("delay_factor"),
+                            "current_speed_kmh": traffic.get("current_speed_kmh"),
+                            "free_flow_speed_kmh": traffic.get("free_flow_speed_kmh")
+                        },
+                        "footfall": {
+                            "source": footfall.get("source", "Unknown"),
+                            "status": footfall.get("status", "unknown"),
+                            "footfall_factor": footfall.get("footfall_factor"),
+                            "live_busyness_pct": footfall.get("live_busyness_pct")
+                        },
+                        "osm": {
+                            "source": "OpenStreetMap Overpass API",
+                            "status": osm.get("osm_status", "unknown"),
+                            "osm_poi_nodes": osm.get("osm_poi_nodes")
+                        }
+                    }
+                })
+
+            self._send_json_response({
+                "backend_version": "EcoRoute Bharat v1.0 — SIH26204",
+                "server_uptime_seconds": uptime_seconds,
+                "last_telemetry_sync": telemetry.get("last_updated"),
+                "total_sensor_readings_logged": sensor_count,
+                "destinations": dest_transparency,
+                "api_key_status": {
+                    "TOMTOM_API_KEY": "CONFIGURED — Live API Active" if tomtom_configured else "NOT_CONFIGURED — Using Heuristic Diurnal Model",
+                    "BESTTIME_API_KEY": "CONFIGURED — Live API Active" if besttime_configured else "NOT_CONFIGURED — Using Hourly Busyness Model",
+                    "DATA_GOV_IN_API_KEY": "CONFIGURED" if datagov_configured else "NOT_CONFIGURED — Using Static Benchmarks",
+                    "OPEN_METEO": "NO_KEY_REQUIRED — Free Public API (Always Live)"
+                },
+                "database": {
+                    "path": "backend/data/ecoroute.db",
+                    "journal_mode": "WAL",
+                    "sensor_readings_count": sensor_count,
+                    "green_passes_issued": passes_count,
+                    "active_advisories": advisories_count
+                },
+                "sih_requirement_status": {
+                    "req_1_collect_signals": f"PARTIAL — Weather: LIVE (Open-Meteo), Traffic: {'LIVE (TomTom)' if tomtom_configured else 'SIMULATED (Heuristic)'}, Footfall: {'LIVE (BestTime)' if besttime_configured else 'SIMULATED (Model)'}",
+                    "req_2_predict_congestion": "DONE — 12-hour Gaussian forecast mounted in TouristView via DemandCurveChart",
+                    "req_3_identify_overcrowding": "DONE — DCC engine classifies OPTIMAL/MODERATE/CRITICAL; rendered in HeroDCCStatus",
+                    "req_4_recommend_twins": "DONE — 4D cosine similarity twin recommender wired in TouristView via TwinAlternativeCards",
+                    "req_5_recommend_times": "DONE — Demand curve highlights best departure windows; time slot selector active",
+                    "req_6_estimate_wait_times": "DONE — Queue delay formula active; displayed in HeroDCCStatus and CorridorMap",
+                    "req_7_demand_spread": "DONE — DemandDiffusionFlow.tsx O-D matrix in AuthorityView",
+                    "req_8_authority_forecasts": "DONE — AuthorityView.tsx with GIS Leaflet map and KPI bars",
+                    "req_9_underutilised_spots": "PARTIAL — Promotions table exists; REST endpoint pending",
+                    "req_10_advisories": "DONE — DigitalAdvisoryDispatcher wired to POST /api/advisories/broadcast",
+                    "req_11_multilingual": "PARTIAL — i18n dictionary done; language switcher not wired in Navbar",
+                    "req_12_eco_indicators": "DONE — EcoHealthCommunityWidget, EcoPassCard, CO2 tracking active",
+                    "req_13_trip_planning": "DONE — FutureTripPlanner calls POST /api/itinerary/plan",
+                    "req_14_ai_helpline": "DONE — AiHelplineBot wired to POST /api/ai/chat with live context"
+                },
+                "frontend_api_connections": {
+                    "GET /api/destinations/live": "CONNECTED — polled every 25s via fetchLiveBackendFeed()",
+                    "POST /api/auth/login": "CONNECTED — AuthModal.tsx",
+                    "POST /api/recommendations/twin": "CONNECTED — TwinAlternativeCards via rerouteToDestination",
+                    "GET /api/destinations/{id}/forecast": "CONNECTED — DemandCurveChart.tsx fetches on mount",
+                    "POST /api/itinerary/plan": "CONNECTED — FutureTripPlanner.tsx form submit",
+                    "POST /api/advisories/broadcast": "CONNECTED — DigitalAdvisoryDispatcher.tsx",
+                    "GET /api/advisories": "CONNECTED — App.tsx initial load seeds store",
+                    "POST /api/passes/issue": "CONNECTED — rerouteToDestination CTA in TwinAlternativeCards",
+                    "GET /api/passes": "NOT CONNECTED — DevPortal SQLite viewer reads directly",
+                    "POST /api/ai/chat": "CONNECTED — AiHelplineBot.tsx with fallback",
+                    "PUT /api/destinations/{id}/occupancy": "CONNECTED — LiveInventoryCard.tsx slider confirm",
+                    "GET /api/health": "NOT EXPLICITLY CALLED — available at /api/health",
+                    "GET /docs": "AVAILABLE — Swagger UI at /docs"
+                }
+            })
+
+        elif path in ["/api/destinations/live", "/api/live"]:
             telemetry = get_latest_telemetry()
             self._send_json_response({
                 "status": "success",

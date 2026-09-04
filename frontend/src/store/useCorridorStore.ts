@@ -151,9 +151,9 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
 
   requestRoleChange: (targetRole) => {
     const { currentUser } = get();
-    // If target is tourist / citizen, always allow
-    if (targetRole === 'tourist') {
-      set({ role: 'tourist' });
+    // If target is tourist / citizen or developer portal, always allow
+    if (targetRole === 'tourist' || targetRole === 'developer') {
+      set({ role: targetRole });
       return;
     }
     // If user already authenticated for this role, allow
@@ -212,6 +212,40 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
           destinations: updatedDestinations,
           liveBackendStatus: 'connected'
         });
+      }
+
+      // Also sync active official advisories from backend gazette
+      try {
+        const advRes = await fetch('http://127.0.0.1:8000/api/advisories', { signal: AbortSignal.timeout(2000) });
+        if (advRes.ok) {
+          const advData = await advRes.json();
+          if (advData && Array.isArray(advData.advisories) && advData.advisories.length > 0) {
+            const mappedAdvisories: Advisory[] = advData.advisories.map((a: {
+              id: string;
+              destination_id: string;
+              destination_name: string;
+              severity: 'low' | 'medium' | 'high' | 'critical';
+              title: string;
+              message: string;
+              author: string;
+              active: number;
+              created_at: string;
+            }) => ({
+              id: a.id,
+              destinationId: a.destination_id,
+              destinationName: a.destination_name,
+              severity: a.severity,
+              title: a.title,
+              message: a.message,
+              author: a.author,
+              active: Boolean(a.active),
+              timestamp: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }));
+            set({ advisories: mappedAdvisories });
+          }
+        }
+      } catch {
+        // Keep existing initial advisories on network error
       }
     } catch {
       set({ liveBackendStatus: 'offline' });

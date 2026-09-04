@@ -248,12 +248,49 @@ Database file: `backend/data/ecoroute.db`.
 
 ---
 
-## 7. Discrepancies & Client-Server Integration Notes
+---
 
-During the codebase inspection, the following architectural realities were observed:
-1. **API Coverage vs. Frontend Consumption**:
-   - The backend exposes 12 endpoints (`/api/destinations/live`, `/api/destinations/{id}/forecast`, `/api/recommendations/twin`, `/api/itinerary/plan`, `/api/ai/chat`, `/api/auth/login`, `/api/advisories`, `/api/advisories/broadcast`, `/api/passes`, `/api/passes/issue`, `/docs`, `/api/health`).
-   - The frontend currently actively consumes `GET /api/destinations/live` (in `useCorridorStore.ts`) and `POST /api/auth/login` (in `AuthModal.tsx`).
-   - Other capabilities (e.g., advisory broadcasting in `DigitalAdvisoryDispatcher.tsx`, pass generation in `EcoPassCard.tsx`, and chat responses in `AiHelplineBot.tsx`) currently update client-side Zustand state directly rather than making network requests to their respective backend endpoints.
-2. **TouristView Presentation Mode**:
-   - `TouristView.tsx` currently renders a fixed comparative showcase (Lonavala vs. Matheran) that was developed for presentation demos. Modular dynamic components exist in `src/components/tourist/` and are fully operational once reconnected.
+## 7. Client-Server Integration & Gap Closures
+
+Following the architectural audit and implementation sprint, the primary frontend-backend discrepancies have been closed:
+1. **Full API Consumption**:
+   - `GET /api/destinations/live`: Actively polled every 25s by `useCorridorStore.ts` to power real-time DCC metrics.
+   - `POST /api/auth/login`: Invoked by `AuthModal.tsx` for stakeholder and citizen authentication.
+   - `POST /api/advisories/broadcast`: Wired to `DigitalAdvisoryDispatcher.tsx`; official bulletins persist directly to SQLite `gazette_advisories`.
+   - `GET /api/advisories`: Polled on application load to sync active emergency notices into client state and render warning banners.
+   - `POST /api/passes/issue`: Triggered by "Choose Twin" CTA in `TwinAlternativeCards.tsx`; issues digital passes and logs records into SQLite `green_yatra_passes`.
+   - `POST /api/ai/chat`: Queried by `AiHelplineBot.tsx` with live telemetry grounding and client-side fallback.
+   - `POST /api/itinerary/plan`: Queried by `FutureTripPlanner.tsx` whenever travel parameters (date, duration, style) are modified.
+   - `GET /api/destinations/{id}/forecast`: Queried by `DemandCurveChart.tsx` to retrieve 12-hour hourly predictive curves with local Gaussian model fallback.
+   - `PUT /api/destinations/{id}/occupancy`: Invoked by `LiveInventoryCard.tsx` in the MTDC Provider console to update live capacity headroom.
+2. **TouristView Live Wiring**:
+   - The static hardcoded presentation showcase in `TouristView.tsx` has been replaced with full dynamic wiring to the Zustand store.
+   - All modular components (`HeroDCCStatus`, `TwinAlternativeCards`, `DemandCurveChart`, `EcoPassCard`, `FutureTripPlanner`) are dynamically mounted and receive live telemetry.
+
+---
+
+## 8. Developer Portal & Data Transparency Layer
+
+To ensure complete transparency during hackathon evaluation and production monitoring, EcoRoute Bharat includes a dedicated inspection layer accessible via the `developer` role (`/developer`).
+
+### 8.1 Architecture & Endpoints
+- **Backend Inspector (`GET /api/dev/status`)**:
+  - Reports server uptime, last ETL cycle timestamp, and database row counts from SQLite (`sensor_readings`, `green_passes_issued`, `gazette_advisories`).
+  - Audits external API key configurations (`TOMTOM_API_KEY`, `BESTTIME_API_KEY`, `DATA_GOV_IN_API_KEY`, `OPEN_METEO`).
+  - Evaluates live status for all 14 SIH26204 problem statement requirements.
+  - Exposes per-destination telemetry breakdowns with explicit provenance labels:
+    - 🟢 `LIVE`: Genuine external API call responding with real-time physical observations.
+    - 🟡 `SIMULATED`: Mathematically calibrated heuristic time-of-day or diurnal multiplier model.
+    - 🔴 `FALLBACK`: Remote service timed out or errored; baseline regional estimates engaged.
+    - ⚫ `HARDCODED`: Static benchmark values.
+- **Frontend Dashboard (`DevPortal.tsx`)**:
+  - Developed with a high-density, dark-mode Vercel/Grafana inspector aesthetic.
+  - Features 6 dedicated sections:
+    - **Section A**: Backend Health, System Uptime & SQLite Database Metadata.
+    - **Section B**: Data Source Transparency Matrix (Destination × Pipeline with raw physical values).
+    - **Section C**: SIH26204 Requirement Compliance Audit (All 14 requirements mapped to operational status).
+    - **Section D**: API Endpoint Registry (Connection state across all REST endpoints).
+    - **Section E**: Live SQLite Ingestion Log Viewer (Snapshot of the latest sensor telemetry rows).
+    - **Section F**: Architectural Transparency Notice (Documenting real vs. simulated pipeline layers).
+  - Automatically refreshes every 10 seconds via `setInterval` with manual refresh override.
+

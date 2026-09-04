@@ -61,7 +61,17 @@ export const LiveInventoryCard: React.FC<LiveInventoryCardProps> = ({ destinatio
           max={100}
           step={5}
           value={occupancy}
-          onChange={(e) => updateDestinationHotelOccupancy(destination.id, Number(e.target.value))}
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            updateDestinationHotelOccupancy(destination.id, val);
+            // Fire-and-forget sync to backend PUT /api/destinations/{id}/occupancy
+            fetch(`http://127.0.0.1:8000/api/destinations/${destination.id}/occupancy`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ occupancy_pct: val, available_rooms: Math.max(0, Math.round(100 - val)) }),
+              signal: AbortSignal.timeout(2000)
+            }).catch(() => { /* silent fallback */ });
+          }}
           aria-label={`Reported Hotel and Resort Occupancy percentage for ${destination.name}`}
           className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
         />

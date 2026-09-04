@@ -15,7 +15,8 @@ import {
   Lock,
   RefreshCw,
   CheckCircle2,
-  WifiOff
+  WifiOff,
+  Code2
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { PresetScenario } from '../../store/useCorridorStore';
@@ -89,6 +90,12 @@ export const Navbar: React.FC = () => {
       description: 'MTDC Operator Console',
       icon: <Building2 className="w-4 h-4" />,
       isProtected: true
+    },
+    {
+      key: 'developer',
+      label: 'Developer Portal',
+      description: 'Production Audit & Data Inspection',
+      icon: <Code2 className="w-4 h-4" />
     }
   ];
 

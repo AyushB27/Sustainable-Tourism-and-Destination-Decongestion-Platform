@@ -26,7 +26,27 @@ interface CustomTooltipProps {
 
 export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination }) => {
   const { selectedTimeSlot, setSelectedTimeSlot } = useCorridorStore();
-  const forecastData = generate12HourForecast(destination);
+  const [forecastData, setForecastData] = React.useState<HourlyForecastPoint[]>(() => generate12HourForecast(destination));
+
+  React.useEffect(() => {
+    // Generate initial fallback points immediately
+    setForecastData(generate12HourForecast(destination));
+
+    // Fetch from backend endpoint with timeout
+    fetch(`http://127.0.0.1:8000/api/destinations/${destination.id}/forecast`, {
+      signal: AbortSignal.timeout(3000)
+    })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => {
+        if (data && data.forecast_points && Array.isArray(data.forecast_points)) {
+          setForecastData(data.forecast_points);
+        }
+      })
+      .catch(() => {
+        // Safe fallback already applied
+      });
+  }, [destination]);
+
   const capacity = destination.physicalCapacity;
 
   // Friendly Time-Slot Options

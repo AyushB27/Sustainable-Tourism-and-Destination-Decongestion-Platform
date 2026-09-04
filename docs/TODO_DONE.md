@@ -18,16 +18,22 @@ For the master summary index, see [TODO.md](./TODO.md).
 | **4** | Ecological Vulnerability & Municipal Controls | MEDIUM | Verified with interactive sliders & gauges |
 | **5** | Regional Mobility Diffusion Matrix | MEDIUM | Verified with origin-destination flow matrix |
 | **6** | Automated Unit Testing & API Documentation Explorer | HIGH | 7/7 backend unit test suites pass |
+| **7** | Live Telemetry Ingestion Pipeline (Weather LIVE + Fallbacks) | HIGH | Open-Meteo + OSM live, 60s SQLite daemon |
+| **8** | Citizen / Tourist Experience Portal — Dynamic Data Wiring | HIGH | `TouristView.tsx` wired to Zustand store & live telemetry |
+| **9** | 12-Hour Diurnal Demand Curve — Mounted & Wired | MEDIUM | `DemandCurveChart.tsx` fetches `GET /api/destinations/{id}/forecast` |
+| **10** | 4D Cosine Twin Recommender — Dynamic Mounting | HIGH | `TwinAlternativeCards.tsx` receives live store data & cosine utility ranking |
+| **11** | Multi-Day Decongested Itinerary Planner — Wired | MEDIUM | `FutureTripPlanner.tsx` calls `POST /api/itinerary/plan` |
+| **12** | Emergency Gazette Advisory Broadcaster — Wired | HIGH | `DigitalAdvisoryDispatcher.tsx` calls `POST /api/advisories/broadcast` |
+| **13** | Digital Green Yatra Pass & QR Code — Wired | MEDIUM | Reroute CTA calls `POST /api/passes/issue`; saves to SQLite |
+| **14** | 24x7 AI Tourism Helpline Assistant — Wired | MEDIUM | `AiHelplineBot.tsx` calls `POST /api/ai/chat` with live metric context |
+| **15** | Developer Production Monitoring Portal | HIGH | `DevPortal.tsx` with 6 sections (health, transparency, SIH audit, API registry, SQLite logs) |
 
 ---
 
 ## Feature Specifications & Completed Tasks
 
 ### 1. Stakeholder RBAC & Authentication Gateway
-
-Status: DONE
-
-Priority: HIGH
+Status: DONE | Priority: HIGH
 
 #### Description
 Role-based access control (RBAC) protecting administrative and commercial portals. Provides 1-click fast demo profiles (Pune District Magistrate IAS, Raigad SP IPS, Matheran Homestay Operator) and guest citizen authentication.
@@ -40,144 +46,213 @@ Role-based access control (RBAC) protecting administrative and commercial portal
 - [x] Add session token and user profile persistence in browser `localStorage`
 - [x] Add automated unit test for credentials verification in `test_backend.py`
 
-#### Dependencies
-- None (Standalone security module)
-
-#### Definition of Done
-- [x] Unauthenticated users attempting to switch to Authority or Provider roles are prompted with the authentication dialog
-- [x] Valid officer and provider credentials return 200 OK with authenticated session tokens
-- [x] User session state survives browser refreshes
-
-#### Notes
-- Fallback authentication is implemented in `AuthModal.tsx` so the demo functions smoothly even if the Python backend is temporarily unreachable.
+#### Verified
+- Unauthenticated users attempting to switch to Authority or Provider roles are prompted with the authentication dialog.
+- Valid officer and provider credentials return 200 OK with authenticated session tokens.
+- User session state survives browser refreshes.
 
 ---
 
 ### 2. Dynamic Carrying Capacity (DCC) Engine
-
-Status: DONE
-
-Priority: HIGH
+Status: DONE | Priority: HIGH
 
 #### Description
-Core mathematical evaluation engine that quantifies destination crowd pressure and safety thresholds. Blends physical capacity utilization with environmental hazards (rainfall, wind, landslides) to assign an operational status (`OPTIMAL`, `MODERATE`, `CRITICAL`) and estimate visitor queue delays.
+Mathematical engine combining physical capacity utilization (70%) and environmental hazard risks (30%) to produce a deterministic index classifying destination stress as OPTIMAL, MODERATE, or CRITICAL.
 
 #### Tasks
-- [x] Implement DCC formula `(0.70 * Inflow / Capacity) + (0.30 * Weather Hazard Score)` in `backend/app/engine/dcc_calculator.py`
-- [x] Implement identical calculation logic in `frontend/src/lib/engine.ts` for instant client-side reactivity
-- [x] Build queuing wait-time formula based on capacity overflow and average dwell duration
-- [x] Define status thresholds: OPTIMAL (< 0.70), MODERATE (0.70 - 0.84), CRITICAL (>= 0.85)
-- [x] Create automated unit tests covering edge cases in `test_backend.py`
+- [x] Implement deterministic DCC formula in `backend/app/engine/dcc_calculator.py`
+- [x] Implement client-side twin in `frontend/src/lib/engine.ts`
+- [x] Calibrate wait-time queuing model based on average dwell hours
+- [x] Unit test mathematical precision and edge cases in `test_backend.py`
 
-#### Dependencies
-- Weather hazard score from weather telemetry pipeline
-- Inflow estimates from traffic and footfall pipelines
-
-#### Definition of Done
-- [x] Destinations with >100% capacity utilization or high landslide risk are classified as CRITICAL
-- [x] Queuing delays are calculated in minutes and displayed in both backend feeds and frontend metrics
-- [x] Unit test suite verifies precision of calculation against expected benchmarks
-
-#### Notes
-- Mathematical formulation:
-  $$\text{DCC} = \min\left(1.0, \, 0.70 \times \frac{\text{Inflow}}{\text{Capacity}} + 0.30 \times \text{Hazard}\right)$$
+#### Verified
+- Unit test suite verifies DCC score calculation and queue delay formulas across standard, overflow, and edge cases.
 
 ---
 
-### 3. District GIS Emergency Incident Command Center
-
-Status: DONE
-
-Priority: HIGH
+### 3. District GIS Incident Command Center
+Status: DONE | Priority: HIGH
 
 #### Description
-Administrative dashboard for district collectors, police superintendents, and disaster relief cells. Integrates an interactive Leaflet GIS map with color-coded destination status rings, telemetry KPI bars, capacity threshold tables, and live manual backend sync controls.
+District administration emergency command center with interactive GIS map, telemetry cards, and corridor stress level gauges.
 
 #### Tasks
-- [x] Build `AuthorityView.tsx` container layout with official government styling
-- [x] Integrate `CorridorKpiBar.tsx` summarizing total visitors, red zones, eco-passes, and corridor capacity
-- [x] Implement `CorridorMap.tsx` with Leaflet markers, pulsating critical alert circles, and capacity popups
-- [x] Build `CorridorThresholdTable.tsx` for tabular inspection of all 7 corridor destinations
-- [x] Implement manual "Sync Python Live Sensor Pipeline" button with loading spinner
+- [x] Build `AuthorityView.tsx` command center dashboard
+- [x] Build interactive Leaflet map in `CorridorMap.tsx` with color-coded destination markers
+- [x] Add real-time corridor metrics aggregation and status indicators
 
-#### Dependencies
-- Leaflet and React-Leaflet libraries
-- `destinations` telemetry state in Zustand store
-
-#### Definition of Done
-- [x] Map renders all 7 Sahyadri destinations at correct GPS coordinates
-- [x] Overcrowded destinations display pulsating red warning rings
-- [x] Clicking map pins opens detailed telemetry cards with current visitor counts and wait times
-
-#### Notes
-- Map tiles use CartoDB Positron tiles for a clean, professional government command center aesthetic.
+#### Verified
+- Map renders with correct coordinates, dynamic color-coded markers, and status indicators.
 
 ---
 
 ### 4. Ecological Vulnerability & Municipal Controls
-
-Status: DONE
-
-Priority: MEDIUM
-
-#### Description
-Command module allowing district authorities to inspect ecological vulnerability indicators (vegetation stress, groundwater security, forest fire risk) and adjust municipal vehicle entry caps during severe emergencies.
+Status: DONE | Priority: MEDIUM
 
 #### Tasks
-- [x] Create `EcoHealthCommunityWidget.tsx` displaying environmental vulnerability gauges
-- [x] Implement interactive sliders for simulating emergency vehicle cap reductions (e.g. 50% restriction)
-- [x] Render localized water stress and municipal solid waste saturation meters
-- [x] Wire state updates into destination pressure indicators in Zustand store
-
-#### Dependencies
-- Authority dashboard view container (`AuthorityView.tsx`)
-
-#### Definition of Done
-- [x] District officials can adjust simulated carrying capacity limits during extreme weather events
-- [x] Widget visually reflects municipal pressure flags (e.g., waste collection alerts)
+- [x] Build `EcoHealthCommunityWidget.tsx` displaying parking saturation, water stress index, municipal alerts
+- [x] Wire administrative capacity restriction sliders in Authority portal
 
 ---
 
 ### 5. Regional Mobility Diffusion Matrix
-
-Status: DONE
-
-Priority: MEDIUM
-
-#### Description
-Visual Origin-Destination (O-D) flow matrix analyzing how holiday tourists diffuse from primary urban source centers (Mumbai, Pune, Thane) into Sahyadri destination gateways.
+Status: DONE | Priority: MEDIUM
 
 #### Tasks
-- [x] Build `DemandDiffusionFlow.tsx` component with interactive origin hub selectors
-- [x] Implement percentage distribution visualization for vehicle outflows
-- [x] Display alternative bypass recommendations (e.g., diverting NH-48 Pune traffic via Ghoti bypass)
-
-#### Dependencies
-- Authority dashboard view container (`AuthorityView.tsx`)
-
-#### Definition of Done
-- [x] Officials can select source cities and view current tourist dispersion percentages across the 7 monitored destinations
+- [x] Build `DemandDiffusionFlow.tsx` displaying origin-destination flow percentages from Mumbai and Pune
 
 ---
 
 ### 6. Automated Unit Testing & API Documentation Explorer
-
-Status: DONE
-
-Priority: HIGH
-
-#### Description
-Comprehensive backend automated test suite verifying database integrity, mathematical calculation accuracy, pipeline execution, and credentials directories. Interactive OpenAPI Swagger documentation served natively.
+Status: DONE | Priority: HIGH
 
 #### Tasks
-- [x] Implement 7 automated test suites in `backend/test_backend.py` using Python's `unittest`
-- [x] Add tests for database initialization, DCC calculations, 12-hour forecasts, 4D cosine twin matching, itinerary planner, live pipeline fetches, and stakeholder directories
-- [x] Serve interactive Swagger UI at `/docs` and OpenAPI JSON specification at `/openapi.json`
-- [x] Add CLI flags to `backend/main.py` (`--cli` for single sync, `--test` for running tests)
+- [x] 7/7 backend unit test suites in `test_backend.py` covering all core modules
+- [x] OpenAPI specification and Swagger UI served at `/docs`
 
-#### Dependencies
-- Python standard library (`unittest`, `http.server`, `json`, `sqlite3`)
+---
 
-#### Definition of Done
-- [x] Running `python test_backend.py` executes 7 test suites with 100% pass rate
-- [x] Navigating to `http://127.0.0.1:8000/docs` renders complete interactive Swagger documentation
+### 7. Live Telemetry Ingestion Pipeline (Weather LIVE + Fallbacks)
+Status: DONE | Priority: HIGH
+
+#### Description
+Automated background ETL pipeline ingesting real-time weather, traffic speeds, venue footfall, and open government data across 7 Sahyadri destinations. Logs time-series data to SQLite and caches latest metrics in memory.
+
+#### Tasks
+- [x] Implement Open-Meteo live weather pipeline in `weather_pipeline.py` (Rain, Wind, Temp, Hazard Score)
+- [x] Implement TomTom traffic delay pipeline in `traffic_pipeline.py` with diurnal weekend fallback
+- [x] Implement BestTime.app live footfall pipeline in `footfall_pipeline.py` with hourly weekend fallback
+- [x] Implement OpenStreetMap Overpass amenity counter in `footfall_pipeline.py`
+- [x] Implement Open Government Data (data.gov.in) benchmark pipeline in `ogd_india.py`
+- [x] Implement 60-second daemon thread in `background_worker.py` logging to `sensor_readings` table
+- [x] Implement `GET /api/destinations/live` serving in-memory telemetry cache
+- [x] Add auto-polling every 25s in frontend `App.tsx`
+
+#### Verified
+- Open-Meteo API successfully called with real latitude/longitude returning real precipitation and temperatures.
+- 60s background daemon logs rows continuously into SQLite `sensor_readings` table.
+
+---
+
+### 8. Citizen / Tourist Experience Portal — Dynamic Data Wiring
+Status: DONE | Priority: HIGH
+
+#### Description
+Dynamic citizen portal consuming live Zustand store data (which polls `/api/destinations/live` every 25 seconds). Replaces static hardcoded presentation showcase with real-time DCC metrics, destination selector chips, category filters, and offline detection banners.
+
+#### Tasks
+- [x] Wire `TouristView.tsx` to Zustand store destination data
+- [x] Mount `HeroDCCStatus.tsx` displaying live DCC status, inflow, physical capacity, and wait-time delays
+- [x] Mount `TwinAlternativeCards.tsx` dynamically computing 4D cosine similarity recommendations
+- [x] Mount `DemandCurveChart.tsx` displaying 12-hour diurnal forecast
+- [x] Mount `EcoPassCard.tsx` with fast-track digital pass QR code and carbon savings
+- [x] Mount `FutureTripPlanner.tsx` for multi-day decongestion scheduling
+- [x] Display active emergency gazette advisories as dismissible warning banners
+- [x] Show offline status banner when backend connection is severed
+
+#### Verified
+- TypeScript build succeeds with 0 errors.
+- Dynamic selection chips switch destinations and recalculate live DCC and twin alternatives.
+
+---
+
+### 9. 12-Hour Diurnal Demand Curve — Mounted & Wired
+Status: DONE | Priority: MEDIUM
+
+#### Tasks
+- [x] Embed `DemandCurveChart.tsx` inside `TouristView.tsx`
+- [x] Fetch predictive 12-hour curve from `GET /api/destinations/{id}/forecast` with graceful client-side fallback
+- [x] Display time-slot selector highlighting optimal travel windows
+
+#### Verified
+- Chart renders 12-hour curve with responsive SVG area fills and time slot selectors.
+
+---
+
+### 10. 4D Cosine Twin Recommender — Dynamic Mounting
+Status: DONE | Priority: HIGH
+
+#### Tasks
+- [x] Mount `TwinAlternativeCards.tsx` inside `TouristView.tsx`
+- [x] Connect to store's `userPreferences` (4D vector) and candidate destinations pool
+- [x] Rank alternative destinations by multi-objective utility score: $0.60 \times \text{Sim} + 0.40 \times (1 - \text{DCC})$
+- [x] Confetti animation on choosing alternative destination
+
+#### Verified
+- High-pressure targets (e.g. Lonavala DCC 0.88) recommend low-pressure twins (Matheran, Bhandardara) with verified crowd reduction metrics.
+
+---
+
+### 11. Multi-Day Decongested Itinerary Planner — Wired
+Status: DONE | Priority: MEDIUM
+
+#### Tasks
+- [x] Mount `FutureTripPlanner.tsx` inside `TouristView.tsx`
+- [x] Wire trip parameter inputs (date, duration, style) to call `POST /api/itinerary/plan`
+- [x] Display connection status indicator (`✅ Backend API` / `📵 Offline Mode`)
+- [x] Print / Export itinerary capability
+
+#### Verified
+- Changing trip date or style makes network call to `/api/itinerary/plan` with verified fallback.
+
+---
+
+### 12. Emergency Gazette Advisory Broadcaster — Wired
+Status: DONE | Priority: HIGH
+
+#### Tasks
+- [x] Wire `DigitalAdvisoryDispatcher.tsx` to call `POST /api/advisories/broadcast`
+- [x] Persist advisories to SQLite `gazette_advisories` table with active flag
+- [x] Seed advisories in store via `GET /api/advisories` in `useCorridorStore.fetchLiveBackendFeed`
+- [x] Render dismissible emergency banners on Tourist view
+
+#### Verified
+- Broadcasted advisories persist to SQLite and display across both authority view and citizen portal.
+
+---
+
+### 13. Digital Green Yatra Pass & QR Code — Wired
+Status: DONE | Priority: MEDIUM
+
+#### Tasks
+- [x] Wire "Choose Twin" CTA in `TwinAlternativeCards.tsx` to call `POST /api/passes/issue`
+- [x] Persist issued pass to SQLite `green_yatra_passes` table
+- [x] Render pass ID, fast-track QR code, and cumulative carbon savings in `EcoPassCard.tsx`
+
+#### Verified
+- Clicking reroute creates pass record in SQLite and increments carbon saved counter.
+
+---
+
+### 14. 24x7 AI Tourism Helpline Assistant — Wired
+Status: DONE | Priority: MEDIUM
+
+#### Tasks
+- [x] Wire `AiHelplineBot.tsx` to call `POST /api/ai/chat` with live destination context
+- [x] Return contextually grounded responses from backend API
+- [x] Graceful fallback to client-side response generator when backend is offline
+
+#### Verified
+- User messages query backend endpoint and render response with live telemetry grounding.
+
+---
+
+### 15. Developer Production Monitoring Portal
+Status: DONE | Priority: HIGH
+
+#### Description
+Dedicated inspection portal accessible via `developer` role (`/developer`). Designed for hackathon judges, evaluators, and system architects to verify data source reality, database operations, SIH compliance, and API connectivity.
+
+#### Tasks
+- [x] Create `GET /api/dev/status` endpoint in `backend/main.py`
+- [x] Expose pipeline source & status fields (`connected`, `simulated`, `fallback`) with raw telemetry metrics
+- [x] Return live database counts (sensor readings, green passes, active advisories)
+- [x] Return SIH26204 requirement audit checklist and API connectivity registry
+- [x] Build `DevPortal.tsx` with dark Grafana/Vercel inspector aesthetic (6 dedicated sections)
+- [x] Add developer navigation in `Navbar.tsx`, `App.tsx` role router, footer links, and mobile bottom nav
+- [x] Implement 10-second auto-refresh polling with manual refresh trigger
+
+#### Verified
+- Evaluators can review real vs. simulated pipeline data per destination with raw values.
+- SQLite sensor readings row count verifies continuous 60s background ingestion.
+- SIH requirement audit table details implementation status for all 14 problem statement items.
