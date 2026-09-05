@@ -41,7 +41,7 @@ Developed for the Ministry of Tourism (Govt. of India), Maharashtra Tourism Deve
 
 All comprehensive project documentation is organized in the [`docs/`](./docs) directory:
 
-- 🎯 **[Problem Statement & Traceability Matrix](./docs/PROBLEM_STATEMENT.md)** — Official Smart India Hackathon PS (SIH26204) & 14-requirement mapping.
+- 🎯 **[Problem Statement & Traceability Matrix](./docs/PROBLEM_STATEMENT.md)** — Official Smart India Hackathon PS (SIH26204) & 14-requirement mapping *(Immutable Reference — Do Not Modify)*.
 - 📖 **[Main Documentation Entry Point](./docs/README.md)** — Project overview, current audit status, and index.
 - 📋 **[Project Task Management (TODO)](./docs/TODO.md)** — Master task tracker ([Completed](./docs/TODO_DONE.md) • [Partially Executed](./docs/TODO_PARTIAL.md) • [Future Roadmap](./docs/TODO_FUTURE.md)).
 - 🌟 **[Features Specification](./docs/FEATURES.md)** — Plain-language guide to all platform capabilities, user flows, and limitations.

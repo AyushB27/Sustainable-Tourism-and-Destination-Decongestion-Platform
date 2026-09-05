@@ -55,7 +55,7 @@ Based on an audit of the current codebase:
 
 Explore the dedicated documentation files below:
 
-- [Problem Statement & Traceability Matrix](./PROBLEM_STATEMENT.md) — Official Smart India Hackathon PS (SIH26204), background, and requirement mapping.
+- [Problem Statement & Traceability Matrix](./PROBLEM_STATEMENT.md) — Official Smart India Hackathon PS (SIH26204), background, and requirement mapping *(Canonical & Immutable — Do Not Modify)*.
 - [Task Management Index (TODO)](./TODO.md) — Master task tracker and project status breakdown:
   - 🟢 [Completed Tasks (TODO_DONE.md)](./TODO_DONE.md) — 20 fully operational and verified features.
   - 🟡 [Partially Executed Tasks (TODO_PARTIAL.md)](./TODO_PARTIAL.md) — 4 active features requiring final wiring/API keys.
