@@ -14,12 +14,12 @@ To make tracking and manual editing as clear as possible, tasks are separated in
 
 | Status | Count | Dedicated File | Description |
 |---|---:|---|---|
-| **DONE** | 13 | [TODO_DONE.md](./TODO_DONE.md) | Fully implemented, operational, and verified |
+| **DONE** | 20 | [TODO_DONE.md](./TODO_DONE.md) | Fully implemented, operational, and verified |
 | **PARTIAL** | 4 | [TODO_PARTIAL.md](./TODO_PARTIAL.md) | Core logic/UI built; requires final wiring or API keys |
 | **IN PROGRESS** | 0 | — | Active development tasks |
 | **NOT STARTED** | 7 | [TODO_FUTURE.md](./TODO_FUTURE.md) | Future roadmap & infrastructure enhancements |
 | **BLOCKED** | 0 | — | No blocking external dependencies |
-| **TOTAL** | **24** | | Full scope across all platform tiers |
+| **TOTAL** | **31** | | Full scope across all platform tiers |
 
 ---
 
@@ -44,6 +44,11 @@ See **[TODO_DONE.md](./TODO_DONE.md)** for full task breakdowns, dependencies, a
 | **13** | **Green Yatra Pass — Wired** | MEDIUM | Reroute CTA calls `POST /api/passes/issue`; pass ID rendered in `EcoPassCard.tsx` |
 | **14** | **24x7 AI Tourism Helpline — Wired** | MEDIUM | `AiHelplineBot.tsx` calls `POST /api/ai/chat` with live metric context |
 | **15** | **Developer Production Monitoring Portal** | HIGH | `DevPortal.tsx` with data transparency, SIH audit, API registry, SQLite viewer |
+| **16** | **Tourist-First Canonical Destination Page (`/spot/:spotId`)** | HIGH | Single destination page with 8 universal sections + conditionally composed stakeholder panels |
+| **17** | **3-Tier Intent Resolution & Search Engine (`Fuse.js`)** | HIGH | Zero-guess fuzzy search indexing Spots, Districts, and States |
+| **18** | **Full React Router DOM v7 Implementation** | HIGH | 16 declarative routes connecting landing, discover feed, spots, trip planner, and consoles |
+| **19** | **Data Tiers 1–4 Provenance & Confidence Calculator** | HIGH | Transparent telemetry audit trail with dynamic confidence score formula and statutory citations |
+| **20** | **Multithreaded Telemetry Pipeline & OSM POI Caching** | HIGH | `ThreadingHTTPServer` + `ThreadPoolExecutor` parallel ingestion with in-memory OSM POI caching |
 
 ---
 
@@ -53,23 +58,7 @@ See **[TODO_PARTIAL.md](./TODO_PARTIAL.md)** for full task breakdowns, dependenc
 
 | # | Feature / Capability | Priority | Current Operational Implementation | Next Action Required |
 |---|---|:---:|---|---|
-| **16** | **MTDC Operator Room Occupancy Persistence** | MEDIUM | Provider UI slider built; backend `PUT /api/destinations/{id}/occupancy` wired | Verify persistence into in-memory cache across restarts |
-| **17** | **Off-Peak Incentive Schemes** | MEDIUM | `promotions` SQLite table; UI coupon card built | Expose `GET/POST /api/promotions` backend endpoints |
-| **18** | **Trilingual Localization (I18n)** | LOW | 55+ key English, Hindi, and Marathi dictionary compiled | Wire language dropdown switcher in `Navbar.tsx` |
-| **19** | **Production API Keys (TomTom, BestTime)** | HIGH | Heuristic fallbacks fully operational | Configure live production API keys in `.env` |
-
----
-
-## 3. Not Started & Future Roadmap Features Summary
-
-See **[TODO_FUTURE.md](./TODO_FUTURE.md)** for full task breakdowns, dependencies, and definitions of done.
-
-| # | Feature / Capability | Priority | Target Milestone | Description |
-|---|---|:---:|---|---|
-| **20** | **Edge FASTag IoT ANPR Streaming** | HIGH | Sprint 6 | Real-time vehicle counts from highway toll plazas via MQTT |
-| **21** | **Distributed Redis Caching Layer** | MEDIUM | Sprint 7 | Multi-node caching & pub/sub advisory streaming |
-| **22** | **CDAC / NIC SMS & WhatsApp Alerts** | HIGH | Sprint 6 | Automated emergency SMS to tourists in geofenced red zones |
-| **23** | **PostgreSQL & PostGIS Cloud DB** | MEDIUM | Sprint 8 | Spatial indexing and high-concurrency cloud persistence |
-| **24** | **Real FASTag Inflow Data Integration** | HIGH | Sprint 6 | Replace TomTom heuristic with NHAI FASTag vehicle count APIs |
-| **25** | **Gemini API Integration for AI Chat** | HIGH | Sprint 5 | Replace keyword-matching chat with Gemini API + telemetry grounding |
-| **26** | **WebSocket Real-Time Push** | MEDIUM | Sprint 7 | Replace 25s polling with WebSocket for instant advisory push |
+| **21** | **MTDC Operator Room Occupancy Persistence** | MEDIUM | Provider UI slider built; backend `PUT /api/destinations/{id}/occupancy` wired | Verify persistence into in-memory cache across restarts |
+| **22** | **Off-Peak Incentive Schemes** | MEDIUM | `promotions` SQLite table; UI coupon card built | Expose `GET/POST /api/promotions` backend endpoints |
+| **23** | **Trilingual Localization (I18n)** | LOW | 55+ key English, Hindi, and Marathi dictionary compiled | Wire language dropdown switcher in `Navbar.tsx` |
+| **24** | **Production API Keys (TomTom, BestTime)** | HIGH | Heuristic fallbacks fully operational | Configure live production API keys in `.env` |
