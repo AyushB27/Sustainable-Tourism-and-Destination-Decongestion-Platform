@@ -18,6 +18,8 @@ Developed for the Ministry of Tourism (Govt. of India), Maharashtra Tourism Deve
 - 📊 **Auditable Data Provenance (Tiers 1–4)**: Transparent telemetry breakdown tracing every metric back to ground-truth sensors, calibrated APIs, diurnal algorithms, or statutory studies with live confidence scoring.
 - 🗺️ **Full React Router DOM v7 Implementation**: Complete bookmarkable client routing covering search, regional exhaustive directories, spot pages, trip planners, and stakeholder consoles.
 - ⚡ **Multithreaded Concurrent Telemetry Engine**: Python 3.13 backend utilizing `ThreadingHTTPServer` and `ThreadPoolExecutor` with in-memory OSM POI density caching.
+- 📡 **BestTime Live Footfall Telemetry & Dev Inspector**: Direct attraction footfall busyness ingestion using BestTime.app public API tokens, 3 archetype venue profile mappings, physical calibration multipliers, and a live query inspector in `/dev`.
+- 📈 **Visual Numerical Forecasts & Weekly Crowd Rhythms**: Interactive point-and-stem visual graphs with condition-based color states (🟢 Optimal, 🟡 Moderate, 🔴 Peak) across the 12-hour hourly forecast and 7-day historical weekly rhythm strips.
 
 ---
 

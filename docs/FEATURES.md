@@ -26,6 +26,7 @@ This document provides a comprehensive explanation of all capabilities and featu
 16. [Dedicated Portal Workspace Selection Screen (`/`)](#16-dedicated-portal-workspace-selection-screen-)
 17. [Dedicated Modern Authentication Page (`/login`) & Fast Demo Profiles](#17-dedicated-modern-authentication-page-login--fast-demo-profiles)
 18. [Independent Multi-Portal Token Session Manager (`sessionManager.ts`)](#18-independent-multi-portal-token-session-manager-sessionmanagerts)
+19. [BestTime Live Footfall Telemetry & Developer Inspector (`/dev`)](#19-besttime-live-footfall-telemetry--developer-inspector-dev)
 
 ---
 
@@ -187,7 +188,15 @@ DONE.
 ## 9. 12-Hour Diurnal Demand Forecasting & Visiting Windows
 
 ### What it does
-Displays a 12-hour hourly forecast strip (06:00 AM – 06:00 PM) indicating when crowd pressure will peak and highlighting the optimal time window to visit.
+Displays a 12-hour hourly forecast strip (06:00 AM – 06:00 PM) indicating when crowd pressure will peak and highlighting optimal time windows to visit. Includes both an hourly timeline strip and an interactive historical weekly rhythm graph on each destination's canonical Spot Page.
+
+### How it works
+- **Dual Naming Defensive Normalization**: The backend calculates hourly Gaussian arrival curves with dwell-time decay, exposing both camelCase (`dccScore`, `timeLabel`, `waitMinutes`) and snake_case properties to eliminate `NaN%` display anomalies.
+- **Visual Numerical Graphs**: Both the 12-Hour Forecast Strip and Historical Weekly Rhythm feature high-contrast visual point graphs plotting exact numerical busyness values.
+- **Condition-Colored Point Architecture**:
+  - 🟢 **Optimal (`DCC < 0.70` or Busyness `< 60%`)**: Rendered in emerald `#10b981` indicating low queue delays and uncrowded conditions.
+  - 🟡 **Moderate (`0.70 <= DCC < 0.85` or Busyness `60%–84%`)**: Rendered in amber `#f59e0b` indicating active crowds.
+  - 🔴 **Peak (`DCC >= 0.85` or Busyness `>= 85%`)**: Rendered in rose `#f43f5e` indicating bottleneck congestion and advisory warnings.
 
 ### Current Status
 DONE.
@@ -335,3 +344,22 @@ In multi-stakeholder demonstrations, evaluators frequently switch between viewin
 
 ### Current Status
 DONE.
+
+---
+
+## 19. BestTime Live Footfall Telemetry & Developer Inspector (`/dev`)
+
+### What it does
+Provides end-to-end ingestion and real-time visualization of attraction footfall busyness powered by BestTime.app. Evaluators can inspect the exact live query URLs, venue mappings, calibration multipliers, and 24-hour busyness curves directly in the Developer Portal (`/dev`).
+
+### Why it exists
+External footfall API integrations are often treated as black boxes. To guarantee rigorous evaluator auditability under SIH26204 §1, developers and authorities need transparent insight into the underlying venue queries, public API token constraints, and physical calibration math.
+
+### How it works
+- **Public API Key Integration**: Implements venue-specific weekly telemetry requests (`/api/v1/venues/weekly`) conforming strictly to BestTime public key query-only token requirements (`pub_...`).
+- **Archetype Venue Profiles**: Maps the 7 corridor destinations across 3 operational archetype venue profiles (`ven_454e...`, `ven_5138...`, `ven_6f39...`), paired with per-destination physical calibration multipliers (from 1.05× for Lonavala down to 0.72× for Tapola) to ensure distinct, authentic footfall curves.
+- **Interactive Developer Inspector**: An interactive inspector in the Developer Portal featuring destination selector pills (`LON`, `MAT`, `ALB`, `BHA`, `KAS`, `MAH`, `TAP`), a 24-hour busyness curve visualizer, live hour indicators, and full query URL transparency.
+
+### Current Status
+DONE.
+

@@ -129,9 +129,16 @@ All external pipeline modules are **fail-soft**:
    - Applies an automatic diurnal weekend fallback (2.1x during weekend peaks, 1.4x standard weekend, 1.05x weekday).
 
 3. **Footfall Pipeline (`footfall_pipeline.py`)**:
-   - Queries BestTime.app attraction footfall busyness.
-   - Falls back to an hourly busyness model (0.85x–1.45x).
-   - Queries OpenStreetMap Overpass API for registered parking amenities and viewpoints within a 3km radius.
+   - **BestTime.app Public API Architecture**: Integrates live attraction footfall busyness using client public API keys (`pub_...`). Because BestTime public keys are restricted to pre-registered venue queries via `/api/v1/venues/weekly?venue_id={id}&api_key_public={key}` (rejecting arbitrary text scraping), the pipeline implements an Archetype Venue Profile Registry (`DESTINATION_VENUE_PROFILES`).
+   - **Archetype Venue Mappings & Calibration**: Maps all 7 monitored Western Ghats destinations to 3 verified operational archetype venue IDs:
+     - `ven_454e3869426f324831637752414349344c4a4c585047714a496843` (High-traffic hill resort corridors): Lonavala & Khandala (multiplier: 1.05×) and Mahabaleshwar (1.02×).
+     - `ven_5138374d6b63795155453052414349344c4a4c585047714a496843` (Eco-sensitive & heritage plateaus): Matheran Eco-Sensitive (0.95×) and Kas Plateau UNESCO (0.80×).
+     - `ven_6f39344158434a584a517052414349344c4a4c585047714a496843` (Coastal & serene lake getaways): Alibaug Coastal (0.88×), Bhandardara Heritage (0.78×), and Tapola Agro-Tourism (0.72×).
+   - **Dual-Level Caching Architecture**:
+     - *Venue-Level Cache*: Raw weekly footfall payloads are cached in memory per `venue_id` (1-hour TTL) to minimize redundant external API network round-trips and preserve API credits.
+     - *Destination-Level Cache*: Calibrated busyness telemetry is cached per destination coordinate and hour key (`footfall_{dest_id}_{weekday}_{hour}`) with a 1-hour TTL.
+   - **Diurnal Heuristic Fallback**: Gracefully falls back to an hourly busyness model (0.85×–1.45×) if API keys are missing or network endpoints are unreachable.
+   - **OpenStreetMap Overpass Integration**: Queries Overpass Turbo API for registered parking amenities, viewpoints, and drinking water nodes within a 3km radius.
 
 4. **OGD India Pipeline (`ogd_india.py`)**:
    - Queries `data.gov.in` for Maharashtra tourism baselines (+14.8% YoY growth, 1.42x monsoon index).
@@ -218,6 +225,20 @@ Rather than maintaining separate destination detail screens for tourists, distri
 - `useSpotData.ts` serves as the single source of truth, returning live metrics, hourly forecasts, twin alternatives, provenance tiers, and check-ins.
 - **Universal Sections**: Always visible to tourists, citizens, and stakeholders alike.
 - **Role-Conditional Panels**: Rendered at the bottom of the page when an authenticated officer or operator views the spot.
+
+#### Visual Numerical Graphs & Condition Point Architecture
+The Spot Page incorporates high-density, readable numerical visual graphs for both temporal horizons:
+1. **12-Hour Predictive Hourly Forecast Strip**:
+   - Renders hourly timeline cards (06:00 AM to 06:00 PM) featuring dual-compatible data normalization (`dccScore` / `dcc_score`, `timeLabel` / `time_label`, `waitMinutes` / `wait_minutes`).
+   - Displays a mini numerical forecast graph with dynamic vertical point plotting.
+   - Points and value badges are dynamically color-coded based on live DCC thresholds:
+     - 🟢 **Optimal (`DCC < 0.70`)**: Emerald `#10b981` — recommended visiting windows.
+     - 🟡 **Moderate (`0.70 <= DCC < 0.85`)**: Amber `#f59e0b` — increasing visitor inflow.
+     - 🔴 **Peak / Critical (`DCC >= 0.85`)**: Rose `#f43f5e` — bottleneck risk and extended queue delays.
+2. **Historical Weekly Crowd Rhythm Strip**:
+   - Visualizes weekday trends (Mon–Sun) using calibrated weekly baseline profiles from BestTime and historical models.
+   - Features an interactive point-and-stem graph plotting relative busyness scores (`0% – 100%`) for each day of the week.
+   - Day points are styled with condition-based halos and percentage values, allowing tourists to plan off-peak weekend vs. weekday arrivals.
 
 ---
 

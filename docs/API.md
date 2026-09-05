@@ -20,6 +20,8 @@ The server runs by default at `http://127.0.0.1:8000`. An interactive Swagger UI
 | `POST` | [`/api/advisories/broadcast`](#post-apiadvisoriesbroadcast) | Publishes a new administrative gazette advisory | None (Body metadata) |
 | `GET` | [`/api/passes`](#get-apipasses) | Lists recently issued digital Green Yatra passes | None |
 | `POST` | [`/api/passes/issue`](#post-apipassesissue) | Issues a new Green Yatra travel pass with QR code | None (Body metadata) |
+| `GET` | [`/api/dev/besttime`](#get-apidevbesttime) | BestTime footfall telemetry, venue profile calibration, and query URL inspector | None |
+| `GET` | [`/api/dev/status`](#get-apidevstatus) | System telemetry, background worker health, and pipeline statuses | None |
 | `GET` | [`/api/health`](#get-apihealth) | System health diagnostics and pipeline status | None |
 | `GET` | [`/docs`](#get-docs) | Interactive Swagger UI API documentation | None |
 | `GET` | [`/openapi.json`](#get-openapijson) | OpenAPI 3.0.3 machine-readable schema definition | None |
@@ -149,24 +151,32 @@ Host: 127.0.0.1:8000
     {
       "hour": "06:00",
       "time_label": "06:00 AM",
+      "timeLabel": "06:00 AM",
       "inflow": 4130,
       "capacity": 10000,
       "dcc_score": 0.37,
+      "dccScore": 0.37,
       "status": "OPTIMAL",
-      "wait_minutes": 0
+      "wait_minutes": 0,
+      "waitMinutes": 0
     },
     {
       "hour": "12:00",
       "time_label": "12:00 PM",
+      "timeLabel": "12:00 PM",
       "inflow": 15930,
       "capacity": 10000,
       "dcc_score": 1.0,
+      "dccScore": 1.0,
       "status": "CRITICAL",
-      "wait_minutes": 125
+      "wait_minutes": 125,
+      "waitMinutes": 125
     }
   ]
 }
 ```
+
+> **Field Naming Dual-Compatibility**: Each forecast point provides both camelCase (`timeLabel`, `dccScore`, `waitMinutes`) and snake_case (`time_label`, `dcc_score`, `wait_minutes`) keys, ensuring zero-error consumption across TypeScript frontend hooks and Python data clients.
 
 ### Errors
 | Code | Reason |
@@ -174,6 +184,7 @@ Host: 127.0.0.1:8000
 | 404 Not Found | Destination ID is not recognized |
 
 ### Used By
+- 12-Hour Hourly Forecast Strip & Visual Numerical Graph (`SpotPage.tsx`, `useSpotData.ts`).
 - Diurnal forecast component (`DemandCurveChart.tsx`).
 
 ---
@@ -561,6 +572,132 @@ Content-Type: application/json
 
 ### Used By
 - Digital travel pass card (`EcoPassCard.tsx`).
+
+---
+
+## GET /api/dev/besttime
+
+### Purpose
+Inspects live BestTime.app footfall telemetry for a target destination. Returns mapped archetype venue profile information, physical calibration multipliers, query URL transparency, resolved 24-hour day busyness curves, and full cached API payloads.
+
+### Authentication
+None required (Used internally by Developer Portal).
+
+### Parameters (Query String)
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dest_id` | string | Optional (Default: `"LON"`) | Destination ID to inspect (`LON`, `MAT`, `ALB`, `BHA`, `KAS`, `MAH`, `TAP`). Case-insensitive. |
+
+### Request
+```http
+GET /api/dev/besttime?dest_id=LON HTTP/1.1
+Host: 127.0.0.1:8000
+```
+
+### Response
+```json
+{
+  "status": "success",
+  "source": "BestTime.app Weekly Endpoint (Live)",
+  "api_key_configured": true,
+  "api_key_type": "public (client query token)",
+  "api_key_masked": "pub_e8a6...1e96",
+  "destination": {
+    "id": "LON",
+    "name": "Lonavala & Khandala",
+    "mapped_venue_id": "ven_454e3869426f324831637752414349344c4a4c585047714a496843",
+    "venue_name": "Lonavala Wax Museum & Heritage Corridor",
+    "calibration_multiplier": 1.05
+  },
+  "query_transparency": {
+    "endpoint_called": "https://besttime.app/api/v1/venues/weekly",
+    "request_parameters": {
+      "venue_id": "ven_454e3869426f324831637752414349344c4a4c585047714a496843",
+      "api_key_public": "pub_e8a6...1e96"
+    },
+    "full_query_url": "https://besttime.app/api/v1/venues/weekly?venue_id=ven_454e...&api_key_public=pub_e8a6..."
+  },
+  "day_info": {
+    "day_int": 5,
+    "day_text": "Saturday",
+    "current_hour": 15,
+    "current_hour_busyness": 82,
+    "day_rank_mean": 74
+  },
+  "day_raw": [0, 0, 0, 0, 0, 0, 15, 30, 48, 65, 78, 85, 88, 85, 82, ...],
+  "full_response": { ... }
+}
+```
+
+### Used By
+- Developer Portal BestTime Telemetry Inspector (`DevPortal.tsx`).
+
+---
+
+## GET /api/dev/status
+
+### Purpose
+Returns comprehensive runtime diagnostics, server uptime, database records count, active API key connectivity states, SIH26204 requirement compliance traceability, and registered frontend-to-backend API wiring states.
+
+### Authentication
+None required (Used internally by Developer Portal).
+
+### Request
+```http
+GET /api/dev/status HTTP/1.1
+Host: 127.0.0.1:8000
+```
+
+### Response
+```json
+{
+  "backend_version": "EcoRoute Bharat v1.0 — SIH26204",
+  "server_uptime_seconds": 1420,
+  "last_telemetry_sync": "2026-09-05T21:15:00.000000",
+  "total_sensor_readings_logged": 126,
+  "destinations": [
+    {
+      "id": "LON",
+      "name": "Lonavala & Khandala",
+      "dcc_score": 0.89,
+      "status": "CRITICAL",
+      "inflow": 11800,
+      "capacity": 10000,
+      "sensors": {
+        "weather": { "source": "Open-Meteo Live API", "status": "connected" },
+        "traffic": { "source": "TomTom Traffic Flow", "status": "simulated" },
+        "footfall": { "source": "BestTime.app Live API", "status": "connected" }
+      }
+    }
+  ],
+  "api_key_status": {
+    "TOMTOM_API_KEY": "NOT_CONFIGURED — Using Heuristic Diurnal Model",
+    "BESTTIME_API_KEY": "CONFIGURED — Live API Active (public: pub_e8a6...)",
+    "DATA_GOV_IN_API_KEY": "NOT_CONFIGURED — Using Static Benchmarks",
+    "OPEN_METEO": "NO_KEY_REQUIRED — Free Public API (Always Live)"
+  },
+  "database": {
+    "path": "backend/data/ecoroute.db",
+    "journal_mode": "WAL",
+    "sensor_readings_count": 126,
+    "green_passes_issued": 8,
+    "active_advisories": 2
+  },
+  "sih_requirement_status": {
+    "req_1_collect_signals": "PARTIAL — Weather: LIVE (Open-Meteo), Footfall: LIVE (BestTime)",
+    "req_2_predict_congestion": "DONE — 12-hour Gaussian forecast mounted via DemandCurveChart",
+    ...
+  },
+  "frontend_api_connections": {
+    "GET /api/destinations/live": "CONNECTED — polled every 25s via fetchLiveBackendFeed()",
+    "GET /api/dev/besttime": "CONNECTED — DevPortal BestTime live telemetry & 24h curve inspector",
+    ...
+  }
+}
+```
+
+### Used By
+- Developer Portal (`DevPortal.tsx`, `DevLayout.tsx`).
 
 ---
 
