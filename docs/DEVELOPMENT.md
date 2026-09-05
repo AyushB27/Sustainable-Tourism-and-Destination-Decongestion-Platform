@@ -54,13 +54,15 @@ Prototype/
 ├── frontend/                    # React 19 + TypeScript + Vite web app
 │   ├── src/
 │   │   ├── components/          # UI components by stakeholder role
-│   │   │   ├── auth/            # Jan Parichay RBAC authentication modal
+│   │   │   ├── auth/            # RoleGuard & AuthModal
 │   │   │   ├── authority/       # District GIS Command Center views & map
-│   │   │   ├── common/          # Government navbar & AI helpline bot
+│   │   │   ├── common/          # Search box & AI helpline bot
+│   │   │   ├── layout/          # Isolated layout shells (Tourist, Authority, Provider, Dev)
 │   │   │   ├── provider/        # MTDC operator inventory & incentives
 │   │   │   └── tourist/         # Citizen crowd meters, cards & planner
 │   │   ├── data/                # Initial baseline destination datasets
-│   │   ├── lib/                 # Core engine math & i18n dictionaries
+│   │   ├── lib/                 # Core engine math, sessionManager, & i18n
+│   │   ├── pages/               # PortalSelectPage, AuthPage, SpotPage, etc.
 │   │   ├── store/               # Centralized Zustand application store
 │   │   └── types/               # TypeScript interfaces & types
 │   ├── package.json             # NPM dependencies & scripts

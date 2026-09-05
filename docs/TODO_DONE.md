@@ -32,6 +32,12 @@ For the master summary index, see [TODO.md](./TODO.md).
 | **18** | Full React Router DOM v7 Implementation | HIGH | 16 declarative routes connecting landing, discovery feed, spot pages, trip wizard, and consoles |
 | **19** | Data Tiers 1–4 Provenance & Confidence Calculator | HIGH | Transparent telemetry audit trail with dynamic confidence score formula and statutory citations |
 | **20** | Multithreaded Telemetry Pipeline & OSM POI Caching | HIGH | `ThreadingHTTPServer` + `ThreadPoolExecutor` parallel ingestion with in-memory OSM POI caching |
+| **21** | Dedicated Portal Workspace Selection Gateway | HIGH | `PortalSelectPage.tsx` at `/` with 4 isolated workspace cards & 1-click launch |
+| **22** | Role-Isolated Layout Shells & Strict Route Guarding | HIGH | Dedicated layouts (`TouristLayout`, `AuthorityLayout`, `ProviderLayout`, `DevLayout`) & `RoleGuard` |
+| **23** | Dedicated Modern Authentication Page & Fast Demo Profiles | HIGH | `AuthPage.tsx` (`/login`, `/auth`) with role switching & 1-click demo accounts |
+| **24** | Independent Multi-Portal Token Session Management | HIGH | `sessionManager.ts` with role-isolated `localStorage` persistence & 7-day tokens |
+| **25** | Full SaaS UI Modernization & Removal of Gov Tropes | HIGH | Clean travel-tech design; stripped tricolor bars, font scalers, and official emblems |
+| **26** | District Authority Incident Command GIS & Jurisdiction Fixes | HIGH | Leaflet null-safety, bidirectional district matching, and state-level command |
 
 ---
 
@@ -171,6 +177,131 @@ Engine upgrade to the Python backend providing asynchronous concurrency and rate
 
 #### Verified
 - Background telemetry syncs all 7 destinations in parallel in < 2 seconds without HTTP client connection aborts.
+
+---
+
+### 21. Dedicated Portal Workspace Selection Gateway (`/`)
+Status: DONE | Priority: HIGH
+
+#### Description
+Eliminates the confusing monolithic navigation bar by providing a clean, high-impact workspace launchpad at `/` (`PortalSelectPage.tsx`). Users directly choose between the 4 dedicated stakeholder portals rather than seeing all administrative controls mixed into the tourist view.
+
+#### Tasks
+- [x] Create `PortalSelectPage.tsx` mounted at `/`, `/select-portal`, and `/portals`
+- [x] Present 4 distinct workspace cards with badges, capability lists, and active session indicators:
+  - 🌍 **Citizen & Tourist Experience** (`/tourist`)
+  - 🛡️ **District Incident Command GIS** (`/authority`)
+  - 🏨 **MTDC Hospitality & Provider Console** (`/provider`)
+  - ⚡ **Developer Diagnostic & Compliance Lab** (`/dev`)
+- [x] Provide instant 1-click launch for all portals with automated demo login session bootstrap
+- [x] Display real-time active login state and user avatar per workspace card
+
+#### Verified
+- Navigating to `/` displays the 4 isolated portal cards.
+- Clicking "Launch Portal" or "Instant Demo Launch" safely opens the respective portal without route leakage.
+
+---
+
+### 22. Role-Isolated Layout Shells & Strict Route Guarding
+Status: DONE | Priority: HIGH
+
+#### Description
+Restructures the application layout from one shared page chrome into 4 isolated, purpose-built layout shells (`TouristLayout`, `AuthorityLayout`, `ProviderLayout`, `DevLayout`). Each shell provides dedicated navigation, sidebars, and footers tailored to that specific stakeholder's workflow.
+
+#### Tasks
+- [x] Build `TouristLayout.tsx` with consumer-focused travel search and quick-filters
+- [x] Build `AuthorityLayout.tsx` with high-density GIS telemetry bar, district badge, and sub-nav (GIS Overview, Advisories, Policy Simulator, Impact Review)
+- [x] Build `ProviderLayout.tsx` with business operations header, room occupancy controls, and incentive managers
+- [x] Build `DevLayout.tsx` with system telemetry indicators and technical diagnostics
+- [x] Build `RoleGuard.tsx` guarding `/authority/*`, `/provider/*`, and `/dev/*` against unauthenticated access
+- [x] Implement automatic synchronization between `sessionManager` and Zustand `useCorridorStore` on route entry
+
+#### Verified
+- Authority, Provider, and Dev tools are completely hidden from the tourist navigation bar.
+- Unauthenticated users attempting to access `/authority` or `/provider` are redirected to `/login?portal=<role>&redirect=<path>`.
+
+---
+
+### 23. Dedicated Modern Authentication Page & Fast Demo Profiles
+Status: DONE | Priority: HIGH
+
+#### Description
+Replaces intrusive popups and outdated modals with a dedicated modern authentication page at `/login` (`AuthPage.tsx`). Features clean SaaS styling, role switching tabs, password visibility toggling, and 1-click fast demo profiles for hackathon evaluations.
+
+#### Tasks
+- [x] Create `AuthPage.tsx` with routes `/login`, `/auth`, `/signin`, `/signup`
+- [x] Implement role selector tabs (Tourist, District Authority, MTDC Provider, Dev Diagnostics)
+- [x] Provide 1-Click Fast Demo Credentials (`DEMO_ACCOUNTS`) for instant testing:
+  - District Magistrate IAS Dr. Rajeshwar Patil (State/Pune)
+  - Raigad SP IPS Vikram Shinde (Raigad)
+  - Matheran Homestay Operator Suresh Gaikwad (Hospitality)
+  - Lead Systems Engineer Ananya Deshmukh (Dev)
+- [x] Add password visibility toggle and "Keep me signed in for 7 days" option
+- [x] Redirect authenticated users back to their requested portal or original target URL
+
+#### Verified
+- Clicking any 1-click demo button auto-fills valid credentials and logs the user in with a valid token.
+- Role switching dynamically adapts the login branding and security context.
+
+---
+
+### 24. Independent Multi-Portal Token Session Management
+Status: DONE | Priority: HIGH
+
+#### Description
+A real-world multi-portal session manager (`sessionManager.ts`) that persists independent authentication tokens and profiles in browser `localStorage` per role, enabling simultaneous testing of tourist, authority, provider, and developer sessions without collisions.
+
+#### Tasks
+- [x] Implement `sessionManager.ts` with isolated storage keys:
+  - `ecoroute_session_tourist`
+  - `ecoroute_session_authority`
+  - `ecoroute_session_provider`
+  - `ecoroute_session_developer`
+- [x] Generate cryptographically random session tokens with 7-day expiration timestamps
+- [x] Implement session validation (`isSessionValid`), token retrieval (`getSession`), and role switching (`switchActivePortal`)
+- [x] Support independent logout per workspace without terminating other active role sessions
+- [x] Wire `useCorridorStore.ts` to automatically hydrate the current active user from `sessionManager`
+
+#### Verified
+- Logging in as District Magistrate in `/authority` does not overwrite or invalidate an active tourist session.
+- Tokens expire cleanly after 7 days; invalid/tampered tokens trigger re-authentication.
+
+---
+
+### 25. Full SaaS UI Modernization & Removal of Legacy Gov Tropes
+Status: DONE | Priority: HIGH
+
+#### Description
+Modernized the entire visual design language from an outdated government administrative aesthetic into a sleek, high-contrast, premium travel-tech and operations SaaS (inspired by Linear, Stripe, and Airbnb).
+
+#### Tasks
+- [x] Remove tricolor `tiranga-bar` stripes (`#FF9933`, `#FFFFFF`, `#138808`) across all navbars, footers, and modals
+- [x] Remove obsolete accessibility font-scalers (`A-`, `A`, `A+`) and unstyled language switchers
+- [x] Remove official emblem watermarks (Satyameva Jayate, Ashok Chakra) and NIC hosting disclaimers
+- [x] Modernize `AiHelplineBot.tsx` into a sleek floating dark/emerald travel assistant
+- [x] Adopt modern dark slate (`#0f172a`), emerald accents (`#10b981`), refined borders (`border-slate-800`), and responsive layouts across all 4 layout shells
+
+#### Verified
+- Zero legacy government website tropes present in DOM or CSS styles.
+- Consistent, modern SaaS visual hierarchy verified across all 16 routes.
+
+---
+
+### 26. District Authority Incident Command GIS & Jurisdiction Fixes
+Status: DONE | Priority: HIGH
+
+#### Description
+Resolved critical edge cases in the District Incident Command Center, including Leaflet map null-pointer exceptions, regional jurisdiction matching, and state-level command center scoping.
+
+#### Tasks
+- [x] Add null-safety guards in `CorridorMap.tsx` preventing runtime errors when destination lists are empty or filtered
+- [x] Implement bidirectional string matching (`jurVal.includes(dist) || dist.includes(jurVal)`) resolving mismatches between `"Pune"` and `"Pune District"`
+- [x] Configure State Disaster Management Officer Dr. Rajeshwar Patil with `type: 'state'` jurisdiction to oversee all corridor hubs
+- [x] Synchronize session user state into `AuthorityView.tsx`, `AdvisoryManager.tsx`, and `PolicySimulator.tsx`
+
+#### Verified
+- Incident Command Center loads reliably with zero Leaflet JavaScript errors.
+- District officers see strictly their assigned jurisdiction, while state officers see all corridor hubs.
 
 ---
 

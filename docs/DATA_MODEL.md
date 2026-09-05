@@ -280,3 +280,45 @@ export interface SearchMatch {
   category?: string;
 }
 ```
+
+### 3.5 Stakeholder Session & Multi-Portal Authentication Model
+```typescript
+export type StakeholderRole = 'tourist' | 'authority' | 'provider' | 'developer' | 'admin';
+
+export interface JurisdictionScope {
+  type: 'district' | 'state' | 'all';
+  value: string; // e.g., 'Pune', 'Raigad', 'Maharashtra'
+  label: string;
+}
+
+export interface AuthenticatedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: StakeholderRole;
+  designation?: string;
+  organization?: string;
+  jurisdiction?: JurisdictionScope;
+  phone?: string;
+}
+
+export interface StakeholderSession {
+  role: StakeholderRole;
+  token: string;
+  user: AuthenticatedUser;
+  loginAt: string; // ISO 8601
+  expiresAt: string; // ISO 8601 (7-day TTL)
+}
+```
+
+#### Browser `localStorage` Multi-Portal Key Schema
+To permit simultaneous, non-colliding testing of different personas, each stakeholder environment maintains its own isolated session key:
+
+| Storage Key | Role Type | Typical Persona | Persistence TTL |
+|---|---|---|---|
+| `ecoroute_session_tourist` | `tourist` | Citizen traveler / eco-tourist | 7 Days |
+| `ecoroute_session_authority` | `authority` | District Magistrate (IAS) / Police SP (IPS) | 7 Days |
+| `ecoroute_session_provider` | `provider` | MTDC homestay owner / resort operator | 7 Days |
+| `ecoroute_session_developer` | `developer` | Lead systems engineer / compliance auditor | 7 Days |
+| `ecoroute_active_portal` | Meta | Tracks the most recently active workspace | Indefinite |
+

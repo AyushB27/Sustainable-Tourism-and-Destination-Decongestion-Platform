@@ -24,6 +24,10 @@ Key hill stations and coastal hubs across the Sahyadri ranges—such as Lonavala
 3. **Local Hospitality & MTDC Operators**: Homestays, resorts, and local tour guides who report live room inventory and publish off-peak subsidy vouchers to attract tourists during slow periods.
 
 ### Major Architectural & Operational Capabilities
+- **Dedicated Portal Workspace Selection Gateway (`/`)**: High-impact portal launchpad cleanly separating Citizen/Tourist (`/tourist`), District Authority (`/authority`), MTDC Hospitality (`/provider`), and Developer Diagnostics (`/dev`).
+- **Role-Isolated Layout Shells & Strict Guarding**: 4 independent layout shells (`TouristLayout`, `AuthorityLayout`, `ProviderLayout`, `DevLayout`) and strict `RoleGuard` wrapper preventing role cross-contamination.
+- **Dedicated Modern Authentication & Independent Session Manager**: Full-page auth (`/login`) with 1-click fast demo profiles, 7-day tokens, and role-isolated `sessionManager.ts`.
+- **Modern Travel-Tech SaaS Interface**: Replaced outdated government website tropes with a sleek, high-contrast travel-tech and operations SaaS UI (Linear / Stripe / Airbnb standard).
 - **Tourist-First Canonical Destination Architecture**: Every destination has exactly one authoritative page at `/spot/:spotId` containing universal tourist intelligence. Administrative and business roles conditionally attach management tools onto the destination.
 - **3-Tier Fuzzy Search Resolution (Fuse.js)**: Instant autocomplete grouping queries into Spots (`LON`), Districts (`Pune`, `Raigad`, `Satara`), and States (`Maharashtra`) without guessing.
 - **Multi-Source Telemetry Ingestion**: Ingests live data from Open-Meteo (rainfall, wind, temperature), TomTom (traffic delay factors), BestTime.app (attraction footfall), OpenStreetMap (amenity nodes), and Open Government Data (data.gov.in benchmarks).
@@ -43,7 +47,7 @@ Based on an audit of the current codebase:
 
 | Metric | Count | Description |
 |---|---:|---|
-| **DONE** | 20 | Fully implemented, operational, and verified |
+| **DONE** | 26 | Fully implemented, operational, and verified |
 | **PARTIAL** | 4 | Functioning with mock/client-side fallback or awaiting production API keys |
 | **IN PROGRESS** | 0 | Active changes in-flight |
 | **NOT STARTED** | 7 | Long-term planned infrastructure improvements |
@@ -57,7 +61,7 @@ Explore the dedicated documentation files below:
 
 - [Problem Statement & Traceability Matrix](./PROBLEM_STATEMENT.md) — Official Smart India Hackathon PS (SIH26204), background, and requirement mapping *(Canonical & Immutable — Do Not Modify)*.
 - [Task Management Index (TODO)](./TODO.md) — Master task tracker and project status breakdown:
-  - 🟢 [Completed Tasks (TODO_DONE.md)](./TODO_DONE.md) — 20 fully operational and verified features.
+  - 🟢 [Completed Tasks (TODO_DONE.md)](./TODO_DONE.md) — 26 fully operational and verified features.
   - 🟡 [Partially Executed Tasks (TODO_PARTIAL.md)](./TODO_PARTIAL.md) — 4 active features requiring final wiring/API keys.
   - 🔵 [Future Roadmap Tasks (TODO_FUTURE.md)](./TODO_FUTURE.md) — 7 not started / planned infrastructure features.
 - [Features Specification](./FEATURES.md) — Plain-language guide to all platform capabilities, user flows, and current operational states.

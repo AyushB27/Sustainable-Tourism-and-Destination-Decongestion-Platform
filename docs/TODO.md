@@ -14,13 +14,13 @@ To make tracking and manual editing as clear as possible, tasks are separated in
 
 | Status | Count | Dedicated File | Description |
 |---|---:|---|---|
-| **DONE** | 20 | [TODO_DONE.md](./TODO_DONE.md) | Fully implemented, operational, and verified |
+| **DONE** | 26 | [TODO_DONE.md](./TODO_DONE.md) | Fully implemented, operational, and verified |
 | **PROPOSED FOR REVIEW** | 6 | [TODO_PARTIAL.md](./TODO_PARTIAL.md) | Authority Journey implemented & verified; awaiting sign-off to mark DONE |
 | **PARTIAL** | 4 | [TODO_PARTIAL.md](./TODO_PARTIAL.md) | Core logic/UI built; requires final wiring or API keys |
 | **IN PROGRESS** | 0 | — | Active development tasks |
 | **NOT STARTED** | 7 | [TODO_FUTURE.md](./TODO_FUTURE.md) | Future roadmap & infrastructure enhancements |
 | **BLOCKED** | 0 | — | No blocking external dependencies |
-| **TOTAL** | **37** | | Full scope across all platform tiers |
+| **TOTAL** | **43** | | Full scope across all platform tiers |
 
 ---
 
@@ -50,6 +50,12 @@ See **[TODO_DONE.md](./TODO_DONE.md)** for full task breakdowns, dependencies, a
 | **18** | **Full React Router DOM v7 Implementation** | HIGH | 16 declarative routes connecting landing, discover feed, spots, trip planner, and consoles |
 | **19** | **Data Tiers 1–4 Provenance & Confidence Calculator** | HIGH | Transparent telemetry audit trail with dynamic confidence score formula and statutory citations |
 | **20** | **Multithreaded Telemetry Pipeline & OSM POI Caching** | HIGH | `ThreadingHTTPServer` + `ThreadPoolExecutor` parallel ingestion with in-memory OSM POI caching |
+| **21** | **Dedicated Portal Workspace Selection Gateway** | HIGH | `PortalSelectPage.tsx` at `/` with 4 isolated workspace cards & 1-click launch |
+| **22** | **Role-Isolated Layout Shells & Strict Route Guarding** | HIGH | Dedicated layouts (`TouristLayout`, `AuthorityLayout`, `ProviderLayout`, `DevLayout`) & `RoleGuard` |
+| **23** | **Dedicated Modern Authentication Page & Fast Demo Profiles** | HIGH | `AuthPage.tsx` (`/login`, `/auth`) with role switching & 1-click demo accounts |
+| **24** | **Independent Multi-Portal Token Session Management** | HIGH | `sessionManager.ts` with role-isolated `localStorage` persistence & 7-day tokens |
+| **25** | **Full SaaS UI Modernization & Removal of Gov Tropes** | HIGH | Clean travel-tech design; stripped tricolor bars, font scalers, and official emblems |
+| **26** | **District Authority Incident Command GIS & Jurisdiction Fixes** | HIGH | Leaflet null-safety, bidirectional district matching, and state-level command |
 
 ---
 

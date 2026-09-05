@@ -23,6 +23,9 @@ This document provides a comprehensive explanation of all capabilities and featu
 13. [Multithreaded Telemetry Pipeline & OSM POI Caching](#13-multithreaded-telemetry-pipeline--osm-poi-caching)
 14. [24x7 AI Tourism Helpline Assistant ("Sahyadri Guide")](#14-24x7-ai-tourism-helpline-assistant-sahyadri-guide)
 15. [Multi-Stakeholder Role Gatekeeper (RBAC) & Profile Gateway (`/account`)](#15-multi-stakeholder-role-gatekeeper-rbac--profile-gateway-account)
+16. [Dedicated Portal Workspace Selection Screen (`/`)](#16-dedicated-portal-workspace-selection-screen-)
+17. [Dedicated Modern Authentication Page (`/login`) & Fast Demo Profiles](#17-dedicated-modern-authentication-page-login--fast-demo-profiles)
+18. [Independent Multi-Portal Token Session Manager (`sessionManager.ts`)](#18-independent-multi-portal-token-session-manager-sessionmanagerts)
 
 ---
 
@@ -265,7 +268,70 @@ DONE.
 ## 15. Multi-Stakeholder Role Gatekeeper (RBAC) & Profile Gateway (`/account`)
 
 ### What it does
-Manages traveler identity, origin preferences, travel style affinities, and administrative role simulation via Jan Parichay-styled authentication.
+Manages traveler identity, origin preferences, travel style affinities, and active role profile details with modern session inspection.
+
+### Current Status
+DONE.
+
+---
+
+## 16. Dedicated Portal Workspace Selection Screen (`/`)
+
+### What it does
+A clean, centralized launchpad (`PortalSelectPage.tsx`) serving as the gateway to the 4 isolated stakeholder environments:
+1. **Citizen & Tourist Experience** (`/tourist`)
+2. **District Incident Command GIS** (`/authority`)
+3. **MTDC Hospitality & Provider Console** (`/provider`)
+4. **Developer Diagnostic & Compliance Lab** (`/dev`)
+
+### Why it exists
+Combining all administrative and diagnostic controls into the tourist header created visual clutter, leaked internal tools to tourists, and undermined credibility for official operations. The dedicated workspace screen provides clear domain separation.
+
+### How it works
+- Each workspace card highlights key capabilities, active session state, and target user personas.
+- Includes 1-click launch buttons and instant demo bootstrap for seamless evaluator access.
+- Accessible directly at `/`, `/select-portal`, and `/portals`.
+
+### Current Status
+DONE.
+
+---
+
+## 17. Dedicated Modern Authentication Page (`/login`) & Fast Demo Profiles
+
+### What it does
+A dedicated, full-page authentication interface (`AuthPage.tsx`) offering role-based sign-in, account creation, password visibility toggles, and 1-click fast demo credentials.
+
+### Why it exists
+Intrusive modal popups and unstyled forms degrade user experience. A dedicated modern login screen reflects industry standards (Stripe/Linear style) and makes multi-stakeholder testing effortless.
+
+### How it works
+- **Role Selector Tabs**: Switch between Tourist, District Authority, MTDC Provider, and Dev Diagnostics.
+- **1-Click Fast Demo Accounts**:
+  - **Dr. Rajeshwar Patil (IAS)** — State & Pune Disaster Management
+  - **Vikram Shinde (IPS)** — Raigad District Police
+  - **Suresh Gaikwad** — Matheran Homestay Operator
+  - **Ananya Deshmukh** — Lead Systems Engineer
+- **Security**: Validates credentials against the backend API, generates 7-day cryptographic tokens, and redirects back to the user's requested portal.
+
+### Current Status
+DONE.
+
+---
+
+## 18. Independent Multi-Portal Token Session Manager (`sessionManager.ts`)
+
+### What it does
+Manages independent, role-isolated authentication sessions in `localStorage`, permitting multiple stakeholder roles to remain concurrently logged in without session overwrites.
+
+### Why it exists
+In multi-stakeholder demonstrations, evaluators frequently switch between viewing the tourist feed and testing district authority emergency overrides. A shared single-user session required repeatedly logging in and out. Independent sessions enable true multi-persona workflows.
+
+### How it works
+- Stores sessions under role-scoped keys: `ecoroute_session_tourist`, `ecoroute_session_authority`, `ecoroute_session_provider`, and `ecoroute_session_developer`.
+- Validates token validity and 7-day expiration timestamps on every guarded route transition.
+- Supports independent single-workspace logout without terminating active sessions in other portals.
+- Synchronizes seamlessly with the central Zustand application store (`useCorridorStore.ts`).
 
 ### Current Status
 DONE.

@@ -36,15 +36,25 @@ graph TD
     end
 
     subgraph Frontend Presentation Tier (React 19 + TypeScript + Router)
-        ROUTER[React Router DOM v7<br/>16 Declarative Routes]
+        PORTAL_GATEWAY[Workspace Gateway /<br/>PortalSelectPage.tsx]
+        AUTH_PAGE[Dedicated Auth /login<br/>AuthPage.tsx]
+        SESSION_MGR[Multi-Portal Session Manager<br/>sessionManager.ts]
+        ROLE_GUARD[RoleGuard Component<br/>Independent RBAC Protection]
+        ROUTER[React Router DOM v7<br/>Isolated Layout Shells]
+        
+        subgraph Isolated Layout Shells
+            TOURIST_SHELL[TouristLayout.tsx<br/>/tourist, /discover, /plan, /spot]
+            AUTH_SHELL[AuthorityLayout.tsx<br/>/authority Incident Command]
+            PROV_SHELL[ProviderLayout.tsx<br/>/provider Operator Console]
+            DEV_SHELL[DevLayout.tsx<br/>/dev Diagnostic Lab]
+        end
+
         SEARCH[GlobalSearchBox.tsx<br/>Fuse.js 3-Tier Fuzzy Search]
         ZUSTAND[Zustand Central Store<br/>useCorridorStore.ts]
         SPOT_HOOK[useSpotData Hook<br/>Single Source of Truth]
         CANONICAL_SPOT[Canonical Spot Page<br/>/spot/:spotId]
         UNIVERSAL_SECTIONS[Universal Sections §3.1<br/>Crowd, Forecast, Provenance, Twins, Amenities]
         CONDITIONAL_PANELS[Role-Conditional Panels §3.2<br/>Authority Overrides & Provider Vouchers]
-        TOURIST_FLOWS[Tourist Flow Pages<br/>/, /discover, /plan/new, /trips, /account]
-        STAKEHOLDER_HUBS[Provisional Consoles<br/>/authority, /provider funneled into /spot]
     end
 
     %% Ingestion Flow
@@ -69,12 +79,19 @@ graph TD
     %% Client Routing & Flow
     HTTP_SRV -->|GET /api/destinations/live| ZUSTAND
     ZUSTAND --> ROUTER
-    ROUTER --> SEARCH
+    PORTAL_GATEWAY -->|1-Click Launch| ROUTER
+    AUTH_PAGE -->|Role Login| SESSION_MGR
+    SESSION_MGR -->|Hydrate User| ZUSTAND
+    ROUTER --> ROLE_GUARD
+    ROLE_GUARD --> AUTH_SHELL
+    ROLE_GUARD --> PROV_SHELL
+    ROLE_GUARD --> DEV_SHELL
+    ROUTER --> TOURIST_SHELL
+    TOURIST_SHELL --> SEARCH
     SEARCH -->|Tier 1: Spots| CANONICAL_SPOT
-    SEARCH -->|Tier 2 & 3: Regions| ROUTER
-    ROUTER --> TOURIST_FLOWS
-    ROUTER --> STAKEHOLDER_HUBS
-    STAKEHOLDER_HUBS -->|Inspect Destination| CANONICAL_SPOT
+    SEARCH -->|Tier 2 & 3: Regions| TOURIST_SHELL
+    AUTH_SHELL -->|Inspect Destination| CANONICAL_SPOT
+    PROV_SHELL -->|Manage Listing| CANONICAL_SPOT
     ZUSTAND --> SPOT_HOOK
     SPOT_HOOK --> CANONICAL_SPOT
     CANONICAL_SPOT --> UNIVERSAL_SECTIONS
@@ -123,34 +140,80 @@ All external pipeline modules are **fail-soft**:
 
 ## 3. Frontend Architecture
 
-### 3.1 Declarative Route Hierarchy (React Router DOM v7)
-The frontend implements a unified routing tree where stakeholder views are integrated rather than partitioned into disconnected silo apps:
+### 3.1 Dedicated Portal Workspace Gateway (`PortalSelectPage.tsx`) & Authentication (`AuthPage.tsx`)
+The application eliminates monolithic navigation bars by providing a dedicated workspace launchpad at `/` (`PortalSelectPage.tsx`). Users select from 4 isolated portals, each tailored to a specific stakeholder persona:
+1. 🌍 **Citizen & Tourist Experience** (`/tourist`): Real-time congestion radar, 3-tier fuzzy search, personalized discovery feed, GreenPass digital certificates, and smart trip wizard.
+2. 🛡️ **District Incident Command GIS** (`/authority`): Real-time corridor telemetry, interactive Leaflet GIS triage map, emergency gazette advisory broadcasts, and predictive policy simulation.
+3. 🏨 **MTDC Hospitality & Provider Console** (`/provider`): Homestay room inventory tracking, real-time occupancy reporting, and off-peak discount voucher campaigns.
+4. ⚡ **Developer Diagnostic & Compliance Lab** (`/dev`): Ingestion worker telemetry, SIH26204 requirement compliance audit, API endpoint explorer, and SQLite log browser.
 
-| Route | Component | Description |
-|---|---|---|
-| `/` | `LandingPage.tsx` | Hero search box, live preview strip of top destinations, style quick-starts |
-| `/discover` | `DiscoverPage.tsx` | Personalized feed ranked by style affinity, crowd headroom, and under-visited boost |
-| `/search?q=` | `SearchResultsPage.tsx` | Full-page 3-tier fuzzy search intent resolution |
-| `/region/:type/:value` | `RegionPage.tsx` | Exhaustive listing of spots in a district or state sorted by crowd status |
-| `/spot/:spotId` | `SpotPage.tsx` | **Canonical Destination Spot Page** with 8 universal sections + role panels |
-| `/plan/new` | `TripPlannerPage.tsx` | 4-step wizard with progressive profiling signup modal |
-| `/plan/:tripId` | `SavedTripDetailPage.tsx` | Day-by-day timetable and official GreenPass certificate with QR voucher |
-| `/trips` | `MyTripsPage.tsx` | Saved itineraries and redeemable partner vouchers |
-| `/account` | `AccountPage.tsx` | Progressive origin & style preferences, stakeholder role switcher |
-| `/advisories` | `AdvisoriesPage.tsx` | Searchable official gazette dispatch system |
-| `/authority` | `AuthorityCommandPage.tsx` | District GIS command center funneled into canonical spot pages |
-| `/authority/spot/:spotId` | Redirect | Redirects to canonical `/spot/:spotId` |
-| `/provider` | `ProviderConsolePage.tsx` | Homestay operator console funneled into canonical spot pages |
-| `/provider/spot/:spotId` | Redirect | Redirects to canonical `/spot/:spotId` |
-| `/dev` | `DevPortal.tsx` | Production health monitoring, SIH26204 audit, and SQLite logs |
+#### Dedicated Modern Authentication (`AuthPage.tsx`)
+Authentication is centralized at `/login` (with aliases `/auth`, `/signin`, `/signup`):
+- **Role Switching**: Tabs for Tourist, District Authority, MTDC Provider, and Dev Diagnostics.
+- **1-Click Fast Demo Profiles**: Instant testing via pre-configured credentials (`DEMO_ACCOUNTS`):
+  - *District Magistrate IAS Dr. Rajeshwar Patil* (Pune/State Disaster Authority)
+  - *Raigad SP IPS Vikram Shinde* (Raigad District Police)
+  - *Matheran Homestay Operator Suresh Gaikwad* (MTDC Hospitality)
+  - *Lead Systems Engineer Ananya Deshmukh* (Dev Compliance)
+- **Token Persistence**: Generates 7-day cryptographically secured session tokens saved in `localStorage`.
 
-### 3.2 3-Tier Intent Resolution & Search Engine (`GlobalSearchBox.tsx`)
+### 3.2 Role-Isolated Layout Shells & Strict Route Guarding
+Monolithic navigation has been decommissioned in favor of 4 completely isolated layout shells:
+- `TouristLayout.tsx`: Clean consumer travel navigation with global search, discover feed, trip planner, and user profile.
+- `AuthorityLayout.tsx`: High-density operations chrome with live corridor status pills, district jurisdiction badge, and sub-nav (GIS Overview, Advisories, Policy Simulator, Impact Review).
+- `ProviderLayout.tsx`: Merchant operations header with property listings, room occupancy sliders, and voucher managers.
+- `DevLayout.tsx`: Minimalist developer chrome with pipeline health indicators and database logs.
+
+#### Route Guarding (`RoleGuard.tsx`)
+All administrative, commercial, and diagnostic routes (`/authority/*`, `/provider/*`, `/dev/*`) are strictly wrapped in `RoleGuard`:
+- Validates active session via `sessionManager.ts`.
+- Automatically syncs session credentials into the central Zustand store (`useCorridorStore.ts`) to avoid UI state divergence.
+- Unauthenticated requests are smoothly redirected to `/login?portal=<role>&redirect=<target_path>`.
+
+### 3.3 Independent Multi-Portal Token Session Architecture (`sessionManager.ts`)
+The frontend implements a multi-role session manager enabling simultaneous, non-colliding logins across different portals:
+- **Role-Keyed Storage**: Sessions are isolated in `localStorage` under keys `ecoroute_session_tourist`, `ecoroute_session_authority`, `ecoroute_session_provider`, and `ecoroute_session_developer`.
+- **Session Lifecycle**: Tracks `role`, `token`, `user`, `loginAt`, and `expiresAt` (7-day TTL).
+- **Independent Logout**: Logging out from the District Authority console does not terminate an active tourist session in another browser tab.
+
+### 3.4 Modern Travel-Tech & SaaS Design System
+The visual presentation has been modernized from legacy administrative styling into a clean, modern SaaS aesthetic (Linear / Stripe / Airbnb standard):
+- **Removed**: Tricolor `tiranga-bar` stripes, obsolete `A- A A+` font scalers, Ashok Chakra watermarks, unstyled language switchers, and NIC hosting disclosures.
+- **Adopted**: Dark slate navigation (`#0f172a`), emerald accents (`#10b981`), refined borders (`border-slate-800`), smooth transition micro-interactions, and accessible typography.
+
+### 3.5 Declarative Route Hierarchy (React Router DOM v7)
+
+| Route | Shell / Layout | Component | Protection | Description |
+|---|---|---|:---:|---|
+| `/` | Standalone | `PortalSelectPage` | Public | Workspace launchpad with 4 dedicated portal cards |
+| `/login` | Standalone | `AuthPage` | Public | Modern authentication page with role selector & demo accounts |
+| `/tourist` | `TouristLayout` | `LandingPage` | Public | Tourist hero search, destination strip, and quick-starts |
+| `/discover` | `TouristLayout` | `DiscoverPage` | Public | Algorithmic demand diffusion feed |
+| `/search` | `TouristLayout` | `SearchResultsPage` | Public | Full-page 3-tier fuzzy search results |
+| `/region/:type/:value` | `TouristLayout` | `RegionPage` | Public | Exhaustive regional spot directory |
+| `/spot/:spotId` | `TouristLayout` | `SpotPage` | Public | **Canonical Destination Page** (8 universal sections + role panels) |
+| `/plan/new` | `TouristLayout` | `TripPlannerPage` | Public | 4-step wizard with progressive profiling modal |
+| `/plan/:tripId` | `TouristLayout` | `SavedTripDetailPage` | Public | Confirmed timetable + Government Verified Green Pass Certificate |
+| `/trips` | `TouristLayout` | `MyTripsPage` | Public | Saved itineraries and partner vouchers |
+| `/account` | `TouristLayout` | `AccountPage` | Public | Traveler preferences and active role session details |
+| `/authority` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | District GIS Incident Command Center & triage map |
+| `/authority/advisories` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | Official gazette emergency advisory broadcaster |
+| `/authority/policy-simulator` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | Predictive carrying capacity & deflection simulator |
+| `/authority/impact` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | Post-incident review & under-visited promotion schemes |
+| `/authority/overview` | `AuthorityLayout` | `AuthorityCommandPage` | Guarded (`authority`) | High-level corridor triage overview |
+| `/authority/spot/:spotId` | `AuthorityLayout` | `SpotPage` | Guarded (`authority`) | Canonical spot page with Authority Management Panel |
+| `/provider` | `ProviderLayout` | `ProviderView` | Guarded (`provider`) | Homestay operator console & room occupancy controls |
+| `/provider/listings` | `ProviderLayout` | `ProviderConsolePage` | Guarded (`provider`) | Accredited property directory & voucher creator |
+| `/provider/spot/:spotId` | `ProviderLayout` | `SpotPage` | Guarded (`provider`) | Canonical spot page with Provider Panel |
+| `/dev` | `DevLayout` | `DevPortal` | Guarded (`developer`) | System telemetry, SIH26204 audit, and SQLite logs |
+
+### 3.6 3-Tier Intent Resolution & Search Engine (`GlobalSearchBox.tsx`)
 Search operates on an un-opinionated, zero-guess philosophy using `Fuse.js`:
 - **Tier 1 (Spots)**: Matches exact spot names, aliases, or IDs (`LON` -> Lonavala) and navigates to `/spot/:spotId`.
 - **Tier 2 (Districts)**: Matches district names (`Pune`, `Raigad`, `Satara`) and routes to `/region/district/:name`.
 - **Tier 3 (States)**: Matches state names (`Maharashtra`) and routes to `/region/state/:name`.
 
-### 3.3 The Canonical Spot Page Architecture (`SpotPage.tsx` & `useSpotData.ts`)
+### 3.7 The Canonical Spot Page Architecture (`SpotPage.tsx` & `useSpotData.ts`)
 Rather than maintaining separate destination detail screens for tourists, district collectors, and hotel owners, **every destination has exactly one page**. 
 - `useSpotData.ts` serves as the single source of truth, returning live metrics, hourly forecasts, twin alternatives, provenance tiers, and check-ins.
 - **Universal Sections**: Always visible to tourists, citizens, and stakeholders alike.

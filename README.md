@@ -8,32 +8,44 @@ Developed for the Ministry of Tourism (Govt. of India), Maharashtra Tourism Deve
 
 ## Key Highlights
 
+- 🏢 **Dedicated Portal Workspace Selection Gateway (`/`)**: High-impact portal launchpad cleanly separating Citizen/Tourist (`/tourist`), District Authority (`/authority`), MTDC Hospitality (`/provider`), and Developer Diagnostics (`/dev`).
+- 🛡️ **Role-Isolated Layout Shells & Strict Guarding**: 4 independent layout shells (`TouristLayout`, `AuthorityLayout`, `ProviderLayout`, `DevLayout`) and strict `RoleGuard` wrapper preventing role cross-contamination.
+- 🔐 **Dedicated Modern Authentication & Multi-Portal Session Manager**: Full-page authentication (`/login`, `AuthPage.tsx`) with 1-click fast demo profiles, 7-day token persistence, and role-isolated `sessionManager.ts`.
+- 🎨 **Modern Travel-Tech SaaS Interface**: Replaced outdated government website tropes with a sleek, high-contrast travel-tech and operations SaaS UI (Linear / Stripe / Airbnb standard).
 - 🧭 **Tourist-First Canonical Destination Architecture**: Every destination has exactly one authoritative page at `/spot/:spotId` containing universal tourist intelligence. Administrative and business roles conditionally attach management tools onto the destination.
 - 🔍 **3-Tier Fuzzy Search Resolution (Fuse.js)**: Instant autocomplete grouping queries into **Spots** (`LON`), **Districts** (`Pune`, `Raigad`, `Satara`), and **States** (`Maharashtra`) without guessing.
 - 🌿 **Algorithmic Demand Diffusion Feed (`/discover`)**: Re-ranks destinations using: `45% Travel Style Affinity + 30% Crowd Headroom + 25% Under-Visited Boost`.
 - 📊 **Auditable Data Provenance (Tiers 1–4)**: Transparent telemetry breakdown tracing every metric back to ground-truth sensors, calibrated APIs, diurnal algorithms, or statutory studies with live confidence scoring.
-- 🗺️ **Full React Router DOM v7 (16 Routes)**: Complete bookmarkable client routing covering search, regional exhaustive directories, spot pages, trip planners, and stakeholder consoles.
+- 🗺️ **Full React Router DOM v7 Implementation**: Complete bookmarkable client routing covering search, regional exhaustive directories, spot pages, trip planners, and stakeholder consoles.
 - ⚡ **Multithreaded Concurrent Telemetry Engine**: Python 3.13 backend utilizing `ThreadingHTTPServer` and `ThreadPoolExecutor` with in-memory OSM POI density caching.
 
 ---
 
 ## Application Route Directory
 
-| Route | View | Description |
-|---|---|---|
-| `/` | `LandingPage` | Hero search box, live preview strip of top 5 corridor destinations |
-| `/discover` | `DiscoverPage` | Personalized discovery feed with algorithmic promotion boost |
-| `/search?q=` | `SearchResultsPage` | Dedicated 3-tier fuzzy search results breakdown |
-| `/region/:type/:value` | `RegionPage` | Exhaustive regional spot directory sorted by crowd status |
-| `/spot/:spotId` | `SpotPage` | **Canonical Destination Page** (8 universal sections + role panels) |
-| `/plan/new` | `TripPlannerPage` | 4-step wizard with progressive profiling signup modal |
-| `/plan/:tripId` | `SavedTripDetailPage` | Confirmed itinerary + Government Verified Green Pass Certificate |
-| `/trips` | `MyTripsPage` | Traveler dashboard of saved trips and MTDC discount vouchers |
-| `/account` | `AccountPage` | Progressive preferences (home city/state, 4 tap-cards, role gateway) |
-| `/advisories` | `AdvisoriesPage` | Searchable official gazette dispatch system |
-| `/authority` | `AuthorityCommandPage` | District GIS command center funneled into canonical spot pages |
-| `/provider` | `ProviderConsolePage` | Homestay & operator console funneled into canonical spot pages |
-| `/dev` | `DevPortal` | Production health monitoring, SIH26204 audit, and SQLite logs |
+| Route | Shell / Layout | Component | Protection | Description |
+|---|---|---|:---:|---|
+| `/` | Standalone | `PortalSelectPage` | Public | Workspace launchpad with 4 dedicated portal cards |
+| `/login` | Standalone | `AuthPage` | Public | Modern authentication page with role selector & demo accounts |
+| `/tourist` | `TouristLayout` | `LandingPage` | Public | Tourist hero search, destination strip, and quick-starts |
+| `/discover` | `TouristLayout` | `DiscoverPage` | Public | Algorithmic demand diffusion feed |
+| `/search` | `TouristLayout` | `SearchResultsPage` | Public | Full-page 3-tier fuzzy search results |
+| `/region/:type/:value` | `TouristLayout` | `RegionPage` | Public | Exhaustive regional spot directory |
+| `/spot/:spotId` | `TouristLayout` | `SpotPage` | Public | **Canonical Destination Page** (8 universal sections + role panels) |
+| `/plan/new` | `TouristLayout` | `TripPlannerPage` | Public | 4-step wizard with progressive profiling modal |
+| `/plan/:tripId` | `TouristLayout` | `SavedTripDetailPage` | Public | Confirmed timetable + Government Verified Green Pass Certificate |
+| `/trips` | `TouristLayout` | `MyTripsPage` | Public | Saved itineraries and partner vouchers |
+| `/account` | `TouristLayout` | `AccountPage` | Public | Traveler preferences and active role session details |
+| `/authority` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | District GIS Incident Command Center & triage map |
+| `/authority/advisories` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | Official gazette emergency advisory broadcaster |
+| `/authority/policy-simulator` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | Predictive carrying capacity & deflection simulator |
+| `/authority/impact` | `AuthorityLayout` | `AuthorityView` | Guarded (`authority`) | Post-incident review & under-visited promotion schemes |
+| `/authority/overview` | `AuthorityLayout` | `AuthorityCommandPage` | Guarded (`authority`) | High-level corridor triage overview |
+| `/authority/spot/:spotId` | `AuthorityLayout` | `SpotPage` | Guarded (`authority`) | Canonical spot page with Authority Management Panel |
+| `/provider` | `ProviderLayout` | `ProviderView` | Guarded (`provider`) | Homestay operator console & room occupancy controls |
+| `/provider/listings` | `ProviderLayout` | `ProviderConsolePage` | Guarded (`provider`) | Accredited property directory & voucher creator |
+| `/provider/spot/:spotId` | `ProviderLayout` | `SpotPage` | Guarded (`provider`) | Canonical spot page with Provider Panel |
+| `/dev` | `DevLayout` | `DevPortal` | Guarded (`developer`) | System telemetry, SIH26204 audit, and SQLite logs |
 
 ---
 
