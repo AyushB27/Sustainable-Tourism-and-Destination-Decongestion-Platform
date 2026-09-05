@@ -3,8 +3,14 @@ import json
 import time
 import urllib.parse
 from datetime import datetime
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
+
+# Ensure UTF-8 output encoding across Windows shells to avoid charmap UnicodeEncodeErrors
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Track server start time for uptime reporting
 _SERVER_START_TIME = time.time()
@@ -81,14 +87,18 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Private-Network", "true")
 
     def _send_json_response(self, data, status_code=200):
-        response_bytes = json.dumps(data, indent=2).encode("utf-8")
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json")
-        self._send_cors_headers()
-        self.end_headers()
-        self.wfile.write(response_bytes)
+        try:
+            response_bytes = json.dumps(data, indent=2).encode("utf-8")
+            self.send_response(status_code)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(response_bytes)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     def _parse_json_body(self):
         try:
@@ -602,7 +612,7 @@ def run_server():
     start_background_telemetry_worker(interval_seconds=60)
 
     server_address = (BACKEND_HOST, BACKEND_PORT)
-    httpd = HTTPServer(server_address, EcoRouteAPIHandler)
+    httpd = ThreadingHTTPServer(server_address, EcoRouteAPIHandler)
     print(f"\n==================================================================")
     print(f"🚀 EcoRoute Bharat Python Backend Engine Running")
     print(f"📍 Live Feed:     http://{BACKEND_HOST}:{BACKEND_PORT}/api/destinations/live")

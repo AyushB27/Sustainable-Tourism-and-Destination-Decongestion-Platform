@@ -16,11 +16,13 @@
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.1",
+    "fuse.js": "^7.5.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.39.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.18.3",
     "recharts": "^3.10.1",
     "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.15"
