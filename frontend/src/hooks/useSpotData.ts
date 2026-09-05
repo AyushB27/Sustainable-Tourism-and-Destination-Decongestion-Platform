@@ -134,7 +134,19 @@ export function useSpotData(spotId?: string): UseSpotDataResult {
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         if (data && Array.isArray(data.forecast_points) && data.forecast_points.length > 0) {
-          setForecast(data.forecast_points);
+          const normalized: HourlyForecastPoint[] = data.forecast_points.map((pt: any) => {
+            const dcc = Number(pt.dccScore ?? pt.dcc_score ?? 0);
+            return {
+              hour: pt.hour || '12:00',
+              timeLabel: pt.timeLabel || pt.time_label || pt.hour || '12 PM',
+              inflow: Number(pt.inflow ?? 0),
+              capacity: Number(pt.capacity ?? spot.physicalCapacity ?? 1000),
+              dccScore: Number.isFinite(dcc) ? dcc : 0.5,
+              weatherRisk: Number(pt.weatherRisk ?? pt.weather_hazard ?? 0),
+              isBestTime: dcc < 0.60
+            };
+          });
+          setForecast(normalized);
         } else {
           setForecast(generate12HourForecast(spot));
         }

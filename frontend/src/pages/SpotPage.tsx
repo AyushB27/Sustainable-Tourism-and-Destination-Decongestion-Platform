@@ -26,7 +26,9 @@ import {
   X, 
   Layers, 
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { useSpotData } from '../hooks/useSpotData';
 import { useCorridorStore } from '../store/useCorridorStore';
@@ -64,6 +66,8 @@ export const SpotPage: React.FC = () => {
   const [checkInComment, setCheckInComment] = useState('');
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [selectedForecastHour, setSelectedForecastHour] = useState<number | null>(null);
+  const [selectedWeeklyDay, setSelectedWeeklyDay] = useState<number | null>(null);
 
   // Authority panel state
   const [advisoryTitle, setAdvisoryTitle] = useState('');
@@ -434,40 +438,216 @@ export const SpotPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── 12-Hour Forecast Strip (Hourly pills with auto-highlighted best time) ── */}
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-gov-navy" />
-              12-Hour Hourly Forecast Strip
-            </h3>
-            <span className="text-[11px] text-slate-500">Open-Meteo forecast + calibrated arrival model</span>
+        {/* ── 12-Hour Forecast Strip with Visual Graph & Condition Points ── */}
+        <div className="space-y-4 pt-3 border-t border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gov-navy" />
+                <span>12-Hour Predictive Forecast Strip & Demand Graph</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Hourly arrival volume calibrated with Open-Meteo GFS weather sensors & road transit delays
+              </p>
+            </div>
+
+            {/* Condition Color Legend */}
+            <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" />
+                &lt;70% Optimal
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200" />
+                70–84% Moderate
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-200" />
+                ≥85% Peak Rush
+              </span>
+            </div>
           </div>
 
+          {/* 12-Hour Visual Bar Graph with Numbers & Condition-Colored Points */}
+          <div className="bg-slate-950 rounded-2xl p-4 sm:p-5 border border-slate-800 text-white space-y-3">
+            <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                <span className="font-bold text-slate-200">Hourly Inflow Trajectory</span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  (Physical Capacity: <strong className="text-amber-300">{spot.physicalCapacity.toLocaleString()}</strong> visitors)
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400">Click any hour to inspect details</span>
+            </div>
+
+            {/* Graph Canvas */}
+            <div className="h-44 sm:h-52 flex items-end gap-1.5 sm:gap-2 px-1 relative pt-6 pb-2 border-b border-slate-800">
+              {/* Capacity Threshold Line */}
+              {(() => {
+                const maxInflow = Math.max(...forecast.map(p => Number(p.inflow) || 0), spot.physicalCapacity * 1.15, 1000);
+                const capPct = Math.min(95, Math.round((spot.physicalCapacity / maxInflow) * 100));
+                return (
+                  <div
+                    style={{ bottom: `${capPct}%` }}
+                    className="absolute left-0 right-0 border-b border-dashed border-rose-400/50 z-0 pointer-events-none flex items-center justify-end pr-2"
+                  >
+                    <span className="text-[9px] font-mono font-bold text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-800/80 shadow-sm">
+                      100% Capacity ({spot.physicalCapacity.toLocaleString()})
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {forecast.slice(0, 12).map((pt, i) => {
+                const dcc = Number(pt.dccScore ?? pt.dcc_score ?? 0);
+                const inflow = Number(pt.inflow ?? 0);
+                const maxInflow = Math.max(...forecast.map(p => Number(p.inflow) || 0), spot.physicalCapacity * 1.15, 1000);
+                const barHeightPct = Math.max(14, Math.min(100, Math.round((inflow / maxInflow) * 100)));
+                const isSelected = selectedForecastHour === i;
+                const isBest = dcc < 0.60;
+                
+                const pointStatus = dcc >= 0.85 ? 'CRITICAL' : dcc >= 0.70 ? 'MODERATE' : 'OPTIMAL';
+                const barGradient =
+                  pointStatus === 'CRITICAL'
+                    ? 'from-rose-600 to-rose-400 shadow-rose-950/40'
+                    : pointStatus === 'MODERATE'
+                    ? 'from-amber-600 to-amber-400 shadow-amber-950/40'
+                    : 'from-emerald-600 to-emerald-400 shadow-emerald-950/40';
+
+                const pointDotColor =
+                  pointStatus === 'CRITICAL'
+                    ? 'bg-rose-400 ring-rose-300'
+                    : pointStatus === 'MODERATE'
+                    ? 'bg-amber-400 ring-amber-300'
+                    : 'bg-emerald-400 ring-emerald-300';
+
+                const label = pt.timeLabel || pt.time_label || pt.hour;
+                const pctFormatted = `${Math.round(dcc * 100)}%`;
+
+                return (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedForecastHour(isSelected ? null : i)}
+                    className="flex-1 flex flex-col items-center h-full justify-end relative group cursor-pointer z-10"
+                  >
+                    {/* Exact Number Callout (Always visible on top of bar) */}
+                    <div className="absolute -top-6 text-center whitespace-nowrap transition-transform duration-200 group-hover:scale-110">
+                      <span className={`text-[10px] font-black font-mono px-1 py-0.2 rounded ${
+                        pointStatus === 'CRITICAL' ? 'text-rose-300' : pointStatus === 'MODERATE' ? 'text-amber-300' : 'text-emerald-300'
+                      }`}>
+                        {inflow >= 1000 ? `${(inflow / 1000).toFixed(1)}k` : inflow}
+                      </span>
+                    </div>
+
+                    {/* Condition Colored Point Dot */}
+                    <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${pointDotColor} ${isBest ? 'ring-2 ring-emerald-300 shadow-emerald-400/50 shadow' : 'ring-2 ring-offset-1 ring-offset-slate-950'} mb-1 transition-all group-hover:scale-125 z-10`} />
+
+                    {/* Bar Pillar */}
+                    <div
+                      style={{ height: `${barHeightPct}%` }}
+                      className={`w-full max-w-[28px] rounded-t-md bg-gradient-to-t ${barGradient} transition-all duration-300 shadow-md ${
+                        isSelected
+                          ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-950 scale-105 opacity-100'
+                          : 'opacity-85 group-hover:opacity-100 group-hover:scale-105'
+                      }`}
+                    />
+
+                    {/* Tooltip on hover */}
+                    <div className="absolute -bottom-10 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity bg-slate-800 text-white text-[9px] font-mono px-2 py-1 rounded shadow-xl whitespace-nowrap z-30 border border-slate-700">
+                      {label}: {inflow.toLocaleString()} ({pctFormatted})
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* X-Axis Hour Labels */}
+            <div className="flex gap-1.5 sm:gap-2 px-1 text-[9px] font-mono text-slate-400">
+              {forecast.slice(0, 12).map((pt, i) => (
+                <div key={i} className="flex-1 text-center truncate">
+                  {(pt.timeLabel || pt.time_label || pt.hour).replace(':00', '')}
+                </div>
+              ))}
+            </div>
+
+            {/* Selected Hour Details Box */}
+            {selectedForecastHour !== null && forecast[selectedForecastHour] && (() => {
+              const pt = forecast[selectedForecastHour];
+              const dcc = Number(pt.dccScore ?? pt.dcc_score ?? 0);
+              const inflow = Number(pt.inflow ?? 0);
+              const status = dcc >= 0.85 ? 'CRITICAL' : dcc >= 0.70 ? 'MODERATE' : 'OPTIMAL';
+              const label = pt.timeLabel || pt.time_label || pt.hour;
+              return (
+                <div className="mt-2 p-3 bg-slate-900 border border-cyan-700/60 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-bold text-cyan-300 text-sm">{label}</span>
+                    <span className="text-slate-300">
+                      Predicted Arrivals: <strong className="text-white text-sm">{inflow.toLocaleString()} visitors</strong>
+                    </span>
+                    <span className="text-slate-300">
+                      Capacity Utilization: <strong className="text-amber-300">{Math.round(dcc * 100)}%</strong>
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      status === 'CRITICAL'
+                        ? 'bg-rose-950 text-rose-300 border-rose-800'
+                        : status === 'MODERATE'
+                        ? 'bg-amber-950 text-amber-300 border-amber-800'
+                        : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                    }`}>
+                      {status}
+                    </span>
+                    {dcc < 0.60 && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white">
+                        ✨ Recommended Best Arrival Window
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setSelectedForecastHour(null)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] rounded transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* 12-Hour Hourly Cards Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
             {forecast.slice(0, 12).map((pt, i) => {
-              const isBest = pt.dccScore < 0.60;
-              const pointStatus = pt.dccScore >= 0.85 ? 'CRITICAL' : pt.dccScore >= 0.70 ? 'MODERATE' : 'OPTIMAL';
+              const dcc = Number(pt.dccScore ?? pt.dcc_score ?? 0);
+              const inflow = Number(pt.inflow ?? 0);
+              const isBest = dcc < 0.60;
+              const pointStatus = dcc >= 0.85 ? 'CRITICAL' : dcc >= 0.70 ? 'MODERATE' : 'OPTIMAL';
               const dotColor = pointStatus === 'CRITICAL' ? 'bg-rose-500' : pointStatus === 'MODERATE' ? 'bg-amber-500' : 'bg-emerald-500';
+              const label = pt.timeLabel || pt.time_label || pt.hour;
+              const pct = Math.round(dcc * 100);
 
               return (
                 <div
                   key={i}
-                  className={`p-2.5 rounded-xl border text-center transition flex flex-col justify-between ${
+                  onClick={() => setSelectedForecastHour(selectedForecastHour === i ? null : i)}
+                  className={`p-2.5 rounded-xl border text-center transition flex flex-col justify-between cursor-pointer ${
                     isBest
-                      ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-300'
-                      : 'bg-slate-50 border-slate-200'
+                      ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-300 shadow-sm'
+                      : selectedForecastHour === i
+                      ? 'bg-cyan-50 border-cyan-400 ring-2 ring-cyan-300 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">{pt.timeLabel}</span>
-                  <div className="my-1 flex items-center justify-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{label}</span>
+                  <div className="my-1 flex items-center justify-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                    <strong className="text-xs font-black text-slate-900">{Math.round(pt.inflow / 1000)}k</strong>
+                    <strong className="text-xs font-black text-slate-900">
+                      {inflow >= 1000 ? `${(inflow / 1000).toFixed(1)}k` : inflow}
+                    </strong>
                   </div>
                   <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
-                    isBest ? 'bg-emerald-600 text-white' : 'text-slate-500'
+                    isBest ? 'bg-emerald-600 text-white' : pointStatus === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : pointStatus === 'MODERATE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
                   }`}>
-                    {isBest ? 'Best Time' : `${Math.round(pt.dccScore * 100)}%`}
+                    {isBest ? 'Best Time' : `${pct}%`}
                   </span>
                 </div>
               );
@@ -475,38 +655,222 @@ export const SpotPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Historical Pattern Chart (Mon-Sun weekly pattern) ── */}
+        {/* ── Historical Weekly Crowd Rhythm (With Visual Graph of Numbers & Colored Condition Points) ── */}
         {spot.historicalWeeklyPattern && spot.historicalWeeklyPattern.length > 0 && (
-          <div className="space-y-3 pt-4 border-t border-slate-200">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 pt-4 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gov-navy" />
-                  Historical Weekly Crowd Rhythm
+                  <span>Historical Weekly Crowd Rhythm & Inflow Benchmark</span>
                 </h3>
-                <p className="text-[11px] text-slate-500">
-                  Aggregated from past arrivals and tourism registry logs — planning 3 weeks out? Saturdays are typically heavy.
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Aggregated from past arrivals & tourism registry logs — planning ahead? Saturdays and Sundays are typically heavy.
                 </p>
+              </div>
+
+              {/* Weekly Legend */}
+              <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-600">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" />
+                  Optimal Day
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200" />
+                  Moderate Surge
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-200" />
+                  Peak Congestion
+                </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2">
+            {/* Weekly Visual Graph of Numbers */}
+            <div className="bg-slate-950 rounded-2xl p-4 sm:p-5 border border-slate-800 text-white space-y-3">
+              <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-amber-400" />
+                  <span className="font-bold text-slate-200">7-Day Arrival Volume & Capacity Load</span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    (Statutory Capacity Baseline: <strong className="text-amber-300">{spot.physicalCapacity.toLocaleString()}</strong>)
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400">Click any day to inspect details</span>
+              </div>
+
+              {/* Graph Canvas */}
+              <div className="h-44 sm:h-52 flex items-end gap-3 sm:gap-6 px-3 relative pt-6 pb-2 border-b border-slate-800">
+                {/* 100% Capacity Reference Line */}
+                {(() => {
+                  const maxDayVisitors = Math.max(
+                    ...spot.historicalWeeklyPattern!.map(p => Math.round(spot.physicalCapacity * (p.typicalFootfallRatio || 0.5))),
+                    spot.physicalCapacity * 1.25
+                  );
+                  const capPct = Math.min(95, Math.round((spot.physicalCapacity / maxDayVisitors) * 100));
+                  return (
+                    <div
+                      style={{ bottom: `${capPct}%` }}
+                      className="absolute left-0 right-0 border-b border-dashed border-rose-400/50 z-0 pointer-events-none flex items-center justify-end pr-2"
+                    >
+                      <span className="text-[9px] font-mono font-bold text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800/80 shadow-sm">
+                        100% Capacity Limit ({spot.physicalCapacity.toLocaleString()} visitors)
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {spot.historicalWeeklyPattern.map((p, idx) => {
+                  const ratio = p.typicalFootfallRatio ?? (p.level === 'CRITICAL' ? 1.15 : p.level === 'MODERATE' ? 0.75 : 0.35);
+                  const estimatedVisitors = Math.round(spot.physicalCapacity * ratio);
+                  const loadPct = Math.round(ratio * 100);
+                  const maxDayVisitors = Math.max(
+                    ...spot.historicalWeeklyPattern!.map(pt => Math.round(spot.physicalCapacity * (pt.typicalFootfallRatio || 0.5))),
+                    spot.physicalCapacity * 1.25
+                  );
+                  const barHeightPct = Math.max(16, Math.min(100, Math.round((estimatedVisitors / maxDayVisitors) * 100)));
+                  const isSelected = selectedWeeklyDay === idx;
+
+                  const barGradient =
+                    p.level === 'CRITICAL'
+                      ? 'from-rose-600 to-rose-400 shadow-rose-950/40'
+                      : p.level === 'MODERATE'
+                      ? 'from-amber-600 to-amber-400 shadow-amber-950/40'
+                      : 'from-emerald-600 to-emerald-400 shadow-emerald-950/40';
+
+                  const pointDotColor =
+                    p.level === 'CRITICAL'
+                      ? 'bg-rose-400 ring-rose-300'
+                      : p.level === 'MODERATE'
+                      ? 'bg-amber-400 ring-amber-300'
+                      : 'bg-emerald-400 ring-emerald-300';
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedWeeklyDay(isSelected ? null : idx)}
+                      className="flex-1 flex flex-col items-center h-full justify-end relative group cursor-pointer z-10"
+                    >
+                      {/* Numerical Value Callout Above Bar */}
+                      <div className="absolute -top-6 text-center whitespace-nowrap transition-transform duration-200 group-hover:scale-110">
+                        <span className={`text-[11px] font-black font-mono px-1.5 py-0.5 rounded ${
+                          p.level === 'CRITICAL' ? 'text-rose-300' : p.level === 'MODERATE' ? 'text-amber-300' : 'text-emerald-300'
+                        }`}>
+                          {estimatedVisitors >= 1000 ? `${(estimatedVisitors / 1000).toFixed(1)}k` : estimatedVisitors}
+                        </span>
+                      </div>
+
+                      {/* Condition Colored Dot */}
+                      <div className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full ${pointDotColor} ring-2 ring-offset-1 ring-offset-slate-950 mb-1 transition-all group-hover:scale-125 z-10`} />
+
+                      {/* Bar Pillar */}
+                      <div
+                        style={{ height: `${barHeightPct}%` }}
+                        className={`w-full max-w-[42px] rounded-t-lg bg-gradient-to-t ${barGradient} transition-all duration-300 shadow-md ${
+                          isSelected
+                            ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-950 scale-105 opacity-100'
+                            : 'opacity-85 group-hover:opacity-100 group-hover:scale-105'
+                        }`}
+                      />
+
+                      {/* Tooltip on hover */}
+                      <div className="absolute -bottom-10 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity bg-slate-800 text-white text-[9px] font-mono px-2 py-1 rounded shadow-xl whitespace-nowrap z-30 border border-slate-700">
+                        {p.dayFull || p.day}: {estimatedVisitors.toLocaleString()} ({loadPct}% load)
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* X-Axis Day Labels */}
+              <div className="flex gap-3 sm:gap-6 px-3 text-[10px] font-mono text-slate-400 font-bold">
+                {spot.historicalWeeklyPattern.map((p, idx) => (
+                  <div key={idx} className="flex-1 text-center truncate">
+                    {p.day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Selected Day Details Box */}
+              {selectedWeeklyDay !== null && spot.historicalWeeklyPattern[selectedWeeklyDay] && (() => {
+                const p = spot.historicalWeeklyPattern[selectedWeeklyDay];
+                const ratio = p.typicalFootfallRatio ?? (p.level === 'CRITICAL' ? 1.15 : p.level === 'MODERATE' ? 0.75 : 0.35);
+                const estimatedVisitors = Math.round(spot.physicalCapacity * ratio);
+                const loadPct = Math.round(ratio * 100);
+                return (
+                  <div className="mt-2 p-3 bg-slate-900 border border-amber-500/50 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="font-bold text-amber-300 text-sm">{p.dayFull || p.day}</span>
+                      <span className="text-slate-300">
+                        Estimated Footfall: <strong className="text-white text-sm">{estimatedVisitors.toLocaleString()} visitors</strong>
+                      </span>
+                      <span className="text-slate-300">
+                        Carrying Capacity Load: <strong className="text-amber-300">{loadPct}%</strong>
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                        p.level === 'CRITICAL'
+                          ? 'bg-rose-950 text-rose-300 border-rose-800'
+                          : p.level === 'MODERATE'
+                          ? 'bg-amber-950 text-amber-300 border-amber-800'
+                          : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      }`}>
+                        {p.level}
+                      </span>
+                      <span className="text-slate-400 italic">
+                        &ldquo;{p.note}&rdquo;
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setSelectedWeeklyDay(null)}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] rounded transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 7-Day Interactive Information Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
               {spot.historicalWeeklyPattern.map((p, idx) => {
+                const ratio = p.typicalFootfallRatio ?? (p.level === 'CRITICAL' ? 1.15 : p.level === 'MODERATE' ? 0.75 : 0.35);
+                const estimatedVisitors = Math.round(spot.physicalCapacity * ratio);
+                const loadPct = Math.round(ratio * 100);
                 const badgeColor =
                   p.level === 'CRITICAL'
                     ? 'bg-rose-100 text-rose-900 border-rose-300'
                     : p.level === 'MODERATE'
                     ? 'bg-amber-100 text-amber-900 border-amber-300'
                     : 'bg-emerald-100 text-emerald-900 border-emerald-300';
+
+                const isSelected = selectedWeeklyDay === idx;
+
                 return (
                   <div
                     key={idx}
-                    className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between text-center space-y-1.5"
+                    onClick={() => setSelectedWeeklyDay(isSelected ? null : idx)}
+                    className={`p-3 rounded-xl border flex flex-col justify-between text-center space-y-2 transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-300 shadow-sm'
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    }`}
                   >
-                    <span className="text-xs font-bold text-slate-800">{p.day}</span>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800">{p.day}</span>
+                        <span className="text-[10px] text-slate-500 font-mono font-bold">{loadPct}%</span>
+                      </div>
+                      <div className="text-sm font-black text-slate-900 mt-0.5">
+                        {estimatedVisitors.toLocaleString()}
+                      </div>
+                      <span className="text-[9px] text-slate-500 block">est. visitors</span>
+                    </div>
+
                     <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${badgeColor}`}>
                       {p.level}
                     </span>
+
                     <p className="text-[9px] text-slate-500 line-clamp-2 leading-tight">
                       {p.note}
                     </p>

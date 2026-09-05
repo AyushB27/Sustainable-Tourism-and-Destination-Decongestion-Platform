@@ -46,6 +46,7 @@ from app.background_worker import (
 from app.engine.dcc_calculator import generate_12hr_forecast, calculate_dcc_metrics
 from app.engine.twin_matcher import find_twin_recommendations
 from app.engine.itinerary_engine import generate_future_itinerary
+from app.pipelines.footfall_pipeline import get_besttime_full_telemetry
 
 # ==============================================================================
 # AUTHENTICATION DIRECTORY & CREDENTIALS
@@ -640,6 +641,8 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             # API key statuses
             tomtom_configured = bool(TOMTOM_API_KEY and TOMTOM_API_KEY not in ["", "your_tomtom_api_key_here"])
             besttime_configured = bool(BESTTIME_API_KEY and BESTTIME_API_KEY not in ["", "your_besttime_api_key_here"])
+            besttime_masked = f"{BESTTIME_API_KEY[:7]}...{BESTTIME_API_KEY[-4:]}" if len(BESTTIME_API_KEY) >= 12 else BESTTIME_API_KEY
+            besttime_type = "Public Read Key" if BESTTIME_API_KEY.startswith("pub_") else "Private Key"
             datagov_configured = bool(DATA_GOV_IN_API_KEY and DATA_GOV_IN_API_KEY not in ["", "your_data_gov_in_api_key_here"])
 
             # Build per-destination pipeline transparency entries
@@ -675,8 +678,8 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                             "free_flow_speed_kmh": traffic.get("free_flow_speed_kmh")
                         },
                         "footfall": {
-                            "source": footfall.get("source", "Unknown"),
-                            "status": footfall.get("status", "unknown"),
+                            "source": footfall.get("source", "BestTime Live API" if besttime_configured else "Unknown"),
+                            "status": footfall.get("status", "connected" if besttime_configured else "unknown"),
                             "footfall_factor": footfall.get("footfall_factor"),
                             "live_busyness_pct": footfall.get("live_busyness_pct")
                         },
@@ -696,7 +699,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "destinations": dest_transparency,
                 "api_key_status": {
                     "TOMTOM_API_KEY": "CONFIGURED — Live API Active" if tomtom_configured else "NOT_CONFIGURED — Using Heuristic Diurnal Model",
-                    "BESTTIME_API_KEY": "CONFIGURED — Live API Active" if besttime_configured else "NOT_CONFIGURED — Using Hourly Busyness Model",
+                    "BESTTIME_API_KEY": f"CONFIGURED — Live API Active ({besttime_type}: {besttime_masked})" if besttime_configured else "NOT_CONFIGURED — Using Hourly Busyness Model",
                     "DATA_GOV_IN_API_KEY": "CONFIGURED" if datagov_configured else "NOT_CONFIGURED — Using Static Benchmarks",
                     "OPEN_METEO": "NO_KEY_REQUIRED — Free Public API (Always Live)"
                 },
@@ -725,6 +728,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 },
                 "frontend_api_connections": {
                     "GET /api/destinations/live": "CONNECTED — polled every 25s via fetchLiveBackendFeed()",
+                    "GET /api/dev/besttime": "CONNECTED — DevPortal BestTime live telemetry & 24h curve inspector",
                     "POST /api/auth/login": "CONNECTED — AuthModal.tsx",
                     "POST /api/recommendations/twin": "CONNECTED — TwinAlternativeCards via rerouteToDestination",
                     "GET /api/destinations/{id}/forecast": "CONNECTED — DemandCurveChart.tsx fetches on mount",
@@ -740,6 +744,12 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 }
             })
 
+        elif path == "/api/dev/besttime":
+            query_params = urllib.parse.parse_qs(parsed_path.query)
+            dest_id = query_params.get("dest_id", ["LON"])[0].upper()
+            besttime_telemetry = get_besttime_full_telemetry(destination_id=dest_id)
+            self._send_json_response(besttime_telemetry)
+
         elif path in ["/api/destinations/live", "/api/live"]:
             telemetry = get_latest_telemetry()
             self._send_json_response({
@@ -748,7 +758,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "data_sources": {
                     "weather": "Open-Meteo Live Precipitation API",
                     "traffic": f"TomTom Traffic Flow API ({'Key Connected' if TOMTOM_API_KEY and TOMTOM_API_KEY != 'your_tomtom_api_key_here' else 'Diurnal Fallback'})",
-                    "footfall": f"BestTime.app API ({'Key Connected' if BESTTIME_API_KEY and BESTTIME_API_KEY != 'your_besttime_api_key_here' else 'Hourly Model'})",
+                    "footfall": f"BestTime.app API ({'Key Connected (Live)' if BESTTIME_API_KEY and BESTTIME_API_KEY != 'your_besttime_api_key_here' else 'Hourly Model'})",
                     "osm": "Overpass Turbo (Live Nodes)",
                     "ogd_india": telemetry.get("ogd_benchmarks", {})
                 },

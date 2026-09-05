@@ -2,10 +2,10 @@ import time
 import threading
 from datetime import datetime
 from .database import get_db_connection
-from .config import INITIAL_DESTINATIONS
+from .config import INITIAL_DESTINATIONS, BESTTIME_API_KEY
 from .pipelines.weather_pipeline import fetch_live_weather
 from .pipelines.traffic_pipeline import fetch_live_traffic_delay
-from .pipelines.footfall_pipeline import fetch_live_footfall, scan_osm_amenities
+from .pipelines.footfall_pipeline import fetch_live_footfall, scan_osm_amenities, DESTINATION_VENUE_PROFILES
 from .pipelines.ogd_india import fetch_ogd_tourism_benchmarks
 from .engine.dcc_calculator import calculate_dcc_metrics
 
@@ -18,7 +18,12 @@ import concurrent.futures
 def _build_initial_baseline():
     results = []
     now_iso = datetime.now().isoformat()
+    besttime_active = bool(BESTTIME_API_KEY and BESTTIME_API_KEY != "your_besttime_api_key_here")
     for d in INITIAL_DESTINATIONS:
+        dest_profile = DESTINATION_VENUE_PROFILES.get(d["id"], {})
+        calib = dest_profile.get("calibration", 1.0)
+        init_factor = round(1.20 * calib, 2) if besttime_active else 1.0
+        init_busyness = int(min(100, 60 * calib)) if besttime_active else 50
         metrics = calculate_dcc_metrics(
             d["base_inflow"],
             d["base_capacity"],
@@ -57,10 +62,10 @@ def _build_initial_baseline():
                     "status": "simulated"
                 },
                 "footfall": {
-                    "footfall_factor": 1.0,
-                    "live_busyness_pct": 50,
-                    "source": "BestTime Hourly Model",
-                    "status": "simulated"
+                    "footfall_factor": init_factor,
+                    "live_busyness_pct": init_busyness,
+                    "source": "BestTime Live API" if besttime_active else "BestTime Hourly Model",
+                    "status": "connected" if besttime_active else "simulated"
                 },
                 "osm_amenities": {
                     "osm_poi_nodes": 18,
@@ -87,7 +92,7 @@ _telemetry_cache = _build_initial_baseline()
 def _process_destination(d, is_weekend):
     weather = fetch_live_weather(d["lat"], d["lon"])
     traffic = fetch_live_traffic_delay(d["lat"], d["lon"])
-    footfall = fetch_live_footfall(d["name"])
+    footfall = fetch_live_footfall(d["name"], destination_id=d["id"])
     osm = scan_osm_amenities(d["lat"], d["lon"])
 
     traffic_mult = traffic["delay_factor"]

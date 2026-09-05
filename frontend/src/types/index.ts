@@ -218,6 +218,11 @@ export interface HourlyForecastPoint {
   dccScore: number;
   weatherRisk: number;
   isBestTime?: boolean;
+  dcc_score?: number;
+  time_label?: string;
+  status?: string;
+  waitMinutes?: number;
+  wait_minutes?: number;
 }
 
 export interface CorridorMetrics {

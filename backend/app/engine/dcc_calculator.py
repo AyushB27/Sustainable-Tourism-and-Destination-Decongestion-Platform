@@ -77,11 +77,15 @@ def generate_12hr_forecast(
         curve.append({
             "hour": h_code,
             "time_label": h_label,
+            "timeLabel": h_label,
             "inflow": hourly_inflow,
             "capacity": physical_capacity,
             "dcc_score": metrics["dcc_score"],
+            "dccScore": metrics["dcc_score"],
             "status": metrics["status"],
-            "wait_minutes": metrics["wait_time_minutes"]
+            "wait_minutes": metrics["wait_time_minutes"],
+            "waitMinutes": metrics["wait_time_minutes"],
+            "weatherRisk": weather_hazard
         })
 
     return curve

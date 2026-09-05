@@ -23,7 +23,7 @@ export const DevLayout: React.FC = () => {
               </span>
             </h1>
             <p className="text-[11px] text-slate-400">
-              Live telemetry pipeline auditor, SQLite database browser & SIH requirements matrix
+              Live telemetry pipeline auditor, SQLite database browser & BestTime.app footfall inspector
             </p>
           </div>
         </div>

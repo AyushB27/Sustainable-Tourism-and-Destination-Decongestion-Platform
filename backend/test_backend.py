@@ -97,8 +97,23 @@ class TestEcoRouteBackend(unittest.TestCase):
         self.assertIn("delay_factor", traffic)
         self.assertGreaterEqual(traffic["delay_factor"], 1.0)
 
-        footfall = fetch_live_footfall("Lonavala")
+        footfall = fetch_live_footfall("Lonavala", destination_id="LON")
         self.assertIn("footfall_factor", footfall)
+        self.assertIn("live_busyness_pct", footfall)
+        self.assertEqual(footfall["status"], "connected")
+        self.assertEqual(footfall["source"], "BestTime Live API")
+
+        footfall_mat = fetch_live_footfall("Matheran", destination_id="MAT")
+        footfall_tap = fetch_live_footfall("Tapola", destination_id="TAP")
+        self.assertNotEqual(footfall["footfall_factor"], footfall_mat["footfall_factor"])
+        self.assertNotEqual(footfall["live_busyness_pct"], footfall_tap["live_busyness_pct"])
+
+        from app.pipelines.footfall_pipeline import get_besttime_full_telemetry
+        bt_full = get_besttime_full_telemetry()
+        self.assertEqual(bt_full["status"], "connected")
+        self.assertTrue(bt_full["is_live"])
+        self.assertEqual(len(bt_full["hourly_curve"]), 24)
+        self.assertIn("raw_payload", bt_full)
 
         osm = scan_osm_amenities(18.7557, 73.4091)
         self.assertIn("osm_poi_nodes", osm)
