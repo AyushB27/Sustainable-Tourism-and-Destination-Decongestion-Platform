@@ -7,7 +7,10 @@ import type {
   Promotion,
   DestinationCategory,
   DemandFlow,
-  PolicySimulationResult
+  PolicySimulationResult,
+  CheckIn,
+  TripPlan,
+  GreenPass,
 } from '../types';
 import type { Language } from '../lib/i18n';
 import {
@@ -27,8 +30,147 @@ export const DEFAULT_CITIZEN_USER: AuthUser = {
   department: 'National Tourism Citizen Gateway',
   badgeNumber: 'IND-YATRA-2026',
   jurisdiction: null,
-  isAuthenticated: true
+  isAuthenticated: false,
+  homeCity: 'Mumbai',
+  homeState: 'Maharashtra',
+  travelStyleVector: [0.90, 0.70, 0.60, 0.85],
+  interests: ['Waterfalls', 'Hill Treks', 'Local Konkani Food', 'Heritage Forts']
 };
+
+export const INITIAL_CHECKINS: CheckIn[] = [
+  {
+    id: 'chk-01',
+    spot_id: 'LON',
+    spot_name: 'Lonavala & Khandala',
+    rating: 5,
+    user_label: 'Expressway Motorist',
+    comment: 'Bumper-to-bumper queue extending 3km back from Khandala exit. Bhushi dam steps packed wall-to-wall.',
+    timestamp: '15 mins ago',
+    geofence_verified: true
+  },
+  {
+    id: 'chk-02',
+    spot_id: 'LON',
+    spot_name: 'Lonavala & Khandala',
+    rating: 4,
+    user_label: 'Family Traveler',
+    comment: 'Heavy monsoon drizzle and fog. Parking completely saturated near Tiger Leap.',
+    timestamp: '42 mins ago',
+    geofence_verified: true
+  },
+  {
+    id: 'chk-03',
+    spot_id: 'MAT',
+    spot_name: 'Matheran Eco-Zone',
+    rating: 2,
+    user_label: 'Eco Walker',
+    comment: 'Air is crisp and 100% clean. Zero engine fumes, lovely pony ride along Charlotte lake trail.',
+    timestamp: '25 mins ago',
+    geofence_verified: true
+  },
+  {
+    id: 'chk-04',
+    spot_id: 'ALB',
+    spot_name: 'Alibaug Coastal Hub',
+    rating: 5,
+    user_label: 'Ferry Passenger',
+    comment: 'Mandwa water terminal passenger turnaround delay at 75 mins. Long queue for auto-rickshaws.',
+    timestamp: '30 mins ago',
+    geofence_verified: true
+  },
+  {
+    id: 'chk-05',
+    spot_id: 'BHA',
+    spot_name: 'Bhandardara Serene Haven',
+    rating: 1,
+    user_label: 'Nature Camper',
+    comment: 'Tranquil Arthur lake with glass-like water. Barely 20 people around Umbrella Falls! Perfect escape.',
+    timestamp: '1 hr ago',
+    geofence_verified: true
+  },
+  {
+    id: 'chk-06',
+    spot_id: 'MAH',
+    spot_name: 'Mahabaleshwar Plateau',
+    rating: 5,
+    user_label: 'Weekend Visitor',
+    comment: 'Pasarni ghat has continuous crawl. Venna lake boating ticket counter line is over 45 minutes.',
+    timestamp: '20 mins ago',
+    geofence_verified: true
+  },
+  {
+    id: 'chk-07',
+    spot_id: 'TAP',
+    spot_name: 'Tapola & Koyna Backwaters',
+    rating: 1,
+    user_label: 'Kayaker',
+    comment: 'Scenic reservoir with zero congestion. Relaxing boat ride and fresh strawberries without the crowds.',
+    timestamp: '2 hrs ago',
+    geofence_verified: true
+  }
+];
+
+export const INITIAL_TRIP_PLANS: TripPlan[] = [
+  {
+    id: 'trip-sah-101',
+    user_id: 'CITIZEN-GUEST-01',
+    destinations: ['BHA', 'MAT'],
+    dates: {
+      start: '2026-09-12',
+      end: '2026-09-14'
+    },
+    budget_band: '₹₹',
+    group_type: 'friends',
+    itinerary: [
+      {
+        dayNumber: 1,
+        date: '2026-09-12',
+        destinationId: 'BHA',
+        destinationName: 'Bhandardara Serene Haven',
+        morningActivity: 'Early morning scenic drive via Igatpuri; sunrise stop at Wilson Dam.',
+        afternoonActivity: 'Lakeside picnic and Arthur lake row-boating away from tourists.',
+        eveningActivity: 'Firefly trail night walk & camp dinner by the water.',
+        recommendedLodging: 'MTDC Resort Bhandardara (Verified Eco-Partner)',
+        estimatedCrowdLevel: 'OPTIMAL',
+        transitTip: 'Take NH-160 to avoid heavy Mumbai-Pune expressway choke.'
+      },
+      {
+        dayNumber: 2,
+        date: '2026-09-13',
+        destinationId: 'MAT',
+        destinationName: 'Matheran Eco-Zone',
+        morningActivity: 'Drive to Dasturi park base; walk or pony ride up Charlotte lake.',
+        afternoonActivity: 'Panoramic vistas from Echo Point and Louisa Point clifftops.',
+        eveningActivity: 'Sunset at Panorama Point; heritage marketplace street dinner.',
+        recommendedLodging: 'The Verandah in the Forest (Heritage Bungalow)',
+        estimatedCrowdLevel: 'OPTIMAL',
+        transitTip: 'Vehicles must park at Dasturi Point for zero-pollution zone.'
+      }
+    ],
+    totalCo2SavedKg: 24.8,
+    created_at: '2026-09-04T10:00:00Z'
+  }
+];
+
+export const INITIAL_GREEN_PASSES: GreenPass[] = [
+  {
+    id: 'gp-pass-8821',
+    user_id: 'CITIZEN-GUEST-01',
+    trip_plan_id: 'trip-sah-101',
+    original_spot_id: 'LON',
+    original_spot_name: 'Lonavala & Khandala',
+    twin_spot_id: 'BHA',
+    twin_spot_name: 'Bhandardara Serene Haven',
+    distance_delta_km: 82,
+    co2_saved_kg: 18.5,
+    geofence_verified: true,
+    issued_at: '2026-09-04T10:15:00Z',
+    code: 'GREEN-YATRA-BHA-25',
+    status: 'active',
+    discountPct: 25,
+    operatorName: 'Sahyadri Rural Tourism Collective'
+  }
+];
 
 interface CorridorStore {
   // Authentication & Stakeholder Identity
@@ -38,6 +180,7 @@ interface CorridorStore {
   setAuthModalOpen: (open: boolean, targetRole?: UserRole) => void;
   loginUser: (user: AuthUser) => void;
   logoutUser: () => void;
+  updateUserProfile: (profile: Partial<AuthUser>) => void;
 
   // Localization
   language: Language;
@@ -93,6 +236,18 @@ interface CorridorStore {
   lastRerouteNotice: string | null;
   clearRerouteNotice: () => void;
   
+  // Community Check-ins (§3.1, §7)
+  checkIns: CheckIn[];
+  addCheckIn: (checkIn: Omit<CheckIn, 'id' | 'timestamp'>) => void;
+
+  // Saved Trip Plans & Green Passes (§4.4, §7)
+  tripPlans: TripPlan[];
+  addTripPlan: (plan: TripPlan) => void;
+  deleteTripPlan: (id: string) => void;
+  greenPasses: GreenPass[];
+  addGreenPass: (pass: GreenPass) => void;
+  redeemGreenPass: (code: string) => void;
+
   // Quick Simulation Scenarios
   activeScenario: PresetScenario;
   applyPresetScenario: (scenario: PresetScenario) => void;
@@ -156,6 +311,46 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
     });
   },
 
+  updateUserProfile: (profile) => {
+    const updated = { ...get().currentUser, ...profile };
+    try {
+      localStorage.setItem('ecoroute_auth_user', JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+    set({ currentUser: updated });
+  },
+
+  checkIns: INITIAL_CHECKINS,
+  addCheckIn: (checkInData) => {
+    const newCheckIn: CheckIn = {
+      ...checkInData,
+      id: `chk-${Date.now()}`,
+      timestamp: 'Just now'
+    };
+    set({ checkIns: [newCheckIn, ...get().checkIns] });
+  },
+
+  tripPlans: INITIAL_TRIP_PLANS,
+  addTripPlan: (plan) => {
+    set({ tripPlans: [plan, ...get().tripPlans] });
+  },
+  deleteTripPlan: (id) => {
+    set({ tripPlans: get().tripPlans.filter(p => p.id !== id) });
+  },
+
+  greenPasses: INITIAL_GREEN_PASSES,
+  addGreenPass: (pass) => {
+    set({ greenPasses: [pass, ...get().greenPasses] });
+  },
+  redeemGreenPass: (code) => {
+    set({
+      greenPasses: get().greenPasses.map(p =>
+        p.code === code ? { ...p, status: 'redeemed' } : p
+      )
+    });
+  },
+
   language: 'en',
   setLanguage: (language) => set({ language }),
 
@@ -205,7 +400,7 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
   fetchLiveBackendFeed: async () => {
     set({ liveBackendStatus: 'syncing' });
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/destinations/live', { signal: AbortSignal.timeout(3500) });
+      const response = await fetch('http://127.0.0.1:8000/api/destinations/live', { signal: AbortSignal.timeout(6000) });
       if (!response.ok) throw new Error('Backend HTTP error');
       const data = await response.json();
       
@@ -229,7 +424,7 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
 
       // Also sync active official advisories from backend gazette
       try {
-        const advRes = await fetch('http://127.0.0.1:8000/api/advisories', { signal: AbortSignal.timeout(2000) });
+        const advRes = await fetch('http://127.0.0.1:8000/api/advisories', { signal: AbortSignal.timeout(5000) });
         if (advRes.ok) {
           const advData = await advRes.json();
           if (advData && Array.isArray(advData.advisories) && advData.advisories.length > 0) {

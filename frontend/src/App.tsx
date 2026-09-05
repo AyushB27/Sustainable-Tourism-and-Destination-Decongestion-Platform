@@ -1,54 +1,50 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, Link } from 'react-router-dom';
 import { useCorridorStore } from './store/useCorridorStore';
 import { Navbar } from './components/common/Navbar';
-import { TouristView } from './components/tourist/TouristView';
+import { AuthModal } from './components/auth/AuthModal';
+import { AiHelplineBot } from './components/common/AiHelplineBot';
+
+// Pages
+import { LandingPage } from './pages/LandingPage';
+import { DiscoverPage } from './pages/DiscoverPage';
+import { SearchResultsPage } from './pages/SearchResultsPage';
+import { RegionPage } from './pages/RegionPage';
+import { SpotPage } from './pages/SpotPage';
+import { TripPlannerPage } from './pages/TripPlannerPage';
+import { SavedTripDetailPage } from './pages/SavedTripDetailPage';
+import { MyTripsPage } from './pages/MyTripsPage';
+import { AccountPage } from './pages/AccountPage';
+import { AdvisoriesPage } from './pages/AdvisoriesPage';
+import { AuthorityCommandPage } from './pages/AuthorityCommandPage';
+import { ProviderConsolePage } from './pages/ProviderConsolePage';
 import { AuthorityView } from './components/authority/AuthorityView';
 import { ProviderView } from './components/provider/ProviderView';
 import { DevPortal } from './components/developer/DevPortal';
-import { SpotPage } from './components/spot/SpotPage';
-import { AuthModal } from './components/auth/AuthModal';
-import { AiHelplineBot } from './components/common/AiHelplineBot';
+
 import { 
   Compass, 
   ShieldAlert, 
-  Building2,
   ExternalLink,
   Lock,
-  Code2
+  Code2,
+  Sparkles,
+  Calendar,
+  User
 } from 'lucide-react';
 
-const SpotRedirect: React.FC = () => {
+/** Redirect helper for legacy/provisional paths */
+function SpotRedirect() {
   const { spotId } = useParams<{ spotId: string }>();
   return <Navigate to={`/spot/${spotId || ''}`} replace />;
-};
+}
 
 export function App() {
-  const navigate = useNavigate();
   const { 
-    role, 
-    requestRoleChange, 
     currentUser, 
     setAuthModalOpen,
     fetchLiveBackendFeed 
   } = useCorridorStore();
-
-  const handleRoleNav = (targetRole: 'tourist' | 'authority' | 'provider' | 'developer') => {
-    requestRoleChange(targetRole);
-    if (targetRole === 'tourist') {
-      navigate('/');
-    } else if (targetRole === 'authority') {
-      if (currentUser.role === 'authority' && currentUser.isAuthenticated) {
-        navigate('/authority');
-      }
-    } else if (targetRole === 'provider') {
-      if (currentUser.role === 'provider' && currentUser.isAuthenticated) {
-        navigate('/provider');
-      }
-    } else if (targetRole === 'developer') {
-      navigate('/dev');
-    }
-  };
 
   // Automatic on-load sync with Python backend sensor pipeline
   useEffect(() => {
@@ -74,33 +70,41 @@ export function App() {
       {/* 24x7 AI Tourism Helpline Assistant Widget */}
       <AiHelplineBot />
 
-      {/* Main Content View Container with Canonical Route Handling */}
+      {/* Main Content Router */}
       <main className="flex-1 pb-10">
         <Routes>
-          <Route path="/" element={
-            role === 'tourist' ? <TouristView /> :
-            role === 'authority' ? <AuthorityView /> :
-            role === 'provider' ? <ProviderView /> :
-            <DevPortal />
-          } />
-          {/* Canonical Spot Page (Role-Aware: Appends Authority Controls if role === 'authority') */}
+          {/* 1. Landing & Search */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/region/:type/:value" element={<RegionPage />} />
+
+          {/* 2. Canonical Destination Spot Page (§3.1, §3.2) */}
           <Route path="/spot/:spotId" element={<SpotPage />} />
 
-          {/* Authority Routes */}
+          {/* 3. Trip Planner & Itinerary */}
+          <Route path="/plan/new" element={<TripPlannerPage />} />
+          <Route path="/plan/:tripId" element={<SavedTripDetailPage />} />
+          <Route path="/trips" element={<MyTripsPage />} />
+
+          {/* 4. Account & Advisories */}
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/advisories" element={<AdvisoriesPage />} />
+
+          {/* 5. Stakeholder Consoles */}
           <Route path="/authority" element={<AuthorityView />} />
           <Route path="/authority/spot/:spotId" element={<SpotRedirect />} />
           <Route path="/authority/advisories" element={<AuthorityView />} />
           <Route path="/authority/policy-simulator" element={<AuthorityView />} />
           <Route path="/authority/impact" element={<AuthorityView />} />
+          <Route path="/authority/overview" element={<AuthorityCommandPage />} />
 
-          {/* Provider Routes */}
           <Route path="/provider" element={<ProviderView />} />
+          <Route path="/provider/listings" element={<ProviderConsolePage />} />
           <Route path="/provider/spot/:spotId" element={<SpotRedirect />} />
 
-          {/* Developer Production Diagnostics */}
+          {/* 6. Developer & Fallback */}
           <Route path="/dev" element={<DevPortal />} />
-
-          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -136,12 +140,49 @@ export function App() {
                 Quick Navigation
               </h4>
               <ul className="space-y-1.5 text-[11px] text-slate-300">
-                <li><button onClick={() => handleRoleNav('tourist')} className="hover:text-white hover:underline text-left">Citizen Travel Advisory & Green Yatra</button></li>
-                <li><button onClick={() => handleRoleNav('authority')} className="hover:text-white hover:underline text-left">District GIS Emergency Command</button></li>
-                <li><button onClick={() => handleRoleNav('provider')} className="hover:text-white hover:underline text-left">Homestay & Tour Operator Registry</button></li>
-                <li><button onClick={() => handleRoleNav('developer')} className="text-cyan-400 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Developer Production Portal <Code2 className="w-3 h-3" /></button></li>
-                <li><button onClick={() => setAuthModalOpen(true)} className="text-amber-300 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Stakeholder Portal Gateway <Lock className="w-3 h-3" /></button></li>
-                <li><a href="https://tourism.gov.in" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">Ministry of Tourism <ExternalLink className="w-3 h-3 text-slate-400" /></a></li>
+                <li>
+                  <Link to="/discover" className="hover:text-white hover:underline flex items-center gap-1">
+                    <span>Algorithmic Discover Feed</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/plan/new" className="hover:text-white hover:underline flex items-center gap-1">
+                    <span>Smart Trip Planner & Green Pass</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/advisories" className="hover:text-white hover:underline flex items-center gap-1">
+                    <span>Official Gazette Advisories</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/authority" className="hover:text-white hover:underline flex items-center gap-1">
+                    <span>District GIS Emergency Command</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/provider" className="hover:text-white hover:underline flex items-center gap-1">
+                    <span>Homestay & Operator Console</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/dev" className="text-cyan-400 hover:text-white hover:underline font-bold flex items-center gap-1">
+                    <span>Developer Audit Portal</span> <Code2 className="w-3 h-3" />
+                  </Link>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setAuthModalOpen(true)} 
+                    className="text-amber-300 hover:text-white hover:underline text-left font-bold flex items-center gap-1"
+                  >
+                    <span>Stakeholder Portal Gateway</span> <Lock className="w-3 h-3" />
+                  </button>
+                </li>
+                <li>
+                  <a href="https://tourism.gov.in" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">
+                    <span>Ministry of Tourism</span> <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -155,6 +196,11 @@ export function App() {
                 <li>National Emergency Response: <strong className="text-rose-400">112</strong></li>
                 <li>Right to Information (RTI) Disclosures</li>
                 <li>CPGRAMS Citizen Grievance Portal</li>
+                <li className="pt-2">
+                  <span className="text-[10px] text-slate-400">
+                    Logged in as: <strong className="text-slate-200">{currentUser.name}</strong> ({currentUser.role})
+                  </span>
+                </li>
               </ul>
             </div>
           </div>
@@ -181,53 +227,47 @@ export function App() {
         </div>
       </footer>
 
-      {/* Mobile Bottom Quick-Action Role Switcher */}
+      {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gov-navy border-t border-slate-700 shadow-2xl px-2 py-1.5 flex items-center justify-around">
-        <button
-          onClick={() => handleRoleNav('tourist')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold transition ${
-            role === 'tourist' ? 'text-amber-300 bg-slate-800' : 'text-slate-300 hover:text-white'
-          }`}
+        <Link
+          to="/"
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition"
         >
           <Compass className="w-4 h-4 mb-0.5" />
-          <span>Citizen Portal</span>
-        </button>
+          <span>Home</span>
+        </Link>
 
-        <button
-          onClick={() => handleRoleNav('authority')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold transition ${
-            role === 'authority' ? 'text-amber-300 bg-slate-800' : 'text-slate-300 hover:text-white'
-          }`}
+        <Link
+          to="/discover"
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition"
+        >
+          <Sparkles className="w-4 h-4 mb-0.5" />
+          <span>Discover</span>
+        </Link>
+
+        <Link
+          to="/plan/new"
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition"
+        >
+          <Calendar className="w-4 h-4 mb-0.5" />
+          <span>Plan</span>
+        </Link>
+
+        <Link
+          to="/authority"
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition"
         >
           <ShieldAlert className="w-4 h-4 mb-0.5" />
-          <span className="flex items-center gap-1">
-            District GIS
-            {currentUser.role !== 'authority' && <Lock className="w-2.5 h-2.5 text-slate-400" />}
-          </span>
-        </button>
+          <span>Authority</span>
+        </Link>
 
-        <button
-          onClick={() => handleRoleNav('provider')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold transition ${
-            role === 'provider' ? 'text-amber-300 bg-slate-800' : 'text-slate-300 hover:text-white'
-          }`}
+        <Link
+          to="/account"
+          className="flex flex-col items-center justify-center py-1 px-2 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition"
         >
-          <Building2 className="w-4 h-4 mb-0.5" />
-          <span className="flex items-center gap-1">
-            Providers
-            {currentUser.role !== 'provider' && <Lock className="w-2.5 h-2.5 text-slate-400" />}
-          </span>
-        </button>
-
-        <button
-          onClick={() => handleRoleNav('developer')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-lg text-[10px] font-bold transition ${
-            role === 'developer' ? 'text-cyan-300 bg-slate-800' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Code2 className="w-4 h-4 mb-0.5" />
-          <span>Dev</span>
-        </button>
+          <User className="w-4 h-4 mb-0.5" />
+          <span>Account</span>
+        </Link>
       </nav>
     </div>
   );

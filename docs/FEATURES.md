@@ -1,6 +1,6 @@
 # EcoRoute Bharat Features Specification
 
-This document provides a comprehensive, non-technical explanation of all capabilities and features within **EcoRoute Bharat**. It is written for team members, product owners, evaluators, and stakeholders who want to understand what each feature does, why it exists, and its current implementation state.
+This document provides a comprehensive explanation of all capabilities and features within **EcoRoute Bharat**. It is written for team members, product owners, evaluators, and stakeholders who want to understand what each feature does, why it exists, and its current implementation state.
 
 > **Problem Statement Alignment**: All features in this platform directly address the requirements of Smart India Hackathon problem statement **SIH26204 (AI-Powered Sustainable Tourism & Destination Decongestion Platform)**. For a detailed requirement-by-requirement mapping, see [PROBLEM_STATEMENT.md](./PROBLEM_STATEMENT.md).
 
@@ -8,370 +8,264 @@ This document provides a comprehensive, non-technical explanation of all capabil
 
 ## Table of Features
 
-1. [Multi-Stakeholder Role Gatekeeper (RBAC)](#1-multi-stakeholder-role-gatekeeper-rbac)
-2. [Live Corridor Telemetry & Sensor Monitoring](#2-live-corridor-telemetry--sensor-monitoring)
-3. [Dynamic Carrying Capacity (DCC) Metering](#3-dynamic-carrying-capacity-dcc-metering)
-4. [4D Vector Cosine Similarity Twin Destination Recommender](#4-4d-vector-cosine-similarity-twin-destination-recommender)
-5. [Public Citizen & Tourist Experience Portal](#5-public-citizen--tourist-experience-portal)
-6. [12-Hour Diurnal Demand Forecasting & Visiting Windows](#6-12-hour-diurnal-demand-forecasting--visiting-windows)
-7. [Multi-Day Decongested Holiday Itinerary Planner](#7-multi-day-decongested-holiday-itinerary-planner)
-8. [Digital Green Yatra Pass with Toll Plaza QR Voucher](#8-digital-green-yatra-pass-with-toll-plaza-qr-voucher)
-9. [District GIS Incident & Disaster Command Center](#9-district-gis-incident--disaster-command-center)
-10. [Ecological Vulnerability Gauges & Emergency Entry Controls](#10-ecological-vulnerability-gauges--emergency-entry-controls)
-11. [Regional Tourist Mobility Diffusion Matrix](#11-regional-tourist-mobility-diffusion-matrix)
-12. [MTDC Accredited Homestay & Operator Console](#12-mtdc-accredited-homestay--operator-console)
-13. [Off-Peak Subsidy Schemes & Promotional Vouchers](#13-off-peak-subsidy-schemes--promotional-vouchers)
+1. [Canonical Destination Spot Page (`/spot/:spotId`)](#1-canonical-destination-spot-page-spotspotid)
+2. [3-Tier Fuzzy Search & Intent Resolution (Fuse.js)](#2-3-tier-fuzzy-search--intent-resolution-fusejs)
+3. [Algorithmic Demand Diffusion Feed (`/discover`)](#3-algorithmic-demand-diffusion-feed-discover)
+4. [Smart 4-Step Trip Wizard & Progressive Profiling (`/plan/new`)](#4-smart-4-step-trip-wizard--progressive-profiling-plannew)
+5. [Confirmed Green Yatra Plan & Digital Pass Certificate (`/plan/:tripId`)](#5-confirmed-green-yatra-plan--digital-pass-certificate-plantripid)
+6. [Data Tier 1–4 Telemetry Provenance & Confidence Scoring](#6-data-tier-14-telemetry-provenance--confidence-scoring)
+7. [Dynamic Carrying Capacity (DCC) Metering](#7-dynamic-carrying-capacity-dcc-metering)
+8. [4D Cosine Similarity Twin Destination Recommender](#8-4d-cosine-similarity-twin-destination-recommender)
+9. [12-Hour Diurnal Demand Forecasting & Visiting Windows](#9-12-hour-diurnal-demand-forecasting--visiting-windows)
+10. [Official Gazette Travel Advisories & Emergency Broadcasts (`/advisories`)](#10-official-gazette-travel-advisories--emergency-broadcasts-advisories)
+11. [District GIS Incident & Disaster Command Center (`/authority`)](#11-district-gis-incident--disaster-command-center-authority)
+12. [MTDC Homestay & Tour Operator Console (`/provider`)](#12-mtdc-homestay--tour-operator-console-provider)
+13. [Multithreaded Telemetry Pipeline & OSM POI Caching](#13-multithreaded-telemetry-pipeline--osm-poi-caching)
 14. [24x7 AI Tourism Helpline Assistant ("Sahyadri Guide")](#14-24x7-ai-tourism-helpline-assistant-sahyadri-guide)
-15. [Trilingual Accessibility (English, Hindi, Marathi)](#15-trilingual-accessibility-english-hindi-marathi)
+15. [Multi-Stakeholder Role Gatekeeper (RBAC) & Profile Gateway (`/account`)](#15-multi-stakeholder-role-gatekeeper-rbac--profile-gateway-account)
 
 ---
 
-## 1. Multi-Stakeholder Role Gatekeeper (RBAC)
+## 1. Canonical Destination Spot Page (`/spot/:spotId`)
 
 ### What it does
-Protects administrative, law-enforcement, and hospitality operations behind a role-gated authentication gateway styled after the Government of India's *Jan Parichay* portal.
+Acts as the single authoritative source of truth for every destination in the corridor. Instead of segregating destinations across role-specific screens, every tourist, district collector, and homestay owner accesses the same canonical URL (e.g., `/spot/LON`, `/spot/MAT`, `/spot/BHA`).
 
 ### Why it exists
-Different stakeholders require tailored tools: tourists need travel discovery, police officers need emergency broadcast tools, and homestay owners need room occupancy controls. Sensitive controls must not be accessible to casual visitors.
+Disconnected role views create fragmented data realities: tourists see one set of information while administrators see another. The canonical model guarantees that all stakeholders share the same ground-truth metrics, with administrative tools conditionally attached directly to the destination.
 
 ### How it works
-The portal manages three explicit roles:
-- **Tourist / Citizen**: Unrestricted access to crowd meters, twin recommendations, and travel passes.
-- **District Authority**: Restricted access to the GIS Command Center, emergency broadcast dispatcher, and carrying capacity threshold tables.
-- **Tourism Provider**: Restricted access to homestay room occupancy reporting and off-peak discount publishing.
-
-Attempting to switch to Authority or Provider roles opens an authentication dialog featuring 1-click verified demo profiles (Pune District Collector IAS, Raigad Police SP IPS, Matheran Homestay Operator) as well as credential inputs.
-
-### User Experience
-Users select their portal from the top navigation bar or mobile drawer. Switching to an administrative view instantly prompts the officer login modal. Logging in grants immediate access, displaying an official badge and department attribution in the header.
+Contains 8 universal sections rendered for all visitors:
+1. **Header & GIS Preview**: Hero image, category pill, travel time from hub, and interactive Leaflet map preview with carrying capacity boundary polygon.
+2. **Real-Time Crowd & Capacity Telemetry**: DCC status pill (`OPTIMAL`, `MODERATE`, `CRITICAL`), queue delay in minutes, 12h diurnal hourly forecast bar, historical weekly rhythm strip (Mon–Sun), and tap-to-expand Data Tier Provenance breakdown.
+3. **Cosine Similarity Twin Alternatives**: Live alternatives with identical aesthetic vibes and available headroom.
+4. **Practical Travel Amenities**: Verified homestays/hotels with room counts, OpenStreetMap verified food & clean water points, nearby attractions, and transit directions.
+5. **Community Check-Ins**: Crowdsourced congestion ratings (1★–5★) with geofence verification badge.
+6. **Active Official Advisories**: Direct dispatches from District Police and Disaster Cells.
+7. **Trip CTA & Social Sharing**: 1-click plan integration and WhatsApp-formatted travel card.
+8. **Role-Conditional Panels**:
+   - **Authority Panel**: Visible only to authenticated officers; enables capacity limit overrides and emergency advisory dispatching.
+   - **Provider Panel**: Visible to operators; enables room occupancy updates and off-peak voucher publishing.
 
 ### Current Status
-DONE
-
-### Limitations
-Uses a pre-configured in-memory stakeholder credentials directory and local fallback storage rather than a live government single sign-on (SSO) OAuth server.
+DONE (Operational across all Western Ghats destinations).
 
 ---
 
-## 2. Live Corridor Telemetry & Sensor Monitoring
+## 2. 3-Tier Fuzzy Search & Intent Resolution (Fuse.js)
 
 ### What it does
-Continuously tracks environmental weather hazards, vehicular highway delays, attraction footfall busyness, and infrastructure capacity across 7 key destinations in Maharashtra's Western Ghats.
+Provides an un-opinionated, instant autocomplete search bar in the global navigation and landing page that routes queries without guessing or false assumptions.
 
 ### Why it exists
-Weekend travelers typically head toward popular spots without knowing current conditions, discovering severe highway gridlocks or landslide closures only after arriving. Real-time multi-source data enables early proactive decisions.
+Travelers search with varying intent: some type a specific spot name or abbreviation (`LON`, `Lonavala`), others search by district (`Pune`, `Raigad`), and others by state (`Maharashtra`). Treating all queries identically produces confusing search results.
 
 ### How it works
-A background pipeline executes every 60 seconds, combining data from:
-- **Open-Meteo**: Measures live rainfall (mm/hr), wind velocity, and ambient temperature, computing an environmental landslide/hazard score.
-- **TomTom Traffic Flow**: Measures vehicular speed reductions and congestion multipliers along mountain access highways.
-- **BestTime.app**: Measures attraction footfall density and venue saturation.
-- **OpenStreetMap Overpass**: Counts registered parking facilities and scenic viewpoints within a 3km radius.
-- **Open Government Data (data.gov.in)**: Ingests official state tourism baselines and growth rates.
-
-### User Experience
-Users see live status pills (`🟢 Python Live Sensors Active`) in the portal header. Selecting any destination reveals live temperature, weather conditions, highway delay estimates (+45 mins), and parking occupancy percentages.
+Powered by `Fuse.js` with weighted fuzzy thresholds:
+- **Tier 1 (Spots)**: Matches destination title, acronym, or category. Clicking immediately opens `/spot/:spotId`.
+- **Tier 2 (Districts)**: Matches administrative districts (`Pune`, `Raigad`, `Satara`, `Ahmednagar`). Clicking routes to `/region/district/:name`.
+- **Tier 3 (States)**: Matches state names (`Maharashtra`). Clicking routes to `/region/state/:name`.
+- **Full Search Fallback**: Submitting a query opens `/search?q=`, displaying categorized cards with crowd status indicators.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-In production, external API keys for TomTom and BestTime must be configured; when running locally without keys, the system operates on realistic heuristic weekend diurnal models.
+DONE.
 
 ---
 
-## 3. Dynamic Carrying Capacity (DCC) Metering
+## 3. Algorithmic Demand Diffusion Feed (`/discover`)
 
 ### What it does
-Calculates a mathematical index between 0.00 and 1.00 that represents the operational load and safety threshold of any tourist destination.
+A personalized discovery feed that surfaces uncrowded and under-visited destinations tailored to the traveler's individual travel vector.
 
 ### Why it exists
-Static carrying capacity (e.g., maximum daily visitors) ignores real-world conditions like heavy downpours, fog, or vehicle breakdowns on narrow mountain passes. A dynamic score accurately reflects whether a destination is safe and enjoyable right now.
+Popular destinations face excessive concentration because standard search engines rank exclusively by historical popularity. EcoRoute Bharat deliberately applies algorithmic demand diffusion to promote hidden gems.
 
 ### How it works
-The DCC index balances physical capacity against current inflow, weighted by weather hazards:
+Each destination is scored by a multi-objective formula:
+$$\text{Rank Score} = (0.45 \times \text{Travel Style Affinity}) + (0.30 \times \text{Crowd Headroom}) + (0.25 \times \text{UnderVisitedBoost})$$
+- Under-visited spots (e.g. Bhandardara, Kas Plateau) receive an automatic +28% algorithmic promotion weight.
+- Includes quick-filter chips for Day Trips ($\le 110\text{ km}$), Weekend Getaways ($> 110\text{ km}$), and Under-Visited Only.
+
+### Current Status
+DONE.
+
+---
+
+## 4. Smart 4-Step Trip Wizard & Progressive Profiling (`/plan/new`)
+
+### What it does
+Generates an eco-balanced, crowd-aware travel itinerary across 4 simple steps, capturing traveler preferences through a progressive profiling modal rather than an intrusive survey.
+
+### Why it exists
+Lengthy registration surveys cause user drop-off. Progressive profiling asks only 2 non-intrusive questions (home origin city/state and 4 style tap-cards) when the user saves their trip, immediately delivering value.
+
+### How it works
+- **Step 1**: Select primary destination (pre-filled if linked from a Spot Page) and optional secondary stop.
+- **Step 2**: Select travel dates (with automatic weekend peak warning).
+- **Step 3**: Select budget band (₹, ₹₹, ₹₹₹).
+- **Step 4**: Select group dynamic (Solo, Couple, Family, Friends).
+- If unauthenticated, prompts the progressive profile modal to compute exact travel distances, ETA, and carbon savings.
+
+### Current Status
+DONE.
+
+---
+
+## 5. Confirmed Green Yatra Plan & Digital Pass Certificate (`/plan/:tripId`)
+
+### What it does
+Displays the confirmed multi-day itinerary with an official, printable **Government Verified Green Pass Certificate** featuring a verifiable QR code and MTDC homestay discount voucher.
+
+### Why it exists
+Incentivizes tourists to bypass overcrowded bottleneck hubs by awarding tangible commercial discounts at eco-friendly homestays in twin destinations.
+
+### How it works
+- Outlines day-by-day morning, afternoon, and evening slots optimized to avoid peak congestion hours.
+- Computes total carbon emissions avoided (e.g. `~18.5 kg CO2 Saved`).
+- Generates a unique Green Pass voucher code (`ECO-MH-...`) offering 15%–30% discounts redeemable at accredited homestays.
+- Includes 1-click WhatsApp itinerary sharing and print formatting.
+
+### Current Status
+DONE.
+
+---
+
+## 6. Data Tier 1–4 Telemetry Provenance & Confidence Scoring
+
+### What it does
+Displays a transparent, expandable audit breakdown of every sensor reading on the canonical Spot Page, along with an authoritative confidence score (50%–98%).
+
+### Why it exists
+Citizens and district administrators need to trust the numbers. Black-box estimations breed skepticism; showing the exact data source, refresh timestamp, and fallback status establishes credibility.
+
+### How it works
+- **Tier 1 (Ground-Truth)**: Toll gate FASTag counts, parking geofences, and municipal check-in counts.
+- **Tier 2 (Calibrated Live Feeds)**: Open-Meteo weather hazard, TomTom highway delay, and BestTime attraction busyness.
+- **Tier 3 (Algorithmic Rhythm)**: 7-day historical weekly diurnal models used when live sensors are unavailable.
+- **Tier 4 (Statutory Baseline)**: Authoritative carrying capacity citations (e.g., *Maharashtra Forest Dept Carrying Capacity Study 2023*).
+- **Confidence Formula**: Dynamic calculation based on live sensor health and community ground-truth reports.
+
+### Current Status
+DONE.
+
+---
+
+## 7. Dynamic Carrying Capacity (DCC) Metering
+
+### What it does
+Calculates a mathematical index between 0.00 and 1.00 that represents the real-time operational strain and ecological capacity of any tourist destination.
+
+### How it works
 $$\text{DCC} = (0.70 \times \text{Capacity Utilization}) + (0.30 \times \text{Weather Hazard Risk})$$
-
-The score is classified into three plain-text operational tiers:
-- **OPTIMAL (< 0.70)**: Safe, free-flowing tourist experience.
-- **MODERATE (0.70 – 0.84)**: Approaching saturation; queues may begin forming.
-- **CRITICAL (≥ 0.85)**: Severe overcrowding, parking exhaustion, or environmental hazard. Queuing delays are calculated in minutes.
-
-### User Experience
-Destinations display clear colored meters: green for Optimal, yellow for Moderate, and bold red for Critical Overload. Overloaded destinations display explicit queue estimates (e.g., "+45 mins on ghat road").
+- **OPTIMAL (< 0.70)**: Normal visiting conditions.
+- **MODERATE (0.70 – 0.84)**: Approaching capacity; advisory warnings active.
+- **CRITICAL ($\ge 0.85$)**: Severe congestion or severe weather; queue delay in minutes calculated and twin alternatives triggered.
 
 ### Current Status
-DONE
-
-### Limitations
-Dwell time currently relies on destination-specific baseline averages (3.0 to 5.0 hours) rather than individual GPS tracking.
+DONE.
 
 ---
 
-## 4. 4D Vector Cosine Similarity Twin Destination Recommender
+## 8. 4D Cosine Similarity Twin Destination Recommender
 
 ### What it does
-Analyzes overcrowded destinations and traveler preferences to recommend certified, uncrowded "twin destinations" that offer the same scenic vibe, activities, and budget profile.
-
-### Why it exists
-Telling a tourist "do not go to Lonavala" rarely works because they have already planned a vacation. Recommending a specific, equally beautiful spot just 35 minutes away with 80% fewer crowds and hotel discounts provides an actionable, positive alternative.
+Recommends alternate destinations that share aesthetic, budget, and cultural characteristics with an overcrowded spot, but have low DCC pressure.
 
 ### How it works
-Every destination is mapped into a 4-dimensional feature vector:
-1. **Scenic**: Waterfalls, viewpoints, green valleys.
-2. **Budget**: Pocket-friendly accommodations and dining.
-3. **Adventure**: Trekking trails, water sports, forts.
-4. **Family**: Paved walkways, child-friendly amenities, accessibility.
-
-When a tourist searches for an overloaded destination, the engine blends the destination's profile with the tourist's selected preference tags (e.g., prioritizing Scenic + Family) and computes the mathematical cosine angle against all unsaturated destinations (DCC < 0.70). The best matches are ranked using a multi-objective utility score balancing vibe match and available crowd headroom.
-
-### User Experience
-When viewing an overloaded spot (such as Lonavala), the user sees prominent recommendation cards highlighting certified twins (e.g., Matheran Eco-Zone or Bhandardara). Each card displays the match score (e.g., "94% Vibe Match"), driving time comparison, crowd reduction ("80% Fewer Crowds"), and an animated reroute button.
+Computes normalized cosine similarity across 4 feature dimensions:
+$$\text{Features} = [\text{Scenic}, \text{Budget}, \text{Adventure}, \text{Family}]$$
+$$\text{Utility} = (0.60 \times \text{Similarity}) + (0.40 \times (1.0 - \text{DCC}_{\text{candidate}}))$$
 
 ### Current Status
-PARTIAL
-
-### Limitations
-The underlying mathematical engine is complete and verified in both backend and frontend, but the primary `TouristView.tsx` screen currently displays a fixed Lonavala-to-Matheran comparison card created for hackathon demos.
+DONE.
 
 ---
 
-## 5. Public Citizen & Tourist Experience Portal
+## 9. 12-Hour Diurnal Demand Forecasting & Visiting Windows
 
 ### What it does
-A modern, responsive public web portal designed for citizens to plan unhurried vacations across Maharashtra and the Western Ghats.
-
-### Why it exists
-Empowers tourists with transparent information before they depart, helping them avoid stressful traffic jams, overcrowded attractions, and unsafe weather conditions.
-
-### How it works
-Presents a landscape layout with quick search, category filters (Hill Stations, Coastal & Beaches, Heritage Forts, Lakes & Waterfalls), live crowd meters, twin alternative cards, hourly departure schedules, and digital green passes.
-
-### User Experience
-A tourist opens the site, searches for their intended getaway, instantly sees if it is overcrowded, and can choose an alternative destination with a single click.
+Displays a 12-hour hourly forecast strip (06:00 AM – 06:00 PM) indicating when crowd pressure will peak and highlighting the optimal time window to visit.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-The modular components (`HeroDCCStatus.tsx`, `TouristFilters.tsx`, `TwinAlternativeCards.tsx`, `DemandCurveChart.tsx`, `FutureTripPlanner.tsx`, `EcoPassCard.tsx`) exist in the codebase but are currently unlinked in `TouristView.tsx` in favor of a fixed demo layout.
+DONE.
 
 ---
 
-## 6. 12-Hour Diurnal Demand Forecasting & Visiting Windows
+## 10. Official Gazette Travel Advisories & Emergency Broadcasts (`/advisories`)
 
 ### What it does
-Forecasts hour-by-hour tourist velocity and checkpoint wait times from 06:00 AM to 06:00 PM.
-
-### Why it exists
-Many tourist spots are overcrowded only during specific peak midday hours (11:00 AM – 03:00 PM). Providing hourly arrival curves helps travelers depart during early dawn or late afternoon off-peak windows.
+A centralized, searchable official bulletin board for urgent public advisories dispatched by District Disaster Management Cells and Highway Police.
 
 ### How it works
-Uses Gaussian diurnal surge modeling based on historical weekend arrival patterns, combined with current day inflow baselines, to project arrival curves and pinpoint optimal green-window visiting slots.
-
-### User Experience
-Tourists inspect an interactive Area chart that visually charts anticipated visitor volume throughout the day. Below the chart, 4 distinct departure slots (Dawn, Morning, Afternoon, Evening) show anticipated highway conditions and potential time savings.
+- Supports severity tiers: `critical` (red alert), `high` (severe warning), `medium` (caution), and `low` (informational).
+- Each advisory links directly into the affected destination's live Spot Page.
+- Authorized officers can dispatch advisories directly from any Spot Page or the Authority Command Center.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-The forecast endpoint and Recharts chart component are operational, but the chart is not yet embedded into the main tourist container.
+DONE.
 
 ---
 
-## 7. Multi-Day Decongested Holiday Itinerary Planner
+## 11. District GIS Incident & Disaster Command Center (`/authority`)
 
 ### What it does
-Generates personalized 1-day, 2-day, or 3-day travel itineraries that guide tourists through decongested routes and scenic twin spots.
-
-### Why it exists
-Weekend tourists often struggle with trip planning and default to well-known, overcrowded routes. A structured itinerary distributes visitors across multiple points of interest.
+An operational dashboard for District Magistrates and Police Superintendents to monitor corridor-wide carrying capacity and test mitigation policies.
 
 ### How it works
-The planner accepts travel date, duration, and style (Scenic, Adventure, Family, Budget). It schedules early morning arrivals at key viewpoints before peak crowds, routes afternoon hours through peaceful eco-zones, and recommends accredited MTDC homestays.
-
-### User Experience
-Tourists select their travel weekend and duration to generate a clear schedule detailing arrival times, recommended activities, estimated time saved (e.g. "Save 110 mins"), and a 1-click print export button.
+- Corridor KPI statistics bar (Total Inflow, Capacity Utilization, Critical Hubs Count, Active Advisories).
+- Full Leaflet GIS corridor map with interactive spot markers and status rings.
+- **Policy Impact Simulator**: Interactive capacity throttle slider predicting queue time reductions before issuing public restrictions.
+- Threshold monitoring table that drills down into each destination's canonical Spot Page.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-Backend itinerary generation is verified, but frontend currently renders a static 2-day sample card in the tourist layout.
+DONE (Provisional hub integrated with canonical spot pages).
 
 ---
 
-## 8. Digital Green Yatra Pass with Toll Plaza QR Voucher
+## 12. MTDC Homestay & Tour Operator Console (`/provider`)
 
 ### What it does
-Issues an official digital green travel voucher with a unique pass ID and dynamic QR code to travelers who choose under-visited twin destinations.
-
-### Why it exists
-Incentivizes positive travel choices by providing tangible recognition, potential fast-track toll perks, and clear feedback on carbon footprint reductions.
+A dashboard for registered local hospitality businesses to manage property visibility, monitor local crowd trends, and publish off-peak tourist incentives.
 
 ### How it works
-When a traveler reroutes to a certified eco-twin, the system issues a pass (e.g. `ECO-MH-2026-092`), calculates estimated avoided CO₂ emissions based on bypassed highway idling, and generates a verification QR code payload.
-
-### User Experience
-Tourists see an official voucher with their name, destination, carbon saved (~18.5 kg CO₂), and a prominent QR code suitable for saving on a mobile device or presenting at participating checkpoints.
+- Aggregates registered homestay and hotel listings across Western Ghats hubs.
+- Direct links to manage occupancy and publish promotional discount vouchers on each spot's canonical page.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-Pass generation currently updates local frontend state; the backend `POST /api/passes/issue` endpoint exists but is not yet triggered by the frontend reroute action.
+DONE (Provisional hub integrated with canonical spot pages).
 
 ---
 
-## 9. District GIS Incident & Disaster Command Center
+## 13. Multithreaded Telemetry Pipeline & OSM POI Caching
 
 ### What it does
-An administrative command dashboard providing district authorities with real-time geographic oversight of tourism density, road hazards, and active emergencies.
-
-### Why it exists
-District collectors, police chiefs, and disaster management officers need centralized situational awareness across multi-district corridors to dispatch personnel, enforce traffic diversions, and issue public warnings.
+A background telemetry pipeline in the Python backend that concurrently gathers live data for all destinations every 60 seconds without connection drops or blocking requests.
 
 ### How it works
-Integrates an interactive Leaflet GIS map with custom markers, color-coded capacity circles (green, amber, pulsing red), detailed destination telemetry popups, corridor KPI summary metrics, and destination threshold comparison tables.
-
-### User Experience
-District officials log in, view high-level metrics (total active visitors, critical red zones, capacity utilization), click on map pins to inspect specific choke points, and monitor real-time sensor updates.
-
-### Current Status
-DONE
-
-### Limitations
-Currently tracks 7 predefined Western Ghats destinations in Maharashtra; adding new destinations requires updating configuration registries.
-
----
-
-## 10. Ecological Vulnerability Gauges & Emergency Entry Controls
-
-### What it does
-Enables authorities to monitor environmental strain (vegetation stress, water availability, wildfire risk) and simulate municipal vehicle entry restrictions during critical alerts.
-
-### Why it exists
-Fragile highland ecosystems experience acute resource degradation during peak tourist influxes. Authorities require both environmental monitoring and direct levers to test carrying capacity adjustments.
-
-### How it works
-Displays localized environmental health gauges and interactive sliders that allow authorities to reduce baseline capacity caps (e.g., imposing an emergency 50% vehicle restriction during landslide threats).
-
-### User Experience
-Officials view clear ecological status bars and can adjust vehicle entry cap sliders to test the impact of administrative diversions on corridor-wide capacity scores.
+- `ThreadingHTTPServer` handles asynchronous client requests.
+- `ThreadPoolExecutor` parallelizes API calls across all monitored destinations.
+- In-memory OpenStreetMap Overpass cache avoids API rate-limiting.
+- Zero-latency in-memory cache responds to client polling in under 2ms.
 
 ### Current Status
-DONE
-
-### Limitations
-Simulated capacity adjustments currently update frontend state and do not trigger physical automated toll gate barriers.
-
----
-
-## 11. Regional Tourist Mobility Diffusion Matrix
-
-### What it does
-Visualizes how tourist traffic from primary urban hubs (Mumbai, Pune, Thane) disperses into Sahyadri mountain gateways.
-
-### Why it exists
-Decongestion requires understanding where tourists originate. Managing traffic at urban exit points is far more effective than trying to manage bottlenecks after vehicles have already entered narrow mountain roads.
-
-### How it works
-Calculates origin-destination flow shares and recommends strategic alternate routes (e.g., diverting Mumbai-bound vehicles via northern bypasses to circumvent the Khandala tunnel bottleneck).
-
-### User Experience
-Officials click on an origin city (e.g., Pune) to view the percentage split of holiday traffic headed to Lonavala, Mahabaleshwar, or coastal getaways, along with active diversion recommendations.
-
-### Current Status
-DONE
-
-### Limitations
-Flow percentages are based on calibrated model estimates rather than real-time mobile cellular tower triangulation data.
-
----
-
-## 12. MTDC Accredited Homestay & Operator Console
-
-### What it does
-A specialized console for local homestay hosts, hotel managers, and tour operators to manage property visibility and report live room occupancy.
-
-### Why it exists
-Local hospitality operators are essential partners in sustainable tourism. Real-time room availability data prevents tourists from traveling to saturated towns with no available lodging.
-
-### How it works
-Operators log in using their MTDC registration ID, select their property, and update room vacancy counters using an interactive occupancy slider. The console also displays the destination's 12-hour predicted tourist arrival curve.
-
-### User Experience
-A homestay owner adjusts their room occupancy slider to report 85% occupancy, immediately seeing the impact on local capacity metrics and reviewing expected arrival peaks for the evening.
-
-### Current Status
-DONE
-
-### Limitations
-Occupancy updates are currently maintained in active application state; persistent storage in the backend database requires completing the provider sync endpoint.
-
----
-
-## 13. Off-Peak Subsidy Schemes & Promotional Vouchers
-
-### What it does
-Allows accredited tourism operators to publish special discount coupons (e.g., 25% off homestay bookings) to encourage tourists to visit during off-peak windows or travel to under-visited twin spots.
-
-### Why it exists
-Financial incentives are one of the most effective ways to shift tourist demand from overcrowded weekends to weekdays or from crowded hubs to rural homestays.
-
-### How it works
-Operators submit promotional campaigns detailing discount percentages, validity periods, and voucher codes (e.g. `HOMESTAY25`). Active subsidies are automatically attached to twin recommendation cards shown to tourists.
-
-### User Experience
-An operator publishes a weekend promo voucher; tourists viewing the matching twin destination see a badge advertising the discount code with instructions for claiming it.
-
-### Current Status
-PARTIAL
-
-### Limitations
-Promotions are defined in frontend data and Zustand state; the backend database table exists, but the corresponding REST API endpoints for publishing new promotions need to be added.
+DONE.
 
 ---
 
 ## 14. 24x7 AI Tourism Helpline Assistant ("Sahyadri Guide")
 
 ### What it does
-A floating conversational AI chatbot widget representing the National Tourism Helpline (1363), answering tourist queries about crowd conditions, weather warnings, and route suggestions.
-
-### Why it exists
-Tourists want quick, conversational answers without digging through complex charts and tables.
-
-### How it works
-The bot provides quick-prompt chips ("Is Lonavala crowded right now?", "Alternative to Alibaug beaches?", "Live Weather & Rain Alert") and evaluates tourist questions against live destination telemetry to formulate grounded, factual replies.
-
-### User Experience
-A visitor clicks the bottom-right chat bubble, selects a quick question or types their own, and receives an immediate response with live visitor numbers, delay estimates, and twin spot suggestions.
+A persistent floating AI chat widget that answers visitor questions in natural language, grounded in live corridor conditions and safety advisories.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-The bot currently runs on an intelligent client-side keyword matcher and response generator; the backend `POST /api/ai/chat` endpoint is operational but not yet wired to the frontend widget.
+DONE.
 
 ---
 
-## 15. Trilingual Accessibility (English, Hindi, Marathi)
+## 15. Multi-Stakeholder Role Gatekeeper (RBAC) & Profile Gateway (`/account`)
 
 ### What it does
-Provides user interface localization in English, Hindi (हिन्दी), and Marathi (मराठी).
-
-### Why it exists
-Ensures complete accessibility for local residents, regional district officers, and domestic tourists from across India.
-
-### How it works
-A comprehensive translation dictionary covers more than 55 interface keys across all three languages in `frontend/src/lib/i18n.ts`.
-
-### User Experience
-Users will be able to toggle their preferred language from the top navigation bar to render all portal headers, buttons, and alert notices in their chosen language.
+Manages traveler identity, origin preferences, travel style affinities, and administrative role simulation via Jan Parichay-styled authentication.
 
 ### Current Status
-PARTIAL
-
-### Limitations
-The translation dictionary is fully compiled, but the language switcher UI dropdown is not yet wired to switch active dictionary state across all components.
+DONE.

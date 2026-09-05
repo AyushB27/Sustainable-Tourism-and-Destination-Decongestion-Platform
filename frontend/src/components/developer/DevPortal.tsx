@@ -180,22 +180,22 @@ export const DevPortal: React.FC = () => {
   const fetchStatus = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [statusRes, logsRes] = await Promise.all([
-        fetch('http://127.0.0.1:8000/api/dev/status', { signal: AbortSignal.timeout(4000) }),
-        fetch('http://127.0.0.1:8000/api/destinations/live', { signal: AbortSignal.timeout(4000) }),
+      const [statusRes, logsRes] = await Promise.allSettled([
+        fetch('http://127.0.0.1:8000/api/dev/status', { signal: AbortSignal.timeout(6000) }),
+        fetch('http://127.0.0.1:8000/api/destinations/live', { signal: AbortSignal.timeout(6000) }),
       ]);
 
-      if (statusRes.ok) {
-        const data: DevStatus = await statusRes.json();
+      let isOnline = false;
+
+      if (statusRes.status === 'fulfilled' && statusRes.value.ok) {
+        const data: DevStatus = await statusRes.value.json();
         setStatus(data);
-        setBackendOnline(true);
-      } else {
-        setBackendOnline(false);
+        isOnline = true;
       }
 
       // Build a mock sensor log from live destinations for the log viewer
-      if (logsRes.ok) {
-        const liveData = await logsRes.json();
+      if (logsRes.status === 'fulfilled' && logsRes.value.ok) {
+        const liveData = await logsRes.value.json();
         const rows: SensorLogRow[] = (liveData.destinations ?? []).map(
           (d: {
             id: string;
@@ -223,7 +223,10 @@ export const DevPortal: React.FC = () => {
           })
         );
         setSensorLogs(rows);
+        isOnline = true;
       }
+
+      setBackendOnline(isOnline);
     } catch {
       setBackendOnline(false);
     }

@@ -1,12 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useCorridorStore } from '../store/useCorridorStore';
 import { calculateDCCMetrics, getTwinRecommendations, generate12HourForecast } from '../lib/engine';
+import { generateSpotTelemetry } from '../lib/telemetry';
 import type {
   Destination,
   DCCMetrics,
-  HourlyForecastPoint,
   TwinRecommendation,
+  SpotTelemetrySnapshot,
+  HourlyForecastPoint,
   Advisory,
+  Promotion,
+  CheckIn,
+  Jurisdiction
 } from '../types';
 
 export interface ProvenanceTierItem {
@@ -19,143 +24,107 @@ export interface ProvenanceTierItem {
   status: 'live' | 'simulated' | 'fallback';
 }
 
-export interface CommunityCheckIn {
-  id: string;
-  userName: string;
-  rating: number; // 1-5
-  timestamp: string;
-  crowdLevel: string;
-  note: string;
+export interface UseSpotDataResult {
+  spot: Destination | null;
+  metrics: DCCMetrics | null;
+  telemetry: SpotTelemetrySnapshot | null;
+  forecast: HourlyForecastPoint[];
+  loadingForecast: boolean;
+  twins: TwinRecommendation[];
+  advisories: Advisory[];
+  promotions: Promotion[];
+  checkIns: CheckIn[];
+  addCheckIn: (rating: number, comment?: string) => void;
+  isLoading: boolean;
+  notFound: boolean;
+  provenance: ProvenanceTierItem[];
+  confidenceScore: number;
+  historicalPattern: Array<{ day: string; crowdLevel: string; pct: number }>;
+  // Additive Authority Contract
+  isAuthority: boolean;
+  hasJurisdiction: boolean;
+  jurisdiction?: Jurisdiction | null;
+  overrideCapacity: (spotId: string, capacityCap: number, reason?: string) => Promise<{ success: boolean; message?: string }>;
+  broadcastAdvisory: (advisory: any) => void;
 }
 
-export function useSpotData(spotId?: string) {
+export function useSpotData(spotId?: string): UseSpotDataResult {
   const {
     destinations,
     userPreferences,
     promotions,
     advisories,
     currentUser,
+    liveBackendStatus,
+    checkIns,
+    addCheckIn: storeAddCheckIn,
     overrideCapacity,
     broadcastAdvisory,
   } = useCorridorStore();
 
   const [forecast, setForecast] = useState<HourlyForecastPoint[]>([]);
   const [loadingForecast, setLoadingForecast] = useState<boolean>(false);
-  const [checkIns, setCheckIns] = useState<CommunityCheckIn[]>([
-    {
-      id: 'chk-1',
-      userName: 'Sameer K.',
-      rating: 4,
-      timestamp: '25 mins ago',
-      crowdLevel: 'Moderate crowd near viewpoint',
-      note: 'Rainfall is light, pleasant breeze.'
-    },
-    {
-      id: 'chk-2',
-      userName: 'Pooja Deshmukh',
-      rating: 5,
-      timestamp: '1 hour ago',
-      crowdLevel: 'Clean trails, easy parking',
-      note: 'Gate toll moved fast with Green Pass QR.'
-    }
-  ]);
 
-  // Find the target spot from destinations
-  const spot: Destination | undefined = useMemo(() => {
-    if (!spotId) return destinations[0];
-    return destinations.find(d => d.id.toUpperCase() === spotId.toUpperCase()) || destinations[0];
+  // 1. Find the target spot
+  const spot: Destination | null = useMemo(() => {
+    if (!spotId) return destinations[0] || null;
+    const lower = spotId.trim().toLowerCase();
+    return (
+      destinations.find(
+        d => d.id.toLowerCase() === lower || d.code.toLowerCase() === lower || d.name.toLowerCase() === lower
+      ) || null
+    );
   }, [destinations, spotId]);
 
-  // Calculate standard tourist metrics
-  const metrics: DCCMetrics = useMemo(() => {
-    if (!spot) {
-      return {
-        dccScore: 0.5,
-        status: 'MODERATE',
-        capacityUtilization: 0.5,
-        waitTimeMinutes: 0
-      };
-    }
+  // 2. Standard tourist metrics
+  const metrics: DCCMetrics | null = useMemo(() => {
+    if (!spot) return null;
     return calculateDCCMetrics(spot);
   }, [spot]);
 
-  // Calculate twin recommendations
-  const twins: TwinRecommendation[] = useMemo(() => {
-    if (!spot) return [];
-    return getTwinRecommendations(spot, destinations, userPreferences, promotions);
-  }, [spot, destinations, userPreferences, promotions]);
+  // 3. Telemetry snapshot with provenance tiers
+  const telemetry: SpotTelemetrySnapshot | null = useMemo(() => {
+    if (!spot) return null;
+    return generateSpotTelemetry(spot, liveBackendStatus === 'connected');
+  }, [spot, liveBackendStatus]);
 
-  // Relevant active advisories for this spot or corridor-wide
-  const spotAdvisories: Advisory[] = useMemo(() => {
+  // 4. Twin alternatives
+  const twins: TwinRecommendation[] = useMemo(() => {
+    if (!spot || !metrics) return [];
+    return getTwinRecommendations(spot, destinations, userPreferences, promotions);
+  }, [spot, metrics, destinations, userPreferences, promotions]);
+
+  // 5. Relevant advisories
+  const relevantAdvisories: Advisory[] = useMemo(() => {
     if (!spot) return [];
     return advisories.filter(a => a.active && (a.destinationId === 'ALL' || a.destinationId === spot.id));
-  }, [advisories, spot]);
+  }, [spot, advisories]);
 
-  // Provenance breakdown with transparent Tier 1-4 classification
-  const provenance: ProvenanceTierItem[] = useMemo(() => {
+  // 6. Relevant promotions
+  const relevantPromotions: Promotion[] = useMemo(() => {
     if (!spot) return [];
-    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return promotions.filter(p => p.destinationId === spot.id);
+  }, [spot, promotions]);
 
-    return [
-      {
-        name: 'Precipitation & Wind Risk',
-        value: `${(spot.weatherHazardScore * 25).toFixed(1)} mm/hr (Hazard ${(spot.weatherHazardScore * 100).toFixed(0)}%)`,
-        source: 'Open-Meteo Live Precipitation API',
-        tier: 'Tier 1',
-        tierLabel: 'Tier 1 — Live Sensor API (Zero API Key Needed)',
-        fetchedAt: nowStr,
-        status: 'live'
-      },
-      {
-        name: 'Highway Vehicular Delay Factor',
-        value: `${(1.0 + spot.weatherHazardScore * 0.8).toFixed(2)}x Baseline Speed`,
-        source: 'TomTom Traffic Diurnal Flow Model',
-        tier: 'Tier 3',
-        tierLabel: 'Tier 3 — Calibrated Regression (Time-of-day & Weather)',
-        fetchedAt: nowStr,
-        status: 'simulated'
-      },
-      {
-        name: 'Attraction Footfall Index',
-        value: `${spot.currentInflow.toLocaleString()} Estimated Live Visitors`,
-        source: 'BestTime / Hourly Footfall Estimator',
-        tier: 'Tier 3',
-        tierLabel: 'Tier 3 — Diurnal Footfall Model on State Baseline',
-        fetchedAt: nowStr,
-        status: 'simulated'
-      },
-      {
-        name: 'Local Amenities & Services',
-        value: `${Math.round(spot.physicalCapacity / 250)} Point-of-Interest Nodes`,
-        source: 'OpenStreetMap Overpass API',
-        tier: 'Tier 1',
-        tierLabel: 'Tier 1 — Live Spatial Overpass Nodes',
-        fetchedAt: nowStr,
-        status: 'live'
-      }
-    ];
-  }, [spot]);
+  // 7. Community check-ins
+  const spotCheckIns: CheckIn[] = useMemo(() => {
+    if (!spot) return [];
+    return checkIns.filter(c => c.spot_id === spot.id);
+  }, [spot, checkIns]);
 
-  // Compute confidence score based on active tiers
-  const confidenceScore = useMemo(() => {
-    // 2 Tier 1 signals (2 * 45%) + 2 Tier 3 calibrated signals (2 * 40%) -> normalized ~88%
-    return 88;
-  }, []);
+  const handleAddCheckIn = (rating: number, comment?: string) => {
+    if (!spot) return;
+    storeAddCheckIn({
+      spot_id: spot.id,
+      spot_name: spot.name,
+      rating,
+      comment,
+      user_label: currentUser.name || 'Verified Traveler',
+      geofence_verified: true
+    });
+  };
 
-  // Weekly historical pattern
-  const historicalPattern = useMemo(() => {
-    return [
-      { day: 'Mon', crowdLevel: 'Low', pct: 25 },
-      { day: 'Tue', crowdLevel: 'Low', pct: 28 },
-      { day: 'Wed', crowdLevel: 'Low', pct: 32 },
-      { day: 'Thu', crowdLevel: 'Moderate', pct: 45 },
-      { day: 'Fri', crowdLevel: 'Moderate', pct: 60 },
-      { day: 'Sat', crowdLevel: 'Critical Peak', pct: 95 },
-      { day: 'Sun', crowdLevel: 'Critical Peak', pct: 90 }
-    ];
-  }, []);
-
-  // Fetch 12-hour predictive forecast with graceful fallback
+  // 8. 12-Hour Forecast
   useEffect(() => {
     if (!spot) return;
     setLoadingForecast(true);
@@ -178,7 +147,43 @@ export function useSpotData(spotId?: string) {
       });
   }, [spot]);
 
-  // Authority role evaluation & jurisdiction scoping
+  // 9. Provenance Breakdown
+  const provenance: ProvenanceTierItem[] = useMemo(() => {
+    if (!spot) return [];
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    return [
+      {
+        name: 'Precipitation & Wind Risk',
+        value: `${(spot.weatherHazardScore * 25).toFixed(1)} mm/hr`,
+        source: 'Open-Meteo Live',
+        tier: 'Tier 1',
+        tierLabel: 'Tier 1 — Live Sensor',
+        fetchedAt: nowStr,
+        status: 'live'
+      }
+    ];
+  }, [spot]);
+
+  // 10. Confidence Score
+  const confidenceScore = useMemo(() => {
+    return telemetry ? Math.round(telemetry.confidence_score * 100) : 88;
+  }, [telemetry]);
+
+  // 11. Historical Weekly Pattern
+  const historicalPattern = useMemo(() => {
+    return [
+      { day: 'Mon', crowdLevel: 'Low', pct: 25 },
+      { day: 'Tue', crowdLevel: 'Low', pct: 28 },
+      { day: 'Wed', crowdLevel: 'Low', pct: 32 },
+      { day: 'Thu', crowdLevel: 'Moderate', pct: 45 },
+      { day: 'Fri', crowdLevel: 'Moderate', pct: 60 },
+      { day: 'Sat', crowdLevel: 'Critical Peak', pct: 95 },
+      { day: 'Sun', crowdLevel: 'Critical Peak', pct: 90 }
+    ];
+  }, []);
+
+  // 12. Authority & Jurisdiction Scoping
   const isAuthority = currentUser.role === 'authority';
 
   const hasJurisdiction = useMemo(() => {
@@ -194,36 +199,27 @@ export function useSpotData(spotId?: string) {
     return false;
   }, [isAuthority, currentUser.jurisdiction, spot]);
 
-  // Add a user community check-in
-  const addCheckIn = (rating: number, note: string) => {
-    const newCheckIn: CommunityCheckIn = {
-      id: `chk-${Date.now()}`,
-      userName: currentUser.name || 'Citizen Tourist',
-      rating,
-      timestamp: 'Just now',
-      crowdLevel: rating <= 2 ? 'Low Crowds' : rating <= 4 ? 'Moderate' : 'Heavy Rush',
-      note: note || 'Self-reported check-in at location.'
-    };
-    setCheckIns(prev => [newCheckIn, ...prev]);
-  };
-
   return {
     spot,
     metrics,
+    telemetry,
     forecast,
     loadingForecast,
     twins,
-    advisories: spotAdvisories,
+    advisories: relevantAdvisories,
+    promotions: relevantPromotions,
+    checkIns: spotCheckIns,
+    addCheckIn: handleAddCheckIn,
+    isLoading: false,
+    notFound: !spot && Boolean(spotId),
     provenance,
     confidenceScore,
     historicalPattern,
-    checkIns,
-    addCheckIn,
     // Additive Authority Contract
     isAuthority,
     hasJurisdiction,
     jurisdiction: currentUser.jurisdiction,
     overrideCapacity,
-    broadcastAdvisory,
+    broadcastAdvisory
   };
 }

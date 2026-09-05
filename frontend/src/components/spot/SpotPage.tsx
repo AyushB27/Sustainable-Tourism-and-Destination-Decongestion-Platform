@@ -70,7 +70,7 @@ export const SpotPage: React.FC = () => {
   const [overrideSubmitting, setOverrideSubmitting] = useState(false);
   const [overrideFeedback, setOverrideFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  if (!spot) {
+  if (!spot || !metrics) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <h2 className="text-xl font-bold text-slate-800 mb-2">Destination Not Found</h2>
@@ -586,13 +586,13 @@ export const SpotPage: React.FC = () => {
               <div key={chk.id} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-start justify-between gap-3 text-xs">
                 <div>
                   <div className="flex items-center gap-2">
-                    <strong className="text-slate-900">{chk.userName}</strong>
+                    <strong className="text-slate-900">{chk.user_label}</strong>
                     <span className="text-amber-500 font-bold">{'★'.repeat(chk.rating)}</span>
                     <span className="text-[10px] text-slate-400 font-mono">• {chk.timestamp}</span>
                   </div>
-                  <p className="text-slate-700 mt-1">{chk.note}</p>
+                  {chk.comment && <p className="text-slate-700 mt-1">{chk.comment}</p>}
                   <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-1.5">
-                    {chk.crowdLevel}
+                    {chk.rating <= 2 ? 'Low Crowds' : chk.rating <= 4 ? 'Moderate' : 'Heavy Crowd'}
                   </span>
                 </div>
               </div>

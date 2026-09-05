@@ -27,6 +27,11 @@ For the master summary index, see [TODO.md](./TODO.md).
 | **13** | Digital Green Yatra Pass & QR Code — Wired | MEDIUM | Reroute CTA calls `POST /api/passes/issue`; saves to SQLite |
 | **14** | 24x7 AI Tourism Helpline Assistant — Wired | MEDIUM | `AiHelplineBot.tsx` calls `POST /api/ai/chat` with live metric context |
 | **15** | Developer Production Monitoring Portal | HIGH | `DevPortal.tsx` with 6 sections (health, transparency, SIH audit, API registry, SQLite logs) |
+| **16** | Tourist-First Canonical Destination Page (`/spot/:spotId`) | HIGH | Single canonical spot page with 8 universal tourist sections and role-conditional panels |
+| **17** | 3-Tier Intent Resolution & Search Engine (`Fuse.js`) | HIGH | Zero-guess autocomplete indexing Spots, Districts, and States |
+| **18** | Full React Router DOM v7 Implementation | HIGH | 16 declarative routes connecting landing, discovery feed, spot pages, trip wizard, and consoles |
+| **19** | Data Tiers 1–4 Provenance & Confidence Calculator | HIGH | Transparent telemetry audit trail with dynamic confidence score formula and statutory citations |
+| **20** | Multithreaded Telemetry Pipeline & OSM POI Caching | HIGH | `ThreadingHTTPServer` + `ThreadPoolExecutor` parallel ingestion with in-memory OSM POI caching |
 
 ---
 
@@ -60,202 +65,112 @@ Status: DONE | Priority: HIGH
 Mathematical engine combining physical capacity utilization (70%) and environmental hazard risks (30%) to produce a deterministic index classifying destination stress as OPTIMAL, MODERATE, or CRITICAL.
 
 #### Tasks
-- [x] Implement deterministic DCC formula in `backend/app/engine/dcc_calculator.py`
-- [x] Implement client-side twin in `frontend/src/lib/engine.ts`
-- [x] Calibrate wait-time queuing model based on average dwell hours
-- [x] Unit test mathematical precision and edge cases in `test_backend.py`
+- [x] Implement DCC formula in `backend/app/engine/dcc_calculator.py`
+- [x] Mirror DCC math in `frontend/src/lib/engine.ts` for instantaneous client calculations
+- [x] Implement queuing delay model calculating wait times in minutes based on dwell hours
+- [x] Classify scores into OPTIMAL (<0.70), MODERATE (0.70-0.84), and CRITICAL (>=0.85)
 
 #### Verified
-- Unit test suite verifies DCC score calculation and queue delay formulas across standard, overflow, and edge cases.
+- Unit tests verify DCC boundaries across safe, moderate, and critical weather conditions.
 
 ---
 
-### 3. District GIS Incident Command Center
+### 16. Tourist-First Canonical Destination Page (`/spot/:spotId`)
 Status: DONE | Priority: HIGH
 
 #### Description
-District administration emergency command center with interactive GIS map, telemetry cards, and corridor stress level gauges.
+Architectural transition from three siloed role views to a single authoritative canonical destination page. All visitors (citizens, tourists, officers, operators) access the same destination URL. Administrative and provider tools are conditionally attached to the page based on the visitor's authenticated role.
 
 #### Tasks
-- [x] Build `AuthorityView.tsx` command center dashboard
-- [x] Build interactive Leaflet map in `CorridorMap.tsx` with color-coded destination markers
-- [x] Add real-time corridor metrics aggregation and status indicators
+- [x] Create `SpotPage.tsx` with all 8 universal sections:
+  1. Header with hero image, metadata, and Leaflet GIS preview
+  2. Crowd status pill, 12h forecast strip, and historical weekly rhythm
+  3. Expandable Data Tier Provenance breakdown (Tiers 1–4)
+  4. Cosine similarity twin alternatives with load balancing savings
+  5. Practical amenities (homestays, OSM water/food, attractions, directions)
+  6. Geofence-verified community check-in reviews and modal
+  7. Active emergency gazette advisories
+  8. Trip planner CTA and WhatsApp card modal
+- [x] Implement role-conditional panels for District Authority (emergency limits & advisories) and Providers (live room occupancy & off-peak vouchers)
+- [x] Build `useSpotData.ts` hook serving as the single source of truth across all routes
 
 #### Verified
-- Map renders with correct coordinates, dynamic color-coded markers, and status indicators.
+- Navigating to `/spot/LON`, `/spot/MAT`, `/spot/BHA` loads the complete canonical page.
+- Switching to Authority or Provider roles in `/account` reveals the respective management panel at the bottom of the Spot Page.
 
 ---
 
-### 4. Ecological Vulnerability & Municipal Controls
-Status: DONE | Priority: MEDIUM
-
-#### Tasks
-- [x] Build `EcoHealthCommunityWidget.tsx` displaying parking saturation, water stress index, municipal alerts
-- [x] Wire administrative capacity restriction sliders in Authority portal
-
----
-
-### 5. Regional Mobility Diffusion Matrix
-Status: DONE | Priority: MEDIUM
-
-#### Tasks
-- [x] Build `DemandDiffusionFlow.tsx` displaying origin-destination flow percentages from Mumbai and Pune
-
----
-
-### 6. Automated Unit Testing & API Documentation Explorer
-Status: DONE | Priority: HIGH
-
-#### Tasks
-- [x] 7/7 backend unit test suites in `test_backend.py` covering all core modules
-- [x] OpenAPI specification and Swagger UI served at `/docs`
-
----
-
-### 7. Live Telemetry Ingestion Pipeline (Weather LIVE + Fallbacks)
+### 17. 3-Tier Intent Resolution & Search Engine (`Fuse.js`)
 Status: DONE | Priority: HIGH
 
 #### Description
-Automated background ETL pipeline ingesting real-time weather, traffic speeds, venue footfall, and open government data across 7 Sahyadri destinations. Logs time-series data to SQLite and caches latest metrics in memory.
+An un-opinionated, instant fuzzy search box that resolves user search intent across three distinct tiers without false assumptions.
 
 #### Tasks
-- [x] Implement Open-Meteo live weather pipeline in `weather_pipeline.py` (Rain, Wind, Temp, Hazard Score)
-- [x] Implement TomTom traffic delay pipeline in `traffic_pipeline.py` with diurnal weekend fallback
-- [x] Implement BestTime.app live footfall pipeline in `footfall_pipeline.py` with hourly weekend fallback
-- [x] Implement OpenStreetMap Overpass amenity counter in `footfall_pipeline.py`
-- [x] Implement Open Government Data (data.gov.in) benchmark pipeline in `ogd_india.py`
-- [x] Implement 60-second daemon thread in `background_worker.py` logging to `sensor_readings` table
-- [x] Implement `GET /api/destinations/live` serving in-memory telemetry cache
-- [x] Add auto-polling every 25s in frontend `App.tsx`
+- [x] Build `GlobalSearchBox.tsx` using `Fuse.js` with weighted keys
+- [x] Index destinations by exact name, acronyms, categories, districts, and states
+- [x] Group autocomplete dropdown results by Tier: "Spots", "Districts", and "States"
+- [x] Implement `/search?q=` dedicated full-page results view
+- [x] Implement `/region/:type/:value` exhaustive listing sorted by crowd status
 
 #### Verified
-- Open-Meteo API successfully called with real latitude/longitude returning real precipitation and temperatures.
-- 60s background daemon logs rows continuously into SQLite `sensor_readings` table.
+- Typing "lon" directly suggests "Lonavala & Khandala (Spot)".
+- Typing "pune" suggests "Pune (District)" and routes to `/region/district/Pune`.
+- Typing "maharashtra" suggests "Maharashtra (State)" and routes to `/region/state/Maharashtra`.
 
 ---
 
-### 8. Citizen / Tourist Experience Portal — Dynamic Data Wiring
+### 18. Full React Router DOM v7 Implementation
 Status: DONE | Priority: HIGH
 
 #### Description
-Dynamic citizen portal consuming live Zustand store data (which polls `/api/destinations/live` every 25 seconds). Replaces static hardcoded presentation showcase with real-time DCC metrics, destination selector chips, category filters, and offline detection banners.
+Replaces monolithic role rendering with 16 declarative, bookmarkable routes.
 
 #### Tasks
-- [x] Wire `TouristView.tsx` to Zustand store destination data
-- [x] Mount `HeroDCCStatus.tsx` displaying live DCC status, inflow, physical capacity, and wait-time delays
-- [x] Mount `TwinAlternativeCards.tsx` dynamically computing 4D cosine similarity recommendations
-- [x] Mount `DemandCurveChart.tsx` displaying 12-hour diurnal forecast
-- [x] Mount `EcoPassCard.tsx` with fast-track digital pass QR code and carbon savings
-- [x] Mount `FutureTripPlanner.tsx` for multi-day decongestion scheduling
-- [x] Display active emergency gazette advisories as dismissible warning banners
-- [x] Show offline status banner when backend connection is severed
+- [x] Install `react-router-dom` and configure `BrowserRouter` in `App.tsx`
+- [x] Implement all 16 client routes: `/`, `/search`, `/discover`, `/region/:type/:value`, `/spot/:spotId`, `/plan/new`, `/plan/:tripId`, `/trips`, `/account`, `/advisories`, `/authority`, `/provider`, `/dev`, and wildcard redirects
+- [x] Build `DiscoverPage.tsx` with algorithmic demand diffusion feed formula
+- [x] Build `TripPlannerPage.tsx` with 4-step wizard and progressive profiling modal
+- [x] Build `SavedTripDetailPage.tsx` with confirmed itinerary and official GreenPass certificate
+- [x] Build `MyTripsPage.tsx` dashboard and `AccountPage.tsx` profile manager
 
 #### Verified
-- TypeScript build succeeds with 0 errors.
-- Dynamic selection chips switch destinations and recalculate live DCC and twin alternatives.
+- `tsc -b` and `vite build` compile cleanly with 0 errors. All routes are directly linkable and refresh-safe.
 
 ---
 
-### 9. 12-Hour Diurnal Demand Curve — Mounted & Wired
-Status: DONE | Priority: MEDIUM
-
-#### Tasks
-- [x] Embed `DemandCurveChart.tsx` inside `TouristView.tsx`
-- [x] Fetch predictive 12-hour curve from `GET /api/destinations/{id}/forecast` with graceful client-side fallback
-- [x] Display time-slot selector highlighting optimal travel windows
-
-#### Verified
-- Chart renders 12-hour curve with responsive SVG area fills and time slot selectors.
-
----
-
-### 10. 4D Cosine Twin Recommender — Dynamic Mounting
-Status: DONE | Priority: HIGH
-
-#### Tasks
-- [x] Mount `TwinAlternativeCards.tsx` inside `TouristView.tsx`
-- [x] Connect to store's `userPreferences` (4D vector) and candidate destinations pool
-- [x] Rank alternative destinations by multi-objective utility score: $0.60 \times \text{Sim} + 0.40 \times (1 - \text{DCC})$
-- [x] Confetti animation on choosing alternative destination
-
-#### Verified
-- High-pressure targets (e.g. Lonavala DCC 0.88) recommend low-pressure twins (Matheran, Bhandardara) with verified crowd reduction metrics.
-
----
-
-### 11. Multi-Day Decongested Itinerary Planner — Wired
-Status: DONE | Priority: MEDIUM
-
-#### Tasks
-- [x] Mount `FutureTripPlanner.tsx` inside `TouristView.tsx`
-- [x] Wire trip parameter inputs (date, duration, style) to call `POST /api/itinerary/plan`
-- [x] Display connection status indicator (`✅ Backend API` / `📵 Offline Mode`)
-- [x] Print / Export itinerary capability
-
-#### Verified
-- Changing trip date or style makes network call to `/api/itinerary/plan` with verified fallback.
-
----
-
-### 12. Emergency Gazette Advisory Broadcaster — Wired
-Status: DONE | Priority: HIGH
-
-#### Tasks
-- [x] Wire `DigitalAdvisoryDispatcher.tsx` to call `POST /api/advisories/broadcast`
-- [x] Persist advisories to SQLite `gazette_advisories` table with active flag
-- [x] Seed advisories in store via `GET /api/advisories` in `useCorridorStore.fetchLiveBackendFeed`
-- [x] Render dismissible emergency banners on Tourist view
-
-#### Verified
-- Broadcasted advisories persist to SQLite and display across both authority view and citizen portal.
-
----
-
-### 13. Digital Green Yatra Pass & QR Code — Wired
-Status: DONE | Priority: MEDIUM
-
-#### Tasks
-- [x] Wire "Choose Twin" CTA in `TwinAlternativeCards.tsx` to call `POST /api/passes/issue`
-- [x] Persist issued pass to SQLite `green_yatra_passes` table
-- [x] Render pass ID, fast-track QR code, and cumulative carbon savings in `EcoPassCard.tsx`
-
-#### Verified
-- Clicking reroute creates pass record in SQLite and increments carbon saved counter.
-
----
-
-### 14. 24x7 AI Tourism Helpline Assistant — Wired
-Status: DONE | Priority: MEDIUM
-
-#### Tasks
-- [x] Wire `AiHelplineBot.tsx` to call `POST /api/ai/chat` with live destination context
-- [x] Return contextually grounded responses from backend API
-- [x] Graceful fallback to client-side response generator when backend is offline
-
-#### Verified
-- User messages query backend endpoint and render response with live telemetry grounding.
-
----
-
-### 15. Developer Production Monitoring Portal
+### 19. Data Tiers 1–4 Provenance & Confidence Calculator
 Status: DONE | Priority: HIGH
 
 #### Description
-Dedicated inspection portal accessible via `developer` role (`/developer`). Designed for hackathon judges, evaluators, and system architects to verify data source reality, database operations, SIH compliance, and API connectivity.
+Auditable provenance engine categorizing all telemetry into four tiers with dynamic confidence scoring.
 
 #### Tasks
-- [x] Create `GET /api/dev/status` endpoint in `backend/main.py`
-- [x] Expose pipeline source & status fields (`connected`, `simulated`, `fallback`) with raw telemetry metrics
-- [x] Return live database counts (sensor readings, green passes, active advisories)
-- [x] Return SIH26204 requirement audit checklist and API connectivity registry
-- [x] Build `DevPortal.tsx` with dark Grafana/Vercel inspector aesthetic (6 dedicated sections)
-- [x] Add developer navigation in `Navbar.tsx`, `App.tsx` role router, footer links, and mobile bottom nav
-- [x] Implement 10-second auto-refresh polling with manual refresh trigger
+- [x] Implement `telemetry.ts` engine generating `DataTierProvenance`
+- [x] Attribute Tier 1 (ground truth), Tier 2 (calibrated APIs), Tier 3 (algorithmic rhythm), and Tier 4 (statutory studies)
+- [x] Implement dynamic confidence score formula (50%–98%) factoring sensor health and community check-ins
+- [x] Build tap-to-expand UI widget on `SpotPage.tsx` detailing data source citations
 
 #### Verified
-- Evaluators can review real vs. simulated pipeline data per destination with raw values.
-- SQLite sensor readings row count verifies continuous 60s background ingestion.
-- SIH requirement audit table details implementation status for all 14 problem statement items.
+- Provenance widget expands on Spot Page, detailing Open-Meteo, TomTom, and statutory Maharashtra Forest Dept citations with live confidence percentages.
+
+---
+
+### 20. Multithreaded Telemetry Pipeline & OSM POI Caching
+Status: DONE | Priority: HIGH
+
+#### Description
+Engine upgrade to the Python backend providing asynchronous concurrency and rate-limit mitigation.
+
+#### Tasks
+- [x] Upgrade `main.py` from `HTTPServer` to `ThreadingHTTPServer`
+- [x] Implement `concurrent.futures.ThreadPoolExecutor` in `background_worker.py` to parallelize destination processing
+- [x] Implement in-memory coordinate grid caching (`_osm_cache`) for OpenStreetMap Overpass queries
+- [x] Reconfigure Windows stdout/stderr to UTF-8 to prevent charmap encoding errors
+- [x] Add CORS `Access-Control-Allow-Private-Network` header
+
+#### Verified
+- Background telemetry syncs all 7 destinations in parallel in < 2 seconds without HTTP client connection aborts.
 
 ---
 

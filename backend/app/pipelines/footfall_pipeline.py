@@ -47,13 +47,20 @@ def fetch_live_footfall(venue_name: str, api_key: str = None) -> dict:
             "status": "fallback"
         }
 
+_osm_cache = {}
+
 def scan_osm_amenities(lat: float, lon: float) -> dict:
     """
     Queries OpenStreetMap Overpass API for registered parking lots & viewpoints
     within a 3km radius to evaluate local infrastructure readiness.
+    Caches results in-memory to prevent rate limiting and avoid blocking API requests.
     """
+    cache_key = (round(lat, 3), round(lon, 3))
+    if cache_key in _osm_cache:
+        return _osm_cache[cache_key]
+
     query = f"""
-    [out:json][timeout:5];
+    [out:json][timeout:3];
     (
       node["amenity"="parking"](around:3000,{lat},{lon});
       node["tourism"="viewpoint"](around:3000,{lat},{lon});
@@ -64,9 +71,13 @@ def scan_osm_amenities(lat: float, lon: float) -> dict:
     try:
         data = urllib.parse.urlencode({'data': query}).encode('utf-8')
         req = urllib.request.Request(url, data=data, headers={"User-Agent": "EcoRouteBharat/1.0"})
-        with urllib.request.urlopen(req, timeout=3) as response:
+        with urllib.request.urlopen(req, timeout=2) as response:
             res = json.loads(response.read().decode("utf-8"))
             count = len(res.get("elements", []))
-            return {"osm_poi_nodes": max(12, count), "osm_status": "live_verified"}
+            result = {"osm_poi_nodes": max(12, count), "osm_status": "live_verified"}
+            _osm_cache[cache_key] = result
+            return result
     except Exception:
-        return {"osm_poi_nodes": 18, "osm_status": "cached_estimate"}
+        fallback = {"osm_poi_nodes": 18, "osm_status": "cached_estimate"}
+        _osm_cache[cache_key] = fallback
+        return fallback

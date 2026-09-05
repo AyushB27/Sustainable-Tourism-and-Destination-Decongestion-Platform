@@ -1,36 +1,34 @@
 import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Compass, 
   ShieldAlert, 
   Building2, 
   Sparkles, 
-  RotateCcw,
-  TrendingDown,
-  Languages,
-  Menu,
-  X,
-  AlertTriangle,
-  UserCheck,
-  LogOut,
-  Lock,
-  RefreshCw,
-  CheckCircle2,
-  WifiOff,
-  Code2
+  RotateCcw, 
+  TrendingDown, 
+  Languages, 
+  Menu, 
+  X, 
+  AlertTriangle, 
+  UserCheck, 
+  LogOut, 
+  Lock, 
+  RefreshCw, 
+  CheckCircle2, 
+  WifiOff, 
+  Code2, 
+  User 
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { PresetScenario } from '../../store/useCorridorStore';
 import { calculateCorridorMetrics } from '../../lib/engine';
-import type { UserRole } from '../../types';
 import type { Language } from '../../lib/i18n';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { GlobalSearchBox } from './GlobalSearchBox';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    role,
-    requestRoleChange,
     currentUser,
     logoutUser,
     setAuthModalOpen,
@@ -72,52 +70,19 @@ export const Navbar: React.FC = () => {
     document.documentElement.classList.add(`font-scale-${size}`);
   };
 
-  const navItems: { key: UserRole; label: string; description: string; icon: React.ReactNode; badge?: string; isProtected?: boolean }[] = [
-    {
-      key: 'tourist',
-      label: 'Tourist & Citizen Portal',
-      description: 'Check Live Crowds & Travel Passes',
-      icon: <Compass className="w-4 h-4" />
-    },
-    {
-      key: 'authority',
-      label: 'District GIS Command Center',
-      description: 'Official District Administration',
-      icon: <ShieldAlert className="w-4 h-4" />,
-      badge: metrics.criticalCount > 0 ? `${metrics.criticalCount} Red Alert` : undefined,
-      isProtected: true
-    },
-    {
-      key: 'provider',
-      label: 'Homestays & Local Operators',
-      description: 'MTDC Operator Console',
-      icon: <Building2 className="w-4 h-4" />,
-      isProtected: true
-    },
-    {
-      key: 'developer',
-      label: 'Developer Portal',
-      description: 'Production Audit & Data Inspection',
-      icon: <Code2 className="w-4 h-4" />
-    }
+  const mainNavLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/discover', label: 'Discover Feed' },
+    { to: '/plan/new', label: 'Trip Planner' },
+    { to: '/advisories', label: 'Advisories', badge: activeAdvisoriesCount > 0 ? `${activeAdvisoriesCount}` : undefined },
+    { to: '/trips', label: 'My Trips' },
   ];
 
-  const handleNavClick = (targetRole: UserRole) => {
-    requestRoleChange(targetRole);
-    if (targetRole === 'tourist') {
-      navigate('/');
-    } else if (targetRole === 'authority') {
-      if (currentUser.role === 'authority' && currentUser.isAuthenticated) {
-        navigate('/authority');
-      }
-    } else if (targetRole === 'provider') {
-      if (currentUser.role === 'provider' && currentUser.isAuthenticated) {
-        navigate('/provider');
-      }
-    } else if (targetRole === 'developer') {
-      navigate('/dev');
-    }
-  };
+  const stakeholderNavLinks = [
+    { to: '/authority', label: 'District GIS', icon: <ShieldAlert className="w-3.5 h-3.5" />, badge: metrics.criticalCount > 0 ? `${metrics.criticalCount}` : undefined },
+    { to: '/provider', label: 'Providers', icon: <Building2 className="w-3.5 h-3.5" /> },
+    { to: '/dev', label: 'Dev Audit', icon: <Code2 className="w-3.5 h-3.5" /> },
+  ];
 
   return (
     <header className="sticky top-0 z-50 shadow-md bg-white">
@@ -260,17 +225,10 @@ export const Navbar: React.FC = () => {
 
       {/* 3. Main Government Portal Brand Header */}
       <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          {/* Official Emblem & Portal Title */}
-          <div 
-            onClick={() => {
-              requestRoleChange('tourist');
-              navigate('/');
-            }}
-            className="flex items-center gap-3.5 cursor-pointer select-none"
-            title="Return to EcoRoute Bharat Home"
-          >
-            <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          {/* Official Emblem & Portal Title (Links to Home /) */}
+          <Link to="/" className="flex items-center gap-3.5 group shrink-0">
+            <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm group-hover:border-gov-navy transition">
               <div className="w-9 h-9 flex items-center justify-center text-gov-navy font-serif font-black text-base border-2 border-gov-navy rounded-full bg-amber-50">
                 🏛️
               </div>
@@ -281,27 +239,34 @@ export const Navbar: React.FC = () => {
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-base sm:text-xl text-gov-navy tracking-tight leading-tight">
-                  EcoRoute Bharat — Sustainable Tourism & Smart Travel Portal
-                </h1>
+                <span className="font-extrabold text-base sm:text-lg text-gov-navy tracking-tight leading-tight group-hover:text-gov-navy-light transition">
+                  EcoRoute Bharat
+                </span>
                 <span className="hidden sm:inline bg-gov-green/10 text-gov-green text-[10px] font-bold px-2 py-0.5 rounded border border-gov-green/30 uppercase">
                   Official Portal
                 </span>
               </div>
-              <p className="text-xs text-slate-600 font-medium mt-0.5">
-                Ministry of Tourism, Govt. of India • Western Ghats & Maharashtra Corridor
+              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
+                Sustainable Tourism • Western Ghats & Maharashtra Corridor
               </p>
             </div>
+          </Link>
+
+          {/* Persistent 3-Tier Global Search Box (§2.1) */}
+          <div className="flex-1 max-w-md hidden md:block">
+            <GlobalSearchBox variant="nav" placeholder="Search destination, district (e.g. Raigad), or state…" />
           </div>
 
           {/* Right Campaign Badges & Mobile Menu Toggle */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2">
-              <div className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                <span className="text-xs font-bold text-amber-900 block leading-none">Incredible !ndia</span>
-                <span className="text-[9px] text-amber-700 font-medium">Dekho Apna Desh</span>
-              </div>
-            </div>
+            <Link
+              to="/account"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 hover:border-gov-navy text-xs font-bold text-slate-800 transition"
+              title="View account preferences"
+            >
+              <User className="w-3.5 h-3.5 text-gov-navy" />
+              <span>Profile</span>
+            </Link>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -317,36 +282,53 @@ export const Navbar: React.FC = () => {
       {/* 4. Deep Navy Primary Navigation Bar */}
       <nav className="bg-gov-navy text-white shadow-inner hidden lg:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          {/* Main Navigation Tabs */}
+          {/* Main Tourist Navigation Tabs (§2) */}
           <div className="flex items-center space-x-1">
-            {navItems.map((item) => {
-              const isPathActive = 
-                (item.key === 'tourist' && (location.pathname === '/' || location.pathname.startsWith('/spot/'))) ||
-                (item.key === 'authority' && location.pathname.startsWith('/authority')) ||
-                (item.key === 'provider' && location.pathname.startsWith('/provider')) ||
-                (item.key === 'developer' && location.pathname.startsWith('/dev'));
-              const isActive = role === item.key || isPathActive;
+            {mainNavLinks.map((item) => {
+              const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
               return (
-                <button
-                  key={item.key}
-                  onClick={() => handleNavClick(item.key)}
-                  className={`flex items-center gap-2 px-4 py-3.5 text-xs sm:text-sm font-semibold transition border-b-2 ${
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-1.5 px-3.5 py-3 text-xs sm:text-sm font-semibold transition border-b-2 ${
                     isActive
                       ? 'bg-gov-navy-dark text-amber-300 border-gov-gold shadow-sm'
                       : 'text-slate-200 border-transparent hover:bg-gov-navy-light hover:text-white'
                   }`}
                 >
-                  {item.icon}
                   <span>{item.label}</span>
-                  {item.isProtected && currentUser.role !== item.key && (
-                    <Lock className="w-3 h-3 text-slate-400 opacity-70" />
-                  )}
                   {item.badge && (
-                    <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                    <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse">
                       {item.badge}
                     </span>
                   )}
-                </button>
+                </Link>
+              );
+            })}
+
+            <span className="text-slate-600 px-1">|</span>
+
+            {/* Stakeholder Consoles (§5, §6) */}
+            {stakeholderNavLinks.map((item) => {
+              const isActive = location.pathname.startsWith(item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-1.5 px-3 py-3 text-xs font-semibold transition border-b-2 ${
+                    isActive
+                      ? 'bg-gov-navy-dark text-amber-300 border-gov-gold shadow-sm'
+                      : 'text-slate-300 border-transparent hover:bg-gov-navy-light hover:text-white'
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="bg-rose-600 text-white text-[9px] font-bold px-1.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
               );
             })}
           </div>
@@ -402,52 +384,64 @@ export const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-gov-navy border-b border-gov-navy-dark px-4 py-4 space-y-3 text-white animate-in slide-in-from-top duration-200">
           <div className="text-xs font-bold text-gov-gold uppercase tracking-wider pb-1 border-b border-slate-700 flex items-center justify-between">
-            <span>Select Portal View</span>
+            <span>Navigation Menu</span>
             <button
               onClick={() => { setAuthModalOpen(true); setMobileMenuOpen(false); }}
               className="text-xs text-amber-300 underline font-bold"
             >
-              Switch Role
+              Switch Role Gateway
             </button>
           </div>
-          <div className="space-y-1.5">
-            {navItems.map((item) => {
-              const isPathActive = 
-                (item.key === 'tourist' && (location.pathname === '/' || location.pathname.startsWith('/spot/'))) ||
-                (item.key === 'authority' && location.pathname.startsWith('/authority')) ||
-                (item.key === 'provider' && location.pathname.startsWith('/provider')) ||
-                (item.key === 'developer' && location.pathname.startsWith('/dev'));
-              const isActive = role === item.key || isPathActive;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => {
-                    handleNavClick(item.key);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg text-sm font-semibold transition ${
-                    isActive
-                      ? 'bg-gov-navy-dark text-amber-300 border border-gov-gold'
-                      : 'bg-slate-800/80 text-slate-200 hover:bg-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {item.isProtected && currentUser.role !== item.key && (
-                      <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    )}
-                    {item.badge && (
-                      <span className="bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+          <div className="space-y-1">
+            {mainNavLinks.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-100 transition"
+              >
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            ))}
+
+            <div className="pt-2 pb-1 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+              Stakeholder Consoles
+            </div>
+
+            {stakeholderNavLinks.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-100 transition"
+              >
+                <div className="flex items-center gap-2">
+                  {item.icon}
+                  <span>{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            ))}
+
+            <Link
+              to="/account"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-amber-300 transition"
+            >
+              <div className="flex items-center gap-2">
+                <User className="w-3.5 h-3.5" />
+                <span>My Profile & Preferences</span>
+              </div>
+            </Link>
           </div>
 
           {/* Mobile User Profile Section */}

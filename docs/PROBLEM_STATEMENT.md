@@ -1,5 +1,7 @@
 # SIH26204: Official Problem Statement & Requirement Mapping
 
+> ⚠️ **CANONICAL REFERENCE — DO NOT MODIFY**: This document contains the official, unmodified Smart India Hackathon problem statement (**SIH26204**) and authoritative statutory requirement specifications. It represents the immutable project baseline and must **NOT** be altered, edited, or modified under any circumstances.
+
 This document details the official Smart India Hackathon problem statement (**SIH26204 — Tourism**) and provides a comprehensive traceability matrix mapping each hackathon requirement to its operational implementation in the EcoRoute Bharat codebase.
 
 ---

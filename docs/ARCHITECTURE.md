@@ -6,7 +6,9 @@ This document details the internal technical architecture, component structure, 
 
 ## 1. High-Level System Architecture
 
-EcoRoute Bharat is engineered as a decoupled, multi-tier system composed of a client-side reactive web portal, a lightweight Python API and data ingestion engine, a persistent SQLite time-series store, and multiple external sensor pipelines.
+EcoRoute Bharat is engineered as a decoupled, multi-tier system composed of a client-side reactive web portal, a multithreaded Python API and telemetry ingestion engine, a persistent SQLite time-series store, and multiple external sensor pipelines.
+
+The platform follows a **Tourist-First Canonical Destination Architecture**: every destination has exactly one canonical page at `/spot/:spotId` containing universal tourist intelligence. Administrative and business roles conditionally compose operational management panels directly onto this canonical page.
 
 ```mermaid
 graph TD
@@ -20,36 +22,43 @@ graph TD
 
     subgraph Backend Engine & Ingestion (Python 3.13)
         BW[Background Telemetry Worker<br/>60s Daemon Thread]
+        TPE[ThreadPoolExecutor<br/>Parallel Hub Processing]
         ENG_DCC[DCC Calculator Engine<br/>dcc_calculator.py]
         ENG_TWIN[4D Cosine Twin Matcher<br/>twin_matcher.py]
         ENG_ITIN[Itinerary Planning Engine<br/>itinerary_engine.py]
+        OSM_CACHE[(In-Memory POI Cache)]
         MEM_CACHE[(In-Memory Telemetry Cache)]
-        HTTP_SRV[HTTP REST API Server<br/>main.py :8000]
+        HTTP_SRV[ThreadingHTTPServer REST API<br/>main.py :8000]
     end
 
     subgraph Persistence Tier
         SQLITE[(SQLite 3 Database<br/>ecoroute.db - WAL Mode)]
     end
 
-    subgraph Frontend Presentation Tier (React 19 + TypeScript)
+    subgraph Frontend Presentation Tier (React 19 + TypeScript + Router)
+        ROUTER[React Router DOM v7<br/>16 Declarative Routes]
+        SEARCH[GlobalSearchBox.tsx<br/>Fuse.js 3-Tier Fuzzy Search]
         ZUSTAND[Zustand Central Store<br/>useCorridorStore.ts]
-        AUTH_GUARD[RBAC Route Guard<br/>requestRoleChange]
-        PORTAL_CITIZEN[Citizen / Tourist Portal<br/>TouristView.tsx]
-        PORTAL_AUTH[District GIS Command<br/>AuthorityView.tsx]
-        PORTAL_PROV[MTDC Operator Console<br/>ProviderView.tsx]
-        BOT[24x7 AI Tourism Helpline<br/>AiHelplineBot.tsx]
+        SPOT_HOOK[useSpotData Hook<br/>Single Source of Truth]
+        CANONICAL_SPOT[Canonical Spot Page<br/>/spot/:spotId]
+        UNIVERSAL_SECTIONS[Universal Sections §3.1<br/>Crowd, Forecast, Provenance, Twins, Amenities]
+        CONDITIONAL_PANELS[Role-Conditional Panels §3.2<br/>Authority Overrides & Provider Vouchers]
+        TOURIST_FLOWS[Tourist Flow Pages<br/>/, /discover, /plan/new, /trips, /account]
+        STAKEHOLDER_HUBS[Provisional Consoles<br/>/authority, /provider funneled into /spot]
     end
 
     %% Ingestion Flow
-    OM -->|HTTP GET| BW
-    TT -->|HTTP GET / Fallback| BW
-    BT -->|HTTP GET / Fallback| BW
-    OSM -->|Overpass Query| BW
-    OGD -->|Resource API| BW
+    OM -->|HTTP GET| TPE
+    TT -->|HTTP GET / Fallback| TPE
+    BT -->|HTTP GET / Fallback| TPE
+    OSM -->|Overpass Query + Cache| OSM_CACHE
+    OSM_CACHE --> TPE
+    OGD -->|Resource API| TPE
 
-    BW --> ENG_DCC
+    BW --> TPE
+    TPE --> ENG_DCC
     ENG_DCC --> MEM_CACHE
-    BW -->|Write sensor_readings| SQLITE
+    TPE -->|Write sensor_readings| SQLITE
 
     %% API Server
     MEM_CACHE --> HTTP_SRV
@@ -57,240 +66,129 @@ graph TD
     ENG_ITIN --> HTTP_SRV
     SQLITE <-->|Read / Write| HTTP_SRV
 
-    %% Client Communication
+    %% Client Routing & Flow
     HTTP_SRV -->|GET /api/destinations/live| ZUSTAND
-    ZUSTAND --> AUTH_GUARD
-    AUTH_GUARD --> PORTAL_CITIZEN
-    AUTH_GUARD --> PORTAL_AUTH
-    AUTH_GUARD --> PORTAL_PROV
-    ZUSTAND --> BOT
+    ZUSTAND --> ROUTER
+    ROUTER --> SEARCH
+    SEARCH -->|Tier 1: Spots| CANONICAL_SPOT
+    SEARCH -->|Tier 2 & 3: Regions| ROUTER
+    ROUTER --> TOURIST_FLOWS
+    ROUTER --> STAKEHOLDER_HUBS
+    STAKEHOLDER_HUBS -->|Inspect Destination| CANONICAL_SPOT
+    ZUSTAND --> SPOT_HOOK
+    SPOT_HOOK --> CANONICAL_SPOT
+    CANONICAL_SPOT --> UNIVERSAL_SECTIONS
+    CANONICAL_SPOT --> CONDITIONAL_PANELS
 ```
 
 ---
 
 ## 2. Backend Architecture
 
-### 2.1 Native HTTP Server (`backend/main.py`)
-The backend is built using Python's standard library `http.server.BaseHTTPRequestHandler` (with zero mandatory external pip dependencies required to launch the core server). It handles:
-- Cross-Origin Resource Sharing (CORS) headers for all origins (`*`).
-- Route parsing and dispatch for both `GET` and `POST` methods.
-- Stakeholder authentication and session token issuance.
-- Native serving of Swagger UI documentation at `/docs` backed by `/openapi.json`.
+### 2.1 Concurrency & Multithreading (`backend/main.py`)
+The backend is built with Python's standard library `http.server.ThreadingHTTPServer` to achieve asynchronous, concurrent request processing without heavy third-party framework overhead:
+- **Multithreading**: Each incoming HTTP client request is dispatched to a dedicated thread, preventing slow client connections from causing `ConnectionResetError` or blocking other users.
+- **Cross-Origin Resource Sharing (CORS)**: Sends full headers (`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Private-Network: true`) supporting cross-origin local and LAN environments.
+- **Windows UTF-8 Encoding**: Configures `sys.stdout` and `sys.stderr` with UTF-8 encoding replacement to prevent charmap `UnicodeEncodeError` in Windows PowerShell/Command Prompt.
+- **Automated OpenApi / Swagger UI**: Serves interactive documentation natively at `/docs` backed by `/openapi.json`.
 
-### 2.2 Background Telemetry Worker (`backend/app/background_worker.py`)
-A continuous daemon thread (`_worker_thread`) is spawned on server startup:
-- **Frequency**: Executes every 60 seconds.
-- **Cycle**: Iterates through all 7 destination configurations in `INITIAL_DESTINATIONS`.
-- **Pipeline Fetch**: Gathers weather, traffic delays, venue footfall factors, and OSM amenity nodes.
-- **Compute**: Calculates the destination's current inflow and Dynamic Carrying Capacity (DCC) index.
-- **Persistence**: Writes a snapshot row into the `sensor_readings` SQLite table.
-- **Memory Cache**: Updates the global `_telemetry_cache` dictionary to enable instant, sub-millisecond API responses without database query overhead.
+### 2.2 Concurrent Background Telemetry Pipeline (`backend/app/background_worker.py`)
+A continuous daemon thread (`_worker_thread`) triggers full multi-source sensor cycles every 60 seconds:
+- **Parallel Processing**: Uses `concurrent.futures.ThreadPoolExecutor` to process all 7 Western Ghats destinations simultaneously.
+- **OSM POI In-Memory Caching**: Overpass queries are cached in `_osm_cache` by coordinate grid `(round(lat, 3), round(lon, 3))` to avoid rate-limiting and eliminate latency bottlenecks.
+- **Batched Persistence**: Writes snapshot rows into SQLite `sensor_readings` in a single WAL transaction.
+- **Zero-Latency In-Memory Snapshot**: Updates `_telemetry_cache` to serve client requests in `< 2ms`.
 
 ### 2.3 Sensor Ingestion Pipelines (`backend/app/pipelines/`)
-Each pipeline is designed to be **fail-soft**, ensuring the platform remains fully operational even if external APIs time out or rate-limit requests:
+All external pipeline modules are **fail-soft**:
 
 1. **Weather Pipeline (`weather_pipeline.py`)**:
-   - Queries `api.open-meteo.com` with destination latitude and longitude.
+   - Queries `api.open-meteo.com` for rainfall (mm/hr), wind velocity, and ambient temperature.
    - Computes an environmental hazard score:
      $$\text{Hazard Score} = \min\left(1.0, \, \frac{\text{Rain mm}}{15.0} \times 0.70 + \frac{\text{Wind km/h}}{50.0} \times 0.30\right)$$
-   - Returns pleasant baseline metrics if the call times out.
 
 2. **Traffic Pipeline (`traffic_pipeline.py`)**:
-   - Queries the TomTom Traffic Flow API for highway speed reductions.
-   - If no API key is supplied, applies a **diurnal weekend model**: 2.1x multiplier during peak weekend hours (05:00 PM – 09:00 PM and 09:00 AM – 12:00 PM), 1.4x during regular weekend hours, and 1.05x on weekdays.
+   - Queries TomTom Traffic Flow API for highway delay multipliers.
+   - Applies an automatic diurnal weekend fallback (2.1x during weekend peaks, 1.4x standard weekend, 1.05x weekday).
 
 3. **Footfall Pipeline (`footfall_pipeline.py`)**:
-   - Queries BestTime.app for live attraction busyness.
-   - Falls back to an hourly busyness model scaling between 0.85x and 1.45x depending on day of week and time of day.
-   - Queries OpenStreetMap Overpass API for registered parking lots and viewpoints within a 3km radius.
+   - Queries BestTime.app attraction footfall busyness.
+   - Falls back to an hourly busyness model (0.85x–1.45x).
+   - Queries OpenStreetMap Overpass API for registered parking amenities and viewpoints within a 3km radius.
 
 4. **OGD India Pipeline (`ogd_india.py`)**:
-   - Queries `data.gov.in` for Maharashtra and coastal tourism statistics.
-   - Calibrates annual domestic tourism visit (DTV) growth rates (+14.8%) and seasonal monsoon indices (1.42x).
+   - Queries `data.gov.in` for Maharashtra tourism baselines (+14.8% YoY growth, 1.42x monsoon index).
 
 ---
 
 ## 3. Frontend Architecture
 
-### 3.1 Framework & Tooling
-- **React 19 & TypeScript 5.8**: Component architecture utilizing strict type safety across all metrics, destinations, and stakeholder records.
-- **Vite 7**: Fast developer server and optimized production bundler.
-- **Tailwind CSS**: Responsive utility styling paired with government color schemes (`#0f2b48` Navy, `#138808` Green, `#FF9933` Saffron, `#f6c042` Gold).
-- **Leaflet & React-Leaflet**: Interactive GIS mapping rendering vector polygons and custom HTML markers.
-- **Recharts**: Responsive SVG charts rendering 12-hour diurnal demand curves.
-- **Framer Motion**: Smooth entry animations for status meters, modal dialogs, and cards.
-- **canvas-confetti**: Celebration animations upon accepting an eco-twin reroute.
+### 3.1 Declarative Route Hierarchy (React Router DOM v7)
+The frontend implements a unified routing tree where stakeholder views are integrated rather than partitioned into disconnected silo apps:
 
-### 3.2 State Management (`frontend/src/store/useCorridorStore.ts`)
-The entire client application state is managed by a single Zustand store:
+| Route | Component | Description |
+|---|---|---|
+| `/` | `LandingPage.tsx` | Hero search box, live preview strip of top destinations, style quick-starts |
+| `/discover` | `DiscoverPage.tsx` | Personalized feed ranked by style affinity, crowd headroom, and under-visited boost |
+| `/search?q=` | `SearchResultsPage.tsx` | Full-page 3-tier fuzzy search intent resolution |
+| `/region/:type/:value` | `RegionPage.tsx` | Exhaustive listing of spots in a district or state sorted by crowd status |
+| `/spot/:spotId` | `SpotPage.tsx` | **Canonical Destination Spot Page** with 8 universal sections + role panels |
+| `/plan/new` | `TripPlannerPage.tsx` | 4-step wizard with progressive profiling signup modal |
+| `/plan/:tripId` | `SavedTripDetailPage.tsx` | Day-by-day timetable and official GreenPass certificate with QR voucher |
+| `/trips` | `MyTripsPage.tsx` | Saved itineraries and redeemable partner vouchers |
+| `/account` | `AccountPage.tsx` | Progressive origin & style preferences, stakeholder role switcher |
+| `/advisories` | `AdvisoriesPage.tsx` | Searchable official gazette dispatch system |
+| `/authority` | `AuthorityCommandPage.tsx` | District GIS command center funneled into canonical spot pages |
+| `/authority/spot/:spotId` | Redirect | Redirects to canonical `/spot/:spotId` |
+| `/provider` | `ProviderConsolePage.tsx` | Homestay operator console funneled into canonical spot pages |
+| `/provider/spot/:spotId` | Redirect | Redirects to canonical `/spot/:spotId` |
+| `/dev` | `DevPortal.tsx` | Production health monitoring, SIH26204 audit, and SQLite logs |
 
-```mermaid
-classDiagram
-    class CorridorStore {
-        +UserRole role
-        +AuthUser currentUser
-        +boolean authModalOpen
-        +Destination[] destinations
-        +string selectedDestinationId
-        +string categoryFilter
-        +number[] userPreferences
-        +string selectedTimeSlot
-        +string liveBackendStatus
-        +Advisory[] advisories
-        +Promotion[] promotions
-        +number totalCarbonSavedKg
-        +number divertedTripsCount
-        +setRole(role)
-        +requestRoleChange(targetRole)
-        +fetchLiveBackendFeed()
-        +setSelectedDestinationId(id)
-        +broadcastAdvisory(advisoryData)
-        +rerouteToDestination(id)
-        +updateAvailableRooms(destId, count)
-    }
-```
+### 3.2 3-Tier Intent Resolution & Search Engine (`GlobalSearchBox.tsx`)
+Search operates on an un-opinionated, zero-guess philosophy using `Fuse.js`:
+- **Tier 1 (Spots)**: Matches exact spot names, aliases, or IDs (`LON` -> Lonavala) and navigates to `/spot/:spotId`.
+- **Tier 2 (Districts)**: Matches district names (`Pune`, `Raigad`, `Satara`) and routes to `/region/district/:name`.
+- **Tier 3 (States)**: Matches state names (`Maharashtra`) and routes to `/region/state/:name`.
 
-### 3.3 State Slices & Persistence
-- **Active Role & Authentication**: Tracks whether the user is browsing as `tourist`, `authority`, or `provider`. User profile and session token are persisted in browser `localStorage['ecoroute_auth_user']`.
-- **Telemetry Auto-Sync**: The `fetchLiveBackendFeed()` method sends a `GET /api/destinations/live` request on initial mount and every 25 seconds thereafter. If the backend is unreachable, the store gracefully sets `liveBackendStatus: 'offline'` and continues operating using cached destination metrics.
-- **Preference Vector**: Tracks a 4D array `[scenic, budget, adventure, family]` adjusted via tag toggle pills.
+### 3.3 The Canonical Spot Page Architecture (`SpotPage.tsx` & `useSpotData.ts`)
+Rather than maintaining separate destination detail screens for tourists, district collectors, and hotel owners, **every destination has exactly one page**. 
+- `useSpotData.ts` serves as the single source of truth, returning live metrics, hourly forecasts, twin alternatives, provenance tiers, and check-ins.
+- **Universal Sections**: Always visible to tourists, citizens, and stakeholders alike.
+- **Role-Conditional Panels**: Rendered at the bottom of the page when an authenticated officer or operator views the spot.
 
 ---
 
-## 4. End-to-End Data Flow
+## 4. Data Provenance & Confidence Scoring (Tiers 1–4)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Sensors as External APIs (Open-Meteo, TomTom)
-    participant Worker as Background Worker Daemon
-    participant DB as SQLite (ecoroute.db)
-    participant Cache as In-Memory Cache
-    participant API as HTTP API Server (:8000)
-    participant Client as React Client (Zustand Store)
+To ensure high credibility and transparency for citizens and district magistrates (§8), all telemetry displayed on the Spot Page is categorized into four auditable Data Tiers:
 
-    loop Every 60 Seconds
-        Worker->>Sensors: Ingest weather, traffic, footfall
-        Sensors-->>Worker: Raw telemetry data
-        Worker->>Worker: Compute DCC index and queue delay
-        Worker->>DB: INSERT into sensor_readings (WAL mode)
-        Worker->>Cache: Update latest telemetry snapshot
-    end
+| Data Tier | Category | Source Systems | Refresh Rate |
+|:---:|---|---|:---:|
+| **Tier 1** | Ground-Truth Telemetry | Highway Toll Sensors, Parking Geofences, Municipal Gates | Sub-minute |
+| **Tier 2** | Calibrated Live Feeds | Open-Meteo Weather, TomTom Traffic Flow, BestTime.app | 60 seconds |
+| **Tier 3** | Algorithmic Fallback & Rhythm | Historical 7-day diurnal curves, weekend multiplier models | Hourly |
+| **Tier 4** | Statutory Baselines | Official Carrying Capacity Gazette citations (e.g. Forest Dept Study) | Periodic audit |
 
-    Client->>API: GET /api/destinations/live
-    API->>Cache: Read snapshot
-    Cache-->>API: Latest destination metrics
-    API-->>Client: 200 OK (destinations JSON)
-    Client->>Client: Update Zustand store & re-render UI
+### Dynamic Confidence Score Formulation
+$$\text{Confidence} = \min\left(98\%, \, \max\left(50\%, \, 55 + (W_{\text{live}} \times 15) + (T_{\text{live}} \times 15) + (O_{\text{live}} \times 10) + \min(checkins \times 2, 8)\right)\right)$$
 
-    opt Authority Broadcasts Advisory
-        Client->>Client: broadcastAdvisory(data)
-        Client->>Client: Update local advisories and active banners
-    end
-
-    opt Tourist Reroutes to Twin Spot
-        Client->>Client: rerouteToDestination(twinId)
-        Client->>Client: Update carbon saved (+18.5 kg) & issue pass
-    end
-```
+Where $W_{\text{live}}$, $T_{\text{live}}$, and $O_{\text{live}}$ are binary flags (1 if sensor is live, 0 if fallback).
 
 ---
 
-## 5. Mathematical Engine Specifications
+## 5. Mathematical Models
 
 ### 5.1 Dynamic Carrying Capacity (DCC)
-Implemented in both `backend/app/engine/dcc_calculator.py` and `frontend/src/lib/engine.ts`:
-- **Physical Capacity Utilization**:
-  $$U_{\text{cap}} = \frac{I_{\text{curr}}}{C_{\text{base}}}$$
-- **Weather Hazard Factor**:
-  $$H_{\text{weather}} \in [0.0, 1.0]$$
-- **Combined Index**:
+- **Capacity Utilization**: $U_{\text{cap}} = I_{\text{curr}} / C_{\text{base}}$
+- **Weather Hazard**: $H_{\text{weather}} \in [0.0, 1.0]$
+- **DCC Index**:
   $$\text{DCC} = \text{round}\left(0.70 \times U_{\text{cap}} + 0.30 \times H_{\text{weather}}, \, 2\right)$$
-- **Classification**:
-  - `OPTIMAL` if $\text{DCC} < 0.70$
-  - `MODERATE` if $0.70 \le \text{DCC} < 0.85$
-  - `CRITICAL` if $\text{DCC} \ge 0.85$
+- **Tiers**: `OPTIMAL` ($< 0.70$), `MODERATE` ($0.70 - 0.84$), `CRITICAL` ($\ge 0.85$).
 
-### 5.2 Queuing Delay Model
-When current inflow exceeds physical capacity, bottleneck queue delays are estimated in minutes:
-$$\text{Wait Minutes} = \text{round}\left(\frac{I_{\text{curr}} - C_{\text{base}}}{C_{\text{base}}} \times T_{\text{dwell}} \times 60\right)$$
-*(where $T_{\text{dwell}}$ is average dwell time in hours, defaulting between 3.0 and 5.0 hours).*
+### 5.2 Algorithmic Demand Diffusion Feed Formula
+Used in `/discover` to surface personalized, resilient destinations while relieving bottleneck pressure:
+$$\text{Rank Score} = (0.45 \times \text{Cosine Similarity}) + (0.30 \times (1.0 - \text{DCC})) + (0.25 \times \text{UnderVisitedBoost})$$
 
-### 5.3 4D Cosine Similarity & Multi-Objective Twin Ranking
-Implemented in `twin_matcher.py` and `frontend/src/lib/engine.ts`:
-- **Feature Vectors**: Normalized 4D array $\mathbf{v} = [v_{\text{scenic}}, v_{\text{budget}}, v_{\text{adventure}}, v_{\text{family}}]$.
-- **Blended Target**:
-  $$\mathbf{u}_{\text{blended}} = (0.60 \times \mathbf{v}_{\text{target}}) + (0.40 \times \mathbf{v}_{\text{user\_prefs}})$$
-- **Cosine Angle**:
-  $$\text{Sim}(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2}$$
-- **Multi-Objective Utility Score**:
-  $$\text{Utility} = (0.60 \times \text{Sim}) + \left(0.40 \times \max(0, 1.0 - \text{DCC}_{\text{candidate}})\right)$$
-Candidate destinations are filtered to ensure $\text{DCC} < 0.70$ and ranked descending by Utility Score.
-
-### 5.4 Diurnal Inflow Gaussian Model
-Forecasts 13 discrete hourly intervals between 06:00 AM and 06:00 PM using time-of-day multipliers:
-- 06:00 AM: $0.35\times$
-- 09:00 AM: $0.82\times$
-- 11:00 AM: $1.25\times$
-- 12:00 PM: $1.35\times$ *(Peak)*
-- 02:00 PM: $1.20\times$
-- 05:00 PM: $0.75\times$
-- 06:00 PM: $0.50\times$
-
----
-
-## 6. Persistence Architecture (SQLite 3 WAL Mode)
-
-Database file: `backend/data/ecoroute.db`.
-- **Write-Ahead Logging (WAL)**: Initialized via `PRAGMA journal_mode = WAL;` and `PRAGMA synchronous = NORMAL;`.
-- **High Concurrency**: Enables concurrent reader processes while the background telemetry daemon executes periodic batch writes.
-- **Timeout Configuration**: Connections are established with `timeout=30.0` seconds to avoid SQLite table lock contentions.
-
----
-
----
-
-## 7. Client-Server Integration & Gap Closures
-
-Following the architectural audit and implementation sprint, the primary frontend-backend discrepancies have been closed:
-1. **Full API Consumption**:
-   - `GET /api/destinations/live`: Actively polled every 25s by `useCorridorStore.ts` to power real-time DCC metrics.
-   - `POST /api/auth/login`: Invoked by `AuthModal.tsx` for stakeholder and citizen authentication.
-   - `POST /api/advisories/broadcast`: Wired to `DigitalAdvisoryDispatcher.tsx`; official bulletins persist directly to SQLite `gazette_advisories`.
-   - `GET /api/advisories`: Polled on application load to sync active emergency notices into client state and render warning banners.
-   - `POST /api/passes/issue`: Triggered by "Choose Twin" CTA in `TwinAlternativeCards.tsx`; issues digital passes and logs records into SQLite `green_yatra_passes`.
-   - `POST /api/ai/chat`: Queried by `AiHelplineBot.tsx` with live telemetry grounding and client-side fallback.
-   - `POST /api/itinerary/plan`: Queried by `FutureTripPlanner.tsx` whenever travel parameters (date, duration, style) are modified.
-   - `GET /api/destinations/{id}/forecast`: Queried by `DemandCurveChart.tsx` to retrieve 12-hour hourly predictive curves with local Gaussian model fallback.
-   - `PUT /api/destinations/{id}/occupancy`: Invoked by `LiveInventoryCard.tsx` in the MTDC Provider console to update live capacity headroom.
-2. **TouristView Live Wiring**:
-   - The static hardcoded presentation showcase in `TouristView.tsx` has been replaced with full dynamic wiring to the Zustand store.
-   - All modular components (`HeroDCCStatus`, `TwinAlternativeCards`, `DemandCurveChart`, `EcoPassCard`, `FutureTripPlanner`) are dynamically mounted and receive live telemetry.
-
----
-
-## 8. Developer Portal & Data Transparency Layer
-
-To ensure complete transparency during hackathon evaluation and production monitoring, EcoRoute Bharat includes a dedicated inspection layer accessible via the `developer` role (`/developer`).
-
-### 8.1 Architecture & Endpoints
-- **Backend Inspector (`GET /api/dev/status`)**:
-  - Reports server uptime, last ETL cycle timestamp, and database row counts from SQLite (`sensor_readings`, `green_passes_issued`, `gazette_advisories`).
-  - Audits external API key configurations (`TOMTOM_API_KEY`, `BESTTIME_API_KEY`, `DATA_GOV_IN_API_KEY`, `OPEN_METEO`).
-  - Evaluates live status for all 14 SIH26204 problem statement requirements.
-  - Exposes per-destination telemetry breakdowns with explicit provenance labels:
-    - 🟢 `LIVE`: Genuine external API call responding with real-time physical observations.
-    - 🟡 `SIMULATED`: Mathematically calibrated heuristic time-of-day or diurnal multiplier model.
-    - 🔴 `FALLBACK`: Remote service timed out or errored; baseline regional estimates engaged.
-    - ⚫ `HARDCODED`: Static benchmark values.
-- **Frontend Dashboard (`DevPortal.tsx`)**:
-  - Developed with a high-density, dark-mode Vercel/Grafana inspector aesthetic.
-  - Features 6 dedicated sections:
-    - **Section A**: Backend Health, System Uptime & SQLite Database Metadata.
-    - **Section B**: Data Source Transparency Matrix (Destination × Pipeline with raw physical values).
-    - **Section C**: SIH26204 Requirement Compliance Audit (All 14 requirements mapped to operational status).
-    - **Section D**: API Endpoint Registry (Connection state across all REST endpoints).
-    - **Section E**: Live SQLite Ingestion Log Viewer (Snapshot of the latest sensor telemetry rows).
-    - **Section F**: Architectural Transparency Notice (Documenting real vs. simulated pipeline layers).
-  - Automatically refreshes every 10 seconds via `setInterval` with manual refresh override.
-
+### 5.3 4D Cosine Similarity Twin Matching
+- Evaluates candidate destinations against traveler preferences across 4 dimensions: Scenic ($v_0$), Budget ($v_1$), Adventure ($v_2$), Family ($v_3$).
+- Only candidates with $\text{DCC} < 0.70$ are promoted as twin alternatives.
