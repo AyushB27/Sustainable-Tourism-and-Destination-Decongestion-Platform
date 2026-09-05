@@ -86,9 +86,25 @@ def init_database():
         message TEXT NOT NULL,
         author TEXT NOT NULL,
         active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        expires_at TEXT,
+        revoked_at TEXT
     )
     """)
+
+    # Migration for existing DB: add expires_at and revoked_at if missing
+    cursor.execute("PRAGMA table_info(gazette_advisories)")
+    adv_cols = [row["name"] for row in cursor.fetchall()]
+    if "expires_at" not in adv_cols:
+        try:
+            cursor.execute("ALTER TABLE gazette_advisories ADD COLUMN expires_at TEXT;")
+        except Exception:
+            pass
+    if "revoked_at" not in adv_cols:
+        try:
+            cursor.execute("ALTER TABLE gazette_advisories ADD COLUMN revoked_at TEXT;")
+        except Exception:
+            pass
 
     # 5. MTDC Homestay & Operator Promotions Table
     cursor.execute("""
@@ -104,6 +120,33 @@ def init_database():
         valid_until TEXT NOT NULL,
         business_name TEXT NOT NULL,
         business_type TEXT NOT NULL
+    )
+    """)
+
+    # 6. Regional Demand Flows Table (Origin-Destination Movement Patterns)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS demand_flows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        origin_spot_id TEXT NOT NULL,
+        destination_spot_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        estimated_visitor_count INTEGER NOT NULL,
+        source_tier TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """)
+
+    # 7. Emergency Capacity Overrides Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS capacity_overrides (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        spot_id TEXT NOT NULL,
+        original_capacity INTEGER NOT NULL,
+        override_capacity INTEGER NOT NULL,
+        reason TEXT,
+        authority_id TEXT NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
     )
     """)
 
@@ -128,15 +171,31 @@ def init_database():
     if cursor.fetchone()[0] == 0:
         cursor.execute("""
         INSERT INTO gazette_advisories (
-            id, destination_id, destination_name, severity, title, message, author, active, created_at
+            id, destination_id, destination_name, severity, title, message, author, active, created_at, expires_at
         ) VALUES 
         ('ADV-01', 'LON', 'Lonavala & Khandala', 'high', 'Expressway Ghat Congestion Alert',
          'Heavy monsoon vehicular bottleneck between Khandala tunnel and Rajmachi point. Diversions active.',
-         'Pune District Collectorate', 1, ?),
+         'Pune District Collectorate', 1, ?, '2026-09-30T23:59:59'),
         ('ADV-02', 'MAH', 'Mahabaleshwar Plateau', 'medium', 'Parking Saturation Advisory',
          'Venna Lake and main market parking reaches 92% occupancy. Use municipal shuttle feeder.',
-         'Satara District Police', 1, ?)
+         'Satara District Police', 1, ?, '2026-09-30T23:59:59')
         """, (datetime.now().isoformat(), datetime.now().isoformat()))
+
+    # Seed Demand Flows if empty
+    cursor.execute("SELECT COUNT(*) FROM demand_flows")
+    if cursor.fetchone()[0] == 0:
+        today_iso = datetime.now().strftime("%Y-%m-%d")
+        cursor.execute("""
+        INSERT INTO demand_flows (origin_spot_id, destination_spot_id, date, estimated_visitor_count, source_tier, created_at)
+        VALUES 
+        ('LON', 'MAT', ?, 1420, 'Tier 3 — Calibrated TripPlan/CheckIn Model', ?),
+        ('LON', 'BHA', ?, 890, 'Tier 3 — Calibrated TripPlan/CheckIn Model', ?),
+        ('ALB', 'KAS', ?, 1150, 'Tier 3 — Calibrated TripPlan/CheckIn Model', ?),
+        ('MAH', 'TAP', ?, 620, 'Tier 3 — Calibrated TripPlan/CheckIn Model', ?)
+        """, (today_iso, datetime.now().isoformat(),
+              today_iso, datetime.now().isoformat(),
+              today_iso, datetime.now().isoformat(),
+              today_iso, datetime.now().isoformat()))
 
     conn.commit()
     conn.close()

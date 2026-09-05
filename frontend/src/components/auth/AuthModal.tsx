@@ -14,8 +14,11 @@ import {
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { UserRole, AuthUser } from '../../types';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const AuthModal: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { 
     authModalOpen, 
     authModalTargetRole, 
@@ -85,6 +88,19 @@ export const AuthModal: React.FC = () => {
     setLoading(true);
     setErrorMessage(null);
 
+    const onLoginSuccess = (user: AuthUser) => {
+      loginUser(user);
+      if (!location.pathname.startsWith('/spot/')) {
+        if (user.role === 'authority') {
+          navigate('/authority');
+        } else if (user.role === 'provider') {
+          navigate('/provider');
+        } else {
+          navigate('/');
+        }
+      }
+    };
+
     try {
       // 1. Try backend authentication
       const res = await fetch('http://127.0.0.1:8000/api/auth/login', {
@@ -97,7 +113,7 @@ export const AuthModal: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'success' && data.user) {
-          loginUser(data.user);
+          onLoginSuccess(data.user);
           setLoading(false);
           return;
         }
@@ -109,12 +125,12 @@ export const AuthModal: React.FC = () => {
     // 2. Local Demo Verification
     if (selectedTab === 'authority') {
       const match = demoAuthorityProfiles[0];
-      loginUser(match);
+      onLoginSuccess(match);
     } else if (selectedTab === 'provider') {
       const match = demoProviderProfiles[0];
-      loginUser(match);
+      onLoginSuccess(match);
     } else {
-      loginUser({
+      onLoginSuccess({
         id: 'CITIZEN-GUEST-01',
         name: 'Citizen Tourist',
         role: 'tourist',
@@ -129,6 +145,15 @@ export const AuthModal: React.FC = () => {
 
   const handleQuickDemoLogin = (profile: AuthUser) => {
     loginUser(profile);
+    if (!location.pathname.startsWith('/spot/')) {
+      if (profile.role === 'authority') {
+        navigate('/authority');
+      } else if (profile.role === 'provider') {
+        navigate('/provider');
+      } else {
+        navigate('/');
+      }
+    }
   };
 
   return (

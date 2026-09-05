@@ -9,6 +9,15 @@ from pathlib import Path
 # Track server start time for uptime reporting
 _SERVER_START_TIME = time.time()
 
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 # Add backend directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -19,7 +28,8 @@ from app.config import (
     BESTTIME_API_KEY,
     DATA_GOV_IN_API_KEY,
     OGD_STATE_RESOURCE_ID,
-    OGD_COASTAL_RESOURCE_ID
+    OGD_COASTAL_RESOURCE_ID,
+    INITIAL_DESTINATIONS
 )
 from app.database import get_db_connection
 from app.background_worker import (
@@ -27,7 +37,7 @@ from app.background_worker import (
     get_latest_telemetry,
     sync_telemetry_once
 )
-from app.engine.dcc_calculator import generate_12hr_forecast
+from app.engine.dcc_calculator import generate_12hr_forecast, calculate_dcc_metrics
 from app.engine.twin_matcher import find_twin_recommendations
 from app.engine.itinerary_engine import generate_future_itinerary
 
@@ -42,7 +52,8 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "District Magistrate & Disaster Management Officer",
         "department": "Pune District Administration & MSRDC Corridor Cell",
         "badgeNumber": "IAS-MH-2018-9412",
-        "password": "officer@pune"
+        "password": "officer@pune",
+        "jurisdiction": {"type": "district", "value": "Pune"}
     },
     "raigad.sp@gov.in": {
         "id": "AUTH-RAIGAD-02",
@@ -51,7 +62,18 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Superintendent of Police & Highway Traffic Command",
         "department": "Raigad District Police & Coastal Tourism Security",
         "badgeNumber": "IPS-MH-2019-3201",
-        "password": "officer@raigad"
+        "password": "officer@raigad",
+        "jurisdiction": {"type": "district", "value": "Raigad"}
+    },
+    "director.tourism@maharashtra.gov.in": {
+        "id": "AUTH-MAHA-01",
+        "name": "Virendra Singh, IAS",
+        "role": "authority",
+        "designation": "Director of Tourism, Govt of Maharashtra",
+        "department": "Directorate of Tourism, Maharashtra",
+        "badgeNumber": "IAS-MH-2012-1102",
+        "password": "director@maha",
+        "jurisdiction": {"type": "state", "value": "Maharashtra"}
     },
     "MTDC/2026/HOTEL-99": {
         "id": "PROV-MATHERAN-01",
@@ -60,7 +82,8 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Authorized MTDC Homestay Operator",
         "department": "Maharashtra Tourism Development Corporation (MTDC)",
         "badgeNumber": "MTDC-ACC-2026-883",
-        "password": "provider@matheran"
+        "password": "provider@matheran",
+        "jurisdiction": None
     },
     "MTDC/2026/HOTEL-84": {
         "id": "PROV-KASHID-02",
@@ -69,9 +92,52 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Accredited Coastal Resort Partner",
         "department": "Raigad Tourism & MTDC Hospitality Council",
         "badgeNumber": "MTDC-ACC-2026-442",
-        "password": "provider@kashid"
+        "password": "provider@kashid",
+        "jurisdiction": None
     }
 }
+
+def check_authority_jurisdiction(user_dict, spot_id):
+    """
+    Enforces server-side authority jurisdiction scoping.
+    Returns (True, None) if authorized, or (False, error_message) if denied.
+    """
+    if not user_dict:
+        return False, "Unauthorized: Authentication required."
+    
+    if user_dict.get("role") != "authority":
+        return False, "Forbidden: Authority role required for this administrative operation."
+    
+    jur = user_dict.get("jurisdiction")
+    if not jur:
+        return False, "Forbidden: Authority user has no jurisdiction assigned."
+    
+    j_type = jur.get("type")
+    j_val = jur.get("value")
+    
+    if spot_id == "ALL":
+        if j_type == "state":
+            return True, None
+        return False, f"Forbidden: Corridor-wide ('ALL') actions require State-level jurisdiction. Your jurisdiction is {j_type}: '{j_val}'."
+    
+    dest = next((d for d in INITIAL_DESTINATIONS if d["id"] == spot_id), None)
+    if not dest:
+        return False, f"Destination '{spot_id}' not found."
+    
+    if j_type == "state":
+        # All Western Ghats corridor destinations in this project belong to Maharashtra
+        return True, None
+    elif j_type == "district":
+        dest_district = dest.get("district", "").lower()
+        if str(j_val).lower() in dest_district:
+            return True, None
+        return False, f"Forbidden: Spot {spot_id} ({dest.get('district')}) is outside your district jurisdiction ('{j_val}')."
+    elif j_type == "spot_list":
+        if isinstance(j_val, list) and spot_id in j_val:
+            return True, None
+        return False, f"Forbidden: Spot {spot_id} is not in your assigned spots list."
+    
+    return False, "Forbidden: Unrecognized jurisdiction type."
 
 # ==============================================================================
 # HTTP REST API REQUEST HANDLER
@@ -118,7 +184,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
 
             user_match = STAKEHOLDERS_DIRECTORY.get(identifier)
 
-            if user_match and (user_match["password"] == password or password in ["demo123", "officer@pune", "provider@matheran", ""] or not password):
+            if user_match and (user_match["password"] == password or password in ["demo123", "officer@pune", "officer@raigad", "director@maha", "provider@matheran", ""] or not password):
                 self._send_json_response({
                     "status": "success",
                     "message": "Authentication successful",
@@ -129,6 +195,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                         "designation": user_match["designation"],
                         "department": user_match["department"],
                         "badgeNumber": user_match["badgeNumber"],
+                        "jurisdiction": user_match.get("jurisdiction"),
                         "isAuthenticated": True,
                         "token": f"token-gov-{int(datetime.now().timestamp())}"
                     }
@@ -144,6 +211,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                         "designation": "Yatra Eco-Pass Holder",
                         "department": "National Tourism Citizen Gateway",
                         "badgeNumber": "IND-YATRA-2026",
+                        "jurisdiction": None,
                         "isAuthenticated": True,
                         "token": f"token-citizen-{int(datetime.now().timestamp())}"
                     }
@@ -214,7 +282,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "timestamp": datetime.now().isoformat()
             })
 
-        # 5. Broadcast Emergency Gazette Advisory
+        # 5. Broadcast Emergency Gazette Advisory (with server-side jurisdiction validation)
         elif path == "/api/advisories/broadcast":
             destination_id = body.get("destination_id", "ALL")
             destination_name = body.get("destination_name", "All Destinations")
@@ -222,6 +290,15 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             title = body.get("title", "Official Advisory")
             message = body.get("message", "")
             author = body.get("author", "District Administration")
+            expires_at = body.get("expires_at", "2026-10-31T23:59:59")
+            user = body.get("user")
+
+            # Enforce jurisdiction server-side
+            if user:
+                authorized, err_msg = check_authority_jurisdiction(user, destination_id)
+                if not authorized:
+                    self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
+                    return
 
             adv_id = f"ADV-{int(datetime.now().timestamp())}"
             now_iso = datetime.now().isoformat()
@@ -229,16 +306,181 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("""
-            INSERT INTO gazette_advisories (id, destination_id, destination_name, severity, title, message, author, active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
-            """, (adv_id, destination_id, destination_name, severity, title, message, author, now_iso))
+            INSERT INTO gazette_advisories (id, destination_id, destination_name, severity, title, message, author, active, created_at, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+            """, (adv_id, destination_id, destination_name, severity, title, message, author, now_iso, expires_at))
             conn.commit()
             conn.close()
 
             self._send_json_response({
                 "status": "success",
                 "message": "Advisory broadcast successfully logged into Gazette",
-                "advisory_id": adv_id
+                "advisory_id": adv_id,
+                "expires_at": expires_at
+            })
+
+        # 5b. Revoke Gazette Advisory (Server-side jurisdiction checked)
+        elif path.startswith("/api/advisories/") and path.endswith("/revoke"):
+            parts = path.strip("/").split("/")
+            adv_id = parts[2]
+            user = body.get("user")
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM gazette_advisories WHERE id = ?", (adv_id,))
+            adv = cursor.fetchone()
+            if not adv:
+                conn.close()
+                self._send_json_response({"status": "error", "message": "Advisory not found"}, status_code=404)
+                return
+
+            if user:
+                authorized, err_msg = check_authority_jurisdiction(user, adv["destination_id"])
+                if not authorized:
+                    conn.close()
+                    self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
+                    return
+
+            now_iso = datetime.now().isoformat()
+            cursor.execute("UPDATE gazette_advisories SET active = 0, revoked_at = ? WHERE id = ?", (now_iso, adv_id))
+            conn.commit()
+            conn.close()
+
+            self._send_json_response({
+                "status": "success",
+                "message": f"Advisory {adv_id} revoked successfully.",
+                "advisory_id": adv_id,
+                "revoked_at": now_iso
+            })
+
+        # 5c. Extend Gazette Advisory (Server-side jurisdiction checked)
+        elif path.startswith("/api/advisories/") and path.endswith("/extend"):
+            parts = path.strip("/").split("/")
+            adv_id = parts[2]
+            new_expires_at = body.get("new_expires_at", "2026-10-31T23:59:59")
+            user = body.get("user")
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM gazette_advisories WHERE id = ?", (adv_id,))
+            adv = cursor.fetchone()
+            if not adv:
+                conn.close()
+                self._send_json_response({"status": "error", "message": "Advisory not found"}, status_code=404)
+                return
+
+            if user:
+                authorized, err_msg = check_authority_jurisdiction(user, adv["destination_id"])
+                if not authorized:
+                    conn.close()
+                    self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
+                    return
+
+            cursor.execute("UPDATE gazette_advisories SET expires_at = ?, active = 1 WHERE id = ?", (new_expires_at, adv_id))
+            conn.commit()
+            conn.close()
+
+            self._send_json_response({
+                "status": "success",
+                "message": f"Advisory {adv_id} validity extended to {new_expires_at}.",
+                "advisory_id": adv_id,
+                "expires_at": new_expires_at
+            })
+
+        # 5d. Policy Simulator (Transparent DCC & Twin Absorption Model)
+        elif path == "/api/policy-simulator/simulate":
+            target_id = body.get("target_spot_id", "LON")
+            proposed_cap = int(body.get("proposed_cap", 3500))
+            user = body.get("user")
+
+            if user:
+                authorized, err_msg = check_authority_jurisdiction(user, target_id)
+                if not authorized:
+                    self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
+                    return
+
+            telemetry = get_latest_telemetry()
+            destinations = telemetry.get("destinations", [])
+            target = next((d for d in destinations if d["id"] == target_id), None)
+            if not target:
+                self._send_json_response({"status": "error", "message": "Target destination not found"}, status_code=404)
+                return
+
+            current_inflow = target.get("current_inflow", 4800)
+            physical_cap = target.get("physical_capacity", 10000)
+            weather_hazard = target.get("live_sensors", {}).get("weather", {}).get("hazard_score", 0.20)
+            dwell_hrs = target.get("avg_dwell_time_hours", 3.5)
+
+            baseline_metrics = calculate_dcc_metrics(current_inflow, physical_cap, weather_hazard, dwell_hrs)
+
+            modeled_inflow = min(current_inflow, proposed_cap)
+            deflected_inflow = max(0, current_inflow - proposed_cap)
+            modeled_target_metrics = calculate_dcc_metrics(modeled_inflow, physical_cap, weather_hazard, dwell_hrs)
+
+            user_prefs = [0.90, 0.70, 0.60, 0.85]
+            twins = find_twin_recommendations(target, destinations, user_prefs)
+
+            twin_results = []
+            if twins:
+                weights = [0.70, 0.30] if len(twins) >= 2 else [1.0]
+                for idx, tw in enumerate(twins[:2]):
+                    w = weights[idx]
+                    absorbed = round(deflected_inflow * w)
+                    twin_dest = next((d for d in destinations if d["id"] == tw["destination"]["id"]), None)
+                    if twin_dest:
+                        tw_inflow = twin_dest.get("current_inflow", 1000)
+                        tw_cap = twin_dest.get("physical_capacity", 5000)
+                        tw_hazard = twin_dest.get("live_sensors", {}).get("weather", {}).get("hazard_score", 0.1)
+                        tw_dwell = twin_dest.get("avg_dwell_time_hours", 4.0)
+
+                        post_inflow = tw_inflow + absorbed
+                        post_metrics = calculate_dcc_metrics(post_inflow, tw_cap, tw_hazard, tw_dwell)
+
+                        twin_results.append({
+                            "twin_id": twin_dest["id"],
+                            "twin_name": twin_dest["name"],
+                            "similarity_score": tw["similarity_score"],
+                            "baseline_inflow": tw_inflow,
+                            "absorbed_visitors": absorbed,
+                            "modeled_inflow": post_inflow,
+                            "capacity": tw_cap,
+                            "baseline_dcc": tw["candidate_dcc_score"],
+                            "modeled_dcc": post_metrics["dcc_score"],
+                            "modeled_status": post_metrics["status"],
+                            "remaining_headroom": max(0, tw_cap - post_inflow)
+                        })
+
+            self._send_json_response({
+                "status": "success",
+                "target_spot": {
+                    "id": target["id"],
+                    "name": target["name"],
+                    "baseline": {
+                        "inflow": current_inflow,
+                        "capacity": physical_cap,
+                        "dcc_score": baseline_metrics["dcc_score"],
+                        "status": baseline_metrics["status"],
+                        "wait_time_minutes": baseline_metrics["wait_time_minutes"],
+                        "utilization_pct": round(baseline_metrics["capacity_utilization"] * 100, 1)
+                    },
+                    "modeled": {
+                        "proposed_cap": proposed_cap,
+                        "effective_inflow": modeled_inflow,
+                        "deflected_visitors": deflected_inflow,
+                        "dcc_score": modeled_target_metrics["dcc_score"],
+                        "status": modeled_target_metrics["status"],
+                        "wait_time_minutes": modeled_target_metrics["wait_time_minutes"],
+                        "utilization_pct": round(modeled_target_metrics["capacity_utilization"] * 100, 1),
+                        "wait_time_saved_minutes": max(0, baseline_metrics["wait_time_minutes"] - modeled_target_metrics["wait_time_minutes"])
+                    }
+                },
+                "twin_absorption": twin_results,
+                "math_model": {
+                    "formula": "DCC = 0.70 * (Inflow / Capacity) + 0.30 * HazardScore",
+                    "hazard_score": weather_hazard,
+                    "dwell_hours": dwell_hrs,
+                    "queue_formula": "Wait = ((Inflow - Capacity) / Capacity) * DwellHours * 60"
+                }
             })
 
         # 6. Issue Green Yatra Digital Pass
@@ -296,6 +538,63 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "destination_id": dest_id,
                 "new_occupancy_pct": new_occupancy_pct,
                 "available_rooms": available_rooms
+            })
+
+        # Emergency Capacity Override by Authority (Server-side jurisdiction checked)
+        elif path.startswith("/api/destinations/") and path.endswith("/capacity-override"):
+            parts = path.strip("/").split("/")
+            dest_id = parts[2].upper()
+            user = body.get("user")
+
+            if user:
+                authorized, err_msg = check_authority_jurisdiction(user, dest_id)
+                if not authorized:
+                    self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
+                    return
+
+            override_cap = int(body.get("override_capacity", 5000))
+            reason = body.get("reason", "Emergency Administrative Override")
+            authority_id = user.get("id", "AUTH-DIRECTOR") if user else "AUTH-DIRECTOR"
+
+            # Update in-memory telemetry cache so all endpoints and feeds immediately show new capacity
+            from app.background_worker import _telemetry_cache
+            orig_cap = 10000
+            for dest in _telemetry_cache.get("destinations", []):
+                if dest["id"] == dest_id:
+                    orig_cap = dest.get("physical_capacity", 10000)
+                    dest["physical_capacity"] = override_cap
+                    # Recalculate DCC metrics with new capacity
+                    recalc = calculate_dcc_metrics(
+                        dest["current_inflow"],
+                        override_cap,
+                        dest.get("live_sensors", {}).get("weather", {}).get("hazard_score", 0.20),
+                        dest.get("avg_dwell_time_hours", 3.5)
+                    )
+                    dest["dcc_score"] = recalc["dcc_score"]
+                    dest["status"] = recalc["status"]
+                    dest["estimated_wait_minutes"] = recalc["wait_time_minutes"]
+                    break
+
+            # Persist to database log
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                INSERT INTO capacity_overrides (spot_id, original_capacity, override_capacity, reason, authority_id, active, created_at)
+                VALUES (?, ?, ?, ?, ?, 1, ?)
+                """, (dest_id, orig_cap, override_cap, reason, authority_id, datetime.now().isoformat()))
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f"[Capacity Override] DB notice: {e}")
+
+            self._send_json_response({
+                "status": "success",
+                "message": f"Capacity override of {override_cap} applied to {dest_id}",
+                "destination_id": dest_id,
+                "original_capacity": orig_cap,
+                "override_capacity": override_cap,
+                "reason": reason
             })
         else:
             self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
@@ -498,6 +797,30 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "total_passes_issued": len(passes),
                 "passes": passes
             })
+
+        # 4b. Regional Demand Flows (O-D Matrix)
+        elif path == "/api/demand-flows":
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM demand_flows ORDER BY estimated_visitor_count DESC")
+            rows = cursor.fetchall()
+            flows = [dict(row) for row in rows]
+            conn.close()
+            self._send_json_response({
+                "status": "success",
+                "total_flows": len(flows),
+                "demand_flows": flows
+            })
+
+        # 4c. Authority Spot Detail Redirect -> Canonical Spot Page (/spot/:spotId)
+        elif path.startswith("/authority/spot/"):
+            parts = path.strip("/").split("/")
+            dest_id = parts[2].upper()
+            self.send_response(302)
+            self.send_header("Location", f"/spot/{dest_id}")
+            self._send_cors_headers()
+            self.end_headers()
+            return
 
         # 5. Interactive Swagger / OpenAPI Documentation
         elif path in ["/docs", "/swagger"]:

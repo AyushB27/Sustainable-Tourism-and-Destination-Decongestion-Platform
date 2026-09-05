@@ -115,6 +115,58 @@ class TestEcoRouteBackend(unittest.TestCase):
         collector = STAKEHOLDERS_DIRECTORY["pune.collector@gov.in"]
         self.assertEqual(collector["role"], "authority")
         self.assertEqual(collector["badgeNumber"], "IAS-MH-2018-9412")
+        self.assertIsNotNone(collector.get("jurisdiction"))
+        self.assertEqual(collector["jurisdiction"]["value"], "Pune")
+
+    def test_jurisdiction_scoping_enforcement(self):
+        """Verify server-side jurisdiction scoping rules."""
+        from main import check_authority_jurisdiction
+        pune_user = STAKEHOLDERS_DIRECTORY["pune.collector@gov.in"]
+        raigad_user = STAKEHOLDERS_DIRECTORY["raigad.sp@gov.in"]
+        maha_user = STAKEHOLDERS_DIRECTORY["director.tourism@maharashtra.gov.in"]
+
+        # Pune Collector: permitted on LON (Pune District), denied on MAT (Raigad District), denied on ALL
+        allowed_pune_lon, _ = check_authority_jurisdiction(pune_user, "LON")
+        self.assertTrue(allowed_pune_lon)
+        allowed_pune_mat, err_pune_mat = check_authority_jurisdiction(pune_user, "MAT")
+        self.assertFalse(allowed_pune_mat)
+        self.assertIn("outside your district jurisdiction", err_pune_mat)
+        allowed_pune_all, err_pune_all = check_authority_jurisdiction(pune_user, "ALL")
+        self.assertFalse(allowed_pune_all)
+        self.assertIn("State-level jurisdiction", err_pune_all)
+
+        # Raigad SP: permitted on MAT, ALB, KAS; denied on LON
+        allowed_raigad_mat, _ = check_authority_jurisdiction(raigad_user, "MAT")
+        self.assertTrue(allowed_raigad_mat)
+        allowed_raigad_lon, _ = check_authority_jurisdiction(raigad_user, "LON")
+        self.assertFalse(allowed_raigad_lon)
+
+        # State Director: permitted on all spots and corridor-wide ALL
+        allowed_maha_lon, _ = check_authority_jurisdiction(maha_user, "LON")
+        allowed_maha_mat, _ = check_authority_jurisdiction(maha_user, "MAT")
+        allowed_maha_all, _ = check_authority_jurisdiction(maha_user, "ALL")
+        self.assertTrue(allowed_maha_lon)
+        self.assertTrue(allowed_maha_mat)
+        self.assertTrue(allowed_maha_all)
+
+    def test_demand_flows_and_advisory_lifecycle(self):
+        """Verify demand_flows and advisory schema with expires_at."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM demand_flows")
+        count = cursor.fetchone()[0]
+        self.assertGreaterEqual(count, 1)
+
+        cursor.execute("SELECT * FROM demand_flows WHERE origin_spot_id='LON'")
+        flow = cursor.fetchone()
+        self.assertIsNotNone(flow)
+        self.assertIn("Tier 3", flow["source_tier"])
+
+        cursor.execute("PRAGMA table_info(gazette_advisories)")
+        cols = [r["name"] for r in cursor.fetchall()]
+        self.assertIn("expires_at", cols)
+        self.assertIn("revoked_at", cols)
+        conn.close()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

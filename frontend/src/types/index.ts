@@ -4,6 +4,11 @@ export type DCCStatus = 'OPTIMAL' | 'MODERATE' | 'CRITICAL';
 
 export type UserRole = 'tourist' | 'authority' | 'provider' | 'developer';
 
+export interface Jurisdiction {
+  type: 'state' | 'district' | 'spot_list';
+  value: string | string[];
+}
+
 export interface AuthUser {
   id: string;
   name: string;
@@ -12,6 +17,7 @@ export interface AuthUser {
   department: string;
   badgeNumber: string;
   isAuthenticated: boolean;
+  jurisdiction?: Jurisdiction | null;
   token?: string;
 }
 
@@ -75,6 +81,61 @@ export interface Advisory {
   timestamp: string;
   active: boolean;
   author: string;
+  expiresAt?: string;
+  revokedAt?: string;
+}
+
+export interface DemandFlow {
+  id: number;
+  origin_spot_id: string;
+  destination_spot_id: string;
+  date: string;
+  estimated_visitor_count: number;
+  source_tier: string;
+}
+
+export interface PolicySimulationResult {
+  target_spot: {
+    id: string;
+    name: string;
+    baseline: {
+      inflow: number;
+      capacity: number;
+      dcc_score: number;
+      status: DCCStatus;
+      wait_time_minutes: number;
+      utilization_pct: number;
+    };
+    modeled: {
+      proposed_cap: number;
+      effective_inflow: number;
+      deflected_visitors: number;
+      dcc_score: number;
+      status: DCCStatus;
+      wait_time_minutes: number;
+      utilization_pct: number;
+      wait_time_saved_minutes: number;
+    };
+  };
+  twin_absorption: Array<{
+    twin_id: string;
+    twin_name: string;
+    similarity_score: number;
+    baseline_inflow: number;
+    absorbed_visitors: number;
+    modeled_inflow: number;
+    capacity: number;
+    baseline_dcc: number;
+    modeled_dcc: number;
+    modeled_status: DCCStatus;
+    remaining_headroom: number;
+  }>;
+  math_model: {
+    formula: string;
+    hazard_score: number;
+    dwell_hours: number;
+    queue_formula: string;
+  };
 }
 
 export interface Promotion {

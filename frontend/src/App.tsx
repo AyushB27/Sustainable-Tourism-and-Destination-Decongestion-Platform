@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
+import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { useCorridorStore } from './store/useCorridorStore';
 import { Navbar } from './components/common/Navbar';
 import { TouristView } from './components/tourist/TouristView';
 import { AuthorityView } from './components/authority/AuthorityView';
 import { ProviderView } from './components/provider/ProviderView';
 import { DevPortal } from './components/developer/DevPortal';
+import { SpotPage } from './components/spot/SpotPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { AiHelplineBot } from './components/common/AiHelplineBot';
 import { 
@@ -16,7 +18,13 @@ import {
   Code2
 } from 'lucide-react';
 
+const SpotRedirect: React.FC = () => {
+  const { spotId } = useParams<{ spotId: string }>();
+  return <Navigate to={`/spot/${spotId || ''}`} replace />;
+};
+
 export function App() {
+  const navigate = useNavigate();
   const { 
     role, 
     requestRoleChange, 
@@ -24,6 +32,23 @@ export function App() {
     setAuthModalOpen,
     fetchLiveBackendFeed 
   } = useCorridorStore();
+
+  const handleRoleNav = (targetRole: 'tourist' | 'authority' | 'provider' | 'developer') => {
+    requestRoleChange(targetRole);
+    if (targetRole === 'tourist') {
+      navigate('/');
+    } else if (targetRole === 'authority') {
+      if (currentUser.role === 'authority' && currentUser.isAuthenticated) {
+        navigate('/authority');
+      }
+    } else if (targetRole === 'provider') {
+      if (currentUser.role === 'provider' && currentUser.isAuthenticated) {
+        navigate('/provider');
+      }
+    } else if (targetRole === 'developer') {
+      navigate('/dev');
+    }
+  };
 
   // Automatic on-load sync with Python backend sensor pipeline
   useEffect(() => {
@@ -49,12 +74,35 @@ export function App() {
       {/* 24x7 AI Tourism Helpline Assistant Widget */}
       <AiHelplineBot />
 
-      {/* Main Content View Container */}
+      {/* Main Content View Container with Canonical Route Handling */}
       <main className="flex-1 pb-10">
-        {role === 'tourist' && <TouristView />}
-        {role === 'authority' && <AuthorityView />}
-        {role === 'provider' && <ProviderView />}
-        {role === 'developer' && <DevPortal />}
+        <Routes>
+          <Route path="/" element={
+            role === 'tourist' ? <TouristView /> :
+            role === 'authority' ? <AuthorityView /> :
+            role === 'provider' ? <ProviderView /> :
+            <DevPortal />
+          } />
+          {/* Canonical Spot Page (Role-Aware: Appends Authority Controls if role === 'authority') */}
+          <Route path="/spot/:spotId" element={<SpotPage />} />
+
+          {/* Authority Routes */}
+          <Route path="/authority" element={<AuthorityView />} />
+          <Route path="/authority/spot/:spotId" element={<SpotRedirect />} />
+          <Route path="/authority/advisories" element={<AuthorityView />} />
+          <Route path="/authority/policy-simulator" element={<AuthorityView />} />
+          <Route path="/authority/impact" element={<AuthorityView />} />
+
+          {/* Provider Routes */}
+          <Route path="/provider" element={<ProviderView />} />
+          <Route path="/provider/spot/:spotId" element={<SpotRedirect />} />
+
+          {/* Developer Production Diagnostics */}
+          <Route path="/dev" element={<DevPortal />} />
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
 
       {/* Official Government Portal Footer */}
@@ -88,10 +136,10 @@ export function App() {
                 Quick Navigation
               </h4>
               <ul className="space-y-1.5 text-[11px] text-slate-300">
-                <li><button onClick={() => requestRoleChange('tourist')} className="hover:text-white hover:underline text-left">Citizen Travel Advisory & Green Yatra</button></li>
-                <li><button onClick={() => requestRoleChange('authority')} className="hover:text-white hover:underline text-left">District GIS Emergency Command</button></li>
-                <li><button onClick={() => requestRoleChange('provider')} className="hover:text-white hover:underline text-left">Homestay & Tour Operator Registry</button></li>
-                <li><button onClick={() => requestRoleChange('developer')} className="text-cyan-400 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Developer Production Portal <Code2 className="w-3 h-3" /></button></li>
+                <li><button onClick={() => handleRoleNav('tourist')} className="hover:text-white hover:underline text-left">Citizen Travel Advisory & Green Yatra</button></li>
+                <li><button onClick={() => handleRoleNav('authority')} className="hover:text-white hover:underline text-left">District GIS Emergency Command</button></li>
+                <li><button onClick={() => handleRoleNav('provider')} className="hover:text-white hover:underline text-left">Homestay & Tour Operator Registry</button></li>
+                <li><button onClick={() => handleRoleNav('developer')} className="text-cyan-400 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Developer Production Portal <Code2 className="w-3 h-3" /></button></li>
                 <li><button onClick={() => setAuthModalOpen(true)} className="text-amber-300 hover:text-white hover:underline text-left font-bold flex items-center gap-1">Stakeholder Portal Gateway <Lock className="w-3 h-3" /></button></li>
                 <li><a href="https://tourism.gov.in" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">Ministry of Tourism <ExternalLink className="w-3 h-3 text-slate-400" /></a></li>
               </ul>
@@ -136,7 +184,7 @@ export function App() {
       {/* Mobile Bottom Quick-Action Role Switcher */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gov-navy border-t border-slate-700 shadow-2xl px-2 py-1.5 flex items-center justify-around">
         <button
-          onClick={() => requestRoleChange('tourist')}
+          onClick={() => handleRoleNav('tourist')}
           className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold transition ${
             role === 'tourist' ? 'text-amber-300 bg-slate-800' : 'text-slate-300 hover:text-white'
           }`}
@@ -146,7 +194,7 @@ export function App() {
         </button>
 
         <button
-          onClick={() => requestRoleChange('authority')}
+          onClick={() => handleRoleNav('authority')}
           className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold transition ${
             role === 'authority' ? 'text-amber-300 bg-slate-800' : 'text-slate-300 hover:text-white'
           }`}
@@ -159,7 +207,7 @@ export function App() {
         </button>
 
         <button
-          onClick={() => requestRoleChange('provider')}
+          onClick={() => handleRoleNav('provider')}
           className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-bold transition ${
             role === 'provider' ? 'text-amber-300 bg-slate-800' : 'text-slate-300 hover:text-white'
           }`}
@@ -172,7 +220,7 @@ export function App() {
         </button>
 
         <button
-          onClick={() => requestRoleChange('developer')}
+          onClick={() => handleRoleNav('developer')}
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-lg text-[10px] font-bold transition ${
             role === 'developer' ? 'text-cyan-300 bg-slate-800' : 'text-slate-400 hover:text-white'
           }`}

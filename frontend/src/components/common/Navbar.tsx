@@ -23,8 +23,11 @@ import type { PresetScenario } from '../../store/useCorridorStore';
 import { calculateCorridorMetrics } from '../../lib/engine';
 import type { UserRole } from '../../types';
 import type { Language } from '../../lib/i18n';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     role,
     requestRoleChange,
@@ -98,6 +101,23 @@ export const Navbar: React.FC = () => {
       icon: <Code2 className="w-4 h-4" />
     }
   ];
+
+  const handleNavClick = (targetRole: UserRole) => {
+    requestRoleChange(targetRole);
+    if (targetRole === 'tourist') {
+      navigate('/');
+    } else if (targetRole === 'authority') {
+      if (currentUser.role === 'authority' && currentUser.isAuthenticated) {
+        navigate('/authority');
+      }
+    } else if (targetRole === 'provider') {
+      if (currentUser.role === 'provider' && currentUser.isAuthenticated) {
+        navigate('/provider');
+      }
+    } else if (targetRole === 'developer') {
+      navigate('/dev');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 shadow-md bg-white">
@@ -173,7 +193,10 @@ export const Navbar: React.FC = () => {
 
           {currentUser.role !== 'tourist' && (
             <button
-              onClick={logoutUser}
+              onClick={() => {
+                logoutUser();
+                navigate('/');
+              }}
               title="Sign out to citizen mode"
               className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition"
             >
@@ -239,7 +262,14 @@ export const Navbar: React.FC = () => {
       <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           {/* Official Emblem & Portal Title */}
-          <div className="flex items-center gap-3.5">
+          <div 
+            onClick={() => {
+              requestRoleChange('tourist');
+              navigate('/');
+            }}
+            className="flex items-center gap-3.5 cursor-pointer select-none"
+            title="Return to EcoRoute Bharat Home"
+          >
             <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm">
               <div className="w-9 h-9 flex items-center justify-center text-gov-navy font-serif font-black text-base border-2 border-gov-navy rounded-full bg-amber-50">
                 🏛️
@@ -290,11 +320,16 @@ export const Navbar: React.FC = () => {
           {/* Main Navigation Tabs */}
           <div className="flex items-center space-x-1">
             {navItems.map((item) => {
-              const isActive = role === item.key;
+              const isPathActive = 
+                (item.key === 'tourist' && (location.pathname === '/' || location.pathname.startsWith('/spot/'))) ||
+                (item.key === 'authority' && location.pathname.startsWith('/authority')) ||
+                (item.key === 'provider' && location.pathname.startsWith('/provider')) ||
+                (item.key === 'developer' && location.pathname.startsWith('/dev'));
+              const isActive = role === item.key || isPathActive;
               return (
                 <button
                   key={item.key}
-                  onClick={() => requestRoleChange(item.key)}
+                  onClick={() => handleNavClick(item.key)}
                   className={`flex items-center gap-2 px-4 py-3.5 text-xs sm:text-sm font-semibold transition border-b-2 ${
                     isActive
                       ? 'bg-gov-navy-dark text-amber-300 border-gov-gold shadow-sm'
@@ -377,12 +412,17 @@ export const Navbar: React.FC = () => {
           </div>
           <div className="space-y-1.5">
             {navItems.map((item) => {
-              const isActive = role === item.key;
+              const isPathActive = 
+                (item.key === 'tourist' && (location.pathname === '/' || location.pathname.startsWith('/spot/'))) ||
+                (item.key === 'authority' && location.pathname.startsWith('/authority')) ||
+                (item.key === 'provider' && location.pathname.startsWith('/provider')) ||
+                (item.key === 'developer' && location.pathname.startsWith('/dev'));
+              const isActive = role === item.key || isPathActive;
               return (
                 <button
                   key={item.key}
                   onClick={() => {
-                    requestRoleChange(item.key);
+                    handleNavClick(item.key);
                     setMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center justify-between p-3 rounded-lg text-sm font-semibold transition ${
@@ -417,7 +457,11 @@ export const Navbar: React.FC = () => {
               <span>{currentUser.name}</span>
               {currentUser.role !== 'tourist' && (
                 <button
-                  onClick={() => { logoutUser(); setMobileMenuOpen(false); }}
+                  onClick={() => { 
+                    logoutUser(); 
+                    navigate('/');
+                    setMobileMenuOpen(false); 
+                  }}
                   className="text-rose-400 text-xs hover:underline flex items-center gap-1"
                 >
                   <LogOut className="w-3 h-3" /> Sign Out

@@ -256,3 +256,9 @@ Dedicated inspection portal accessible via `developer` role (`/developer`). Desi
 - Evaluators can review real vs. simulated pipeline data per destination with raw values.
 - SQLite sensor readings row count verifies continuous 60s background ingestion.
 - SIH requirement audit table details implementation status for all 14 problem statement items.
+
+---
+
+## Authority Journey Implementation (#27 – #32) — Staged for Human Approval
+*Tasks #27 through #32 covering the complete Authority Journey, Canonical Spot Page, Jurisdiction Scoping, Advisory Management, Policy Simulator, and Impact Review are fully implemented and verified via automated backend unit tests and frontend build checks. Per the project governance protocol, they are currently staged as reviewable proposals in [TODO_PARTIAL.md](./TODO_PARTIAL.md) and await explicit human sign-off before being moved into this document.*
+

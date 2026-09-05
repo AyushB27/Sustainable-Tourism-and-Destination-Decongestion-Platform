@@ -6,6 +6,8 @@ import type {
   Advisory,
   Promotion,
   DestinationCategory,
+  DemandFlow,
+  PolicySimulationResult
 } from '../types';
 import type { Language } from '../lib/i18n';
 import {
@@ -24,6 +26,7 @@ export const DEFAULT_CITIZEN_USER: AuthUser = {
   designation: 'General Traveler / Eco-Pass Holder',
   department: 'National Tourism Citizen Gateway',
   badgeNumber: 'IND-YATRA-2026',
+  jurisdiction: null,
   isAuthenticated: true
 };
 
@@ -94,6 +97,16 @@ interface CorridorStore {
   activeScenario: PresetScenario;
   applyPresetScenario: (scenario: PresetScenario) => void;
   resetToDefault: () => void;
+
+  // Regional Demand Flows (O-D Matrix)
+  demandFlows: DemandFlow[];
+  fetchDemandFlows: () => Promise<void>;
+
+  // Authority Real-Backend Operations
+  revokeAdvisory: (advisoryId: string) => Promise<{ success: boolean; message?: string }>;
+  extendAdvisory: (advisoryId: string, newExpiresAt: string) => Promise<{ success: boolean; message?: string }>;
+  overrideCapacity: (spotId: string, overrideCap: number, reason?: string) => Promise<{ success: boolean; message?: string }>;
+  runPolicySimulation: (spotId: string, proposedCap: number) => Promise<PolicySimulationResult | null>;
 }
 
 // Load persisted user or default
@@ -239,6 +252,8 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
               message: a.message,
               author: a.author,
               active: Boolean(a.active),
+              expiresAt: (a as any).expires_at,
+              revokedAt: (a as any).revoked_at,
               timestamp: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }));
             set({ advisories: mappedAdvisories });
@@ -467,6 +482,102 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
     }
   },
   
+  demandFlows: [],
+  fetchDemandFlows: async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/demand-flows');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.demand_flows)) {
+          set({ demandFlows: data.demand_flows });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  revokeAdvisory: async (advisoryId: string) => {
+    const { currentUser, advisories } = get();
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/advisories/${advisoryId}/revoke`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: currentUser })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.message || 'Failed to revoke advisory' };
+      }
+      set({
+        advisories: advisories.map(a => a.id === advisoryId ? { ...a, active: false, revokedAt: data.revoked_at } : a)
+      });
+      return { success: true, message: data.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Network error' };
+    }
+  },
+
+  extendAdvisory: async (advisoryId: string, newExpiresAt: string) => {
+    const { currentUser, advisories } = get();
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/advisories/${advisoryId}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: currentUser, new_expires_at: newExpiresAt })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.message || 'Failed to extend advisory' };
+      }
+      set({
+        advisories: advisories.map(a => a.id === advisoryId ? { ...a, active: true, expiresAt: newExpiresAt } : a)
+      });
+      return { success: true, message: data.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Network error' };
+    }
+  },
+
+  overrideCapacity: async (spotId: string, overrideCap: number, reason: string = 'Emergency Administrative Action') => {
+    const { currentUser, destinations } = get();
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/destinations/${spotId}/capacity-override`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: currentUser, override_capacity: overrideCap, reason })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.message || 'Failed to apply capacity override' };
+      }
+      set({
+        destinations: destinations.map(d => d.id === spotId ? { ...d, physicalCapacity: overrideCap } : d)
+      });
+      return { success: true, message: data.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Network error' };
+    }
+  },
+
+  runPolicySimulation: async (spotId: string, proposedCap: number) => {
+    const { currentUser } = get();
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/policy-simulator/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: currentUser, target_spot_id: spotId, proposed_cap: proposedCap })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      const err = await res.json();
+      throw new Error(err.message || 'Simulation error');
+    } catch (e: any) {
+      throw e;
+    }
+  },
+
   resetToDefault: () => {
     set({
       destinations: INITIAL_DESTINATIONS,

@@ -14,12 +14,13 @@ To make tracking and manual editing as clear as possible, tasks are separated in
 
 | Status | Count | Dedicated File | Description |
 |---|---:|---|---|
-| **DONE** | 13 | [TODO_DONE.md](./TODO_DONE.md) | Fully implemented, operational, and verified |
+| **DONE** | 15 | [TODO_DONE.md](./TODO_DONE.md) | Fully implemented, operational, and verified |
+| **PROPOSED FOR REVIEW** | 6 | [TODO_PARTIAL.md](./TODO_PARTIAL.md) | Implemented & verified; awaiting explicit user approval to mark DONE |
 | **PARTIAL** | 4 | [TODO_PARTIAL.md](./TODO_PARTIAL.md) | Core logic/UI built; requires final wiring or API keys |
 | **IN PROGRESS** | 0 | — | Active development tasks |
 | **NOT STARTED** | 7 | [TODO_FUTURE.md](./TODO_FUTURE.md) | Future roadmap & infrastructure enhancements |
 | **BLOCKED** | 0 | — | No blocking external dependencies |
-| **TOTAL** | **24** | | Full scope across all platform tiers |
+| **TOTAL** | **32** | | Full scope across all platform tiers |
 
 ---
 
@@ -60,7 +61,22 @@ See **[TODO_PARTIAL.md](./TODO_PARTIAL.md)** for full task breakdowns, dependenc
 
 ---
 
-## 3. Not Started & Future Roadmap Features Summary
+## 3. Authority Journey & Governance Architecture (PROPOSED — Awaiting User Sign-off)
+
+See **[TODO_PARTIAL.md](./TODO_PARTIAL.md)** for detailed specifications and verification notes.
+
+| # | Feature / Capability | Priority | Implementation State | Verification & Review State |
+|---|---|:---:|---|---|
+| **27** | **Authority Data Model & Jurisdiction Scoping** | HIGH | SQLite `demand_flows`, `capacity_overrides`, PRAGMA migrations; RBAC jurisdiction enforcement | Tested via backend unit tests (403 on foreign district); zero data leakage |
+| **28** | **District GIS Incident Command Overview** | HIGH | Command center triage with live Leaflet map, corridor KPI strip, and 2h/6h/12h forecast windowing | Reuses tourist DCC metrics; drill-downs link directly to `/spot/:spotId` |
+| **29** | **Canonical Spot Page Authority Controls** | HIGH | Additive incident management panel appended to `/spot/:spotId` for authenticated district officers | Real `PUT /api/destinations/:id/capacity-override` & advisory broadcast |
+| **30** | **Official Advisory Management Surface** | HIGH | `AdvisoryManager.tsx` managing active, expired, and revoked advisories with filter tabs | Calls backend `/api/advisories/:id/revoke` & `/extend`; updates SQLite |
+| **31** | **Predictive Policy Simulator Sandbox** | HIGH | `PolicySimulator.tsx` modeling capacity caps, deflection math, and twin absorption | Explicit formula derivation displayed; purely analytical sandbox |
+| **32** | **Post-Incident Impact Review & Promotion** | MEDIUM | `ImpactReview.tsx` auditing advisory historical impact and under-visited promotion schemes | Quantitative post-mortem metrics & green corridor diffusion analytics |
+
+---
+
+## 4. Not Started & Future Roadmap Features Summary
 
 See **[TODO_FUTURE.md](./TODO_FUTURE.md)** for full task breakdowns, dependencies, and definitions of done.
 
