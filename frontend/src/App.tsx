@@ -12,6 +12,7 @@ import { DevLayout } from './components/layout/DevLayout';
 
 // Pages
 import { PortalSelectPage } from './pages/PortalSelectPage';
+import { AuthPage } from './pages/AuthPage';
 import { LandingPage } from './pages/LandingPage';
 import { DiscoverPage } from './pages/DiscoverPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
@@ -46,10 +47,14 @@ export function App() {
 
       {/* Role-Isolated Routing Hierarchy */}
       <Routes>
-        {/* ── PART 1: DEDICATED PORTAL SELECTION SCREEN ── */}
+        {/* ── PART 1: DEDICATED PORTAL SELECTION & AUTHENTICATION ── */}
         <Route path="/" element={<PortalSelectPage />} />
         <Route path="/select-portal" element={<PortalSelectPage />} />
         <Route path="/portals" element={<PortalSelectPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/signin" element={<AuthPage />} />
+        <Route path="/signup" element={<AuthPage />} />
 
         {/* ── PART 2A: ISOLATED TOURIST PORTAL SHELL ── */}
         <Route element={<TouristLayout />}>

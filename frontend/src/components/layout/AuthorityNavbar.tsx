@@ -6,22 +6,20 @@ import {
   Calculator, 
   TrendingDown, 
   Award, 
-  UserCheck, 
   LogOut, 
   RefreshCw, 
   CheckCircle2, 
   WifiOff, 
-  Sparkles, 
   Menu, 
   X, 
-  RotateCcw,
-  Languages,
-  AlertTriangle
+  Layers,
+  ChevronDown,
+  Sparkles,
+  Radio
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { PresetScenario } from '../../store/useCorridorStore';
 import { calculateCorridorMetrics } from '../../lib/engine';
-import type { Language } from '../../lib/i18n';
 
 export const AuthorityNavbar: React.FC = () => {
   const navigate = useNavigate();
@@ -33,176 +31,191 @@ export const AuthorityNavbar: React.FC = () => {
     advisories,
     activeScenario,
     applyPresetScenario,
-    resetToDefault,
     divertedTripsCount,
     totalCarbonSavedKg,
-    language,
-    setLanguage,
     liveBackendStatus,
     fetchLiveBackendFeed
   } = useCorridorStore();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const activeAdvisoriesCount = advisories.filter(a => a.active).length;
   const metrics = calculateCorridorMetrics(destinations, activeAdvisoriesCount);
 
   const scenarioLabels: Record<PresetScenario, string> = {
-    monsoon_surge: 'Monsoon Weekend Peak (Lonavala Congested)',
-    khandala_landslide: 'Rockfall & Heavy Rain Alert (Khandala)',
-    normal_balanced: 'Normal Balanced Corridor Flow',
+    monsoon_surge: 'Peak Monsoon Surge (Lonavala Peak)',
+    khandala_landslide: 'Rockfall & Hazard Alert (Khandala)',
+    normal_balanced: 'Balanced Baseline Flow',
     coastal_rush: 'Coastal Weekend Rush (Alibaug Peak)'
   };
 
-  const languages: { key: Language; label: string; flag: string }[] = [
-    { key: 'en', label: 'English', flag: '🇬🇧' },
-    { key: 'hi', label: 'Hindi', flag: '🇮🇳' },
-    { key: 'mr', label: 'Marathi', flag: '🚩' },
-  ];
-
-  const authorityNavLinks = [
+  const navLinks = [
     { to: '/authority', label: 'Command Center', icon: <ShieldAlert className="w-4 h-4" /> },
-    { to: '/authority/advisories', label: 'Gazette Advisories', icon: <FileText className="w-4 h-4" />, badge: activeAdvisoriesCount > 0 ? `${activeAdvisoriesCount}` : undefined },
-    { to: '/authority/policy-simulator', label: 'Policy Simulator', icon: <Calculator className="w-4 h-4" /> },
-    { to: '/authority/impact', label: 'Impact Review', icon: <Award className="w-4 h-4" /> },
+    { to: '/authority/advisories', label: 'Advisories', icon: <FileText className="w-4 h-4" />, badge: activeAdvisoriesCount > 0 ? `${activeAdvisoriesCount}` : undefined },
+    { to: '/authority/policy-simulator', label: 'Simulator', icon: <Calculator className="w-4 h-4" /> },
+    { to: '/authority/impact', label: 'Impact', icon: <Award className="w-4 h-4" /> },
   ];
 
   const handleSignOut = () => {
-    logoutUser();
+    logoutUser('authority');
     navigate('/');
   };
 
   return (
-    <header className="sticky top-0 z-50 shadow-md bg-white">
-      {/* 1. National Flag Accent Stripe */}
-      <div className="tiranga-bar" />
+    <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-lg text-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
+          {/* Brand Logo & Telemetry Status */}
+          <div className="flex items-center gap-6">
+            <Link to="/authority" className="flex items-center gap-3 group shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-950/40 group-hover:scale-105 transition-transform duration-200">
+                <Radio className="w-5 h-5 text-slate-950" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-tight">
+                  <span className="font-black text-lg tracking-tight text-white group-hover:text-amber-300 transition">
+                    EcoRoute
+                  </span>
+                  <span className="text-[10px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    Operations
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
+                  Corridor Telemetry & Command
+                </p>
+              </div>
+            </Link>
 
-      {/* 2. Official Administrative Status & Identity Bar */}
-      <div className="bg-slate-900 text-slate-200 border-b border-slate-800 px-3 sm:px-6 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 font-medium">
-          <span className="text-amber-300 font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            OFFICIAL DISTRICT COMMAND HQ
-          </span>
-          <span className="text-slate-600 hidden sm:inline">|</span>
-          <span className="text-slate-400 hidden md:inline">
-            Western Ghats District Cell • Pune • Raigad • Satara
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {/* Live Sensor Connection Indicator */}
-          <button
-            onClick={fetchLiveBackendFeed}
-            title="Click to refresh live sensor feed"
-            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold border transition ${
-              liveBackendStatus === 'connected'
-                ? 'bg-emerald-950 text-emerald-300 border-emerald-600'
-                : liveBackendStatus === 'syncing'
-                ? 'bg-amber-950 text-amber-300 border-amber-600'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-            }`}
-          >
-            {liveBackendStatus === 'syncing' ? (
-              <RefreshCw className="w-3 h-3 animate-spin text-amber-300" />
-            ) : liveBackendStatus === 'connected' ? (
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            ) : (
-              <WifiOff className="w-3 h-3 text-slate-400" />
-            )}
-            <span>
-              {liveBackendStatus === 'connected'
-                ? 'Live Python Pipeline'
-                : liveBackendStatus === 'syncing'
-                ? 'Syncing Pipeline...'
-                : 'Simulator Mode'}
-            </span>
-          </button>
-
-          {/* Active Officer Identity Pill */}
-          <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-0.5 rounded border border-slate-700 shadow-sm text-xs">
-            <UserCheck className="w-3.5 h-3.5 text-amber-300" />
-            <span className="font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
-              {currentUser.name}
-            </span>
-            <span className="bg-amber-400/20 text-amber-300 text-[9px] font-extrabold px-1.5 rounded uppercase border border-amber-400/30">
-              {currentUser.jurisdiction?.value ? `${currentUser.jurisdiction.value}` : 'Official'}
-            </span>
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1">
+              {navLinks.map((link) => {
+                const isActive = location.pathname === link.to || (link.to !== '/authority' && location.pathname.startsWith(link.to));
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                      isActive
+                        ? 'bg-slate-800 text-amber-300 shadow-sm border border-slate-700'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    }`}
+                  >
+                    {link.icon}
+                    <span>{link.label}</span>
+                    {link.badge && (
+                      <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                        {link.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Sign Out / Change Portal */}
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-1 bg-rose-900/40 hover:bg-rose-900/70 text-rose-300 px-2.5 py-1 rounded text-xs font-bold border border-rose-700/60 shadow-sm transition"
-            title="Sign out to portal selection screen"
-          >
-            <LogOut className="w-3 h-3" />
-            <span>Sign Out</span>
-          </button>
-
-          {/* Language Selector */}
-          <div className="flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-            <Languages className="w-3 h-3 text-amber-300" />
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              aria-label="Language Selector"
-              className="bg-transparent text-xs text-slate-200 font-bold focus:outline-none cursor-pointer"
+          {/* Right Action Tools: Pipeline Sync, Sandbox, KPIs, Profile */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Live Pipeline Indicator */}
+            <button
+              onClick={fetchLiveBackendFeed}
+              title="Sync live telemetry pipeline"
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition ${
+                liveBackendStatus === 'connected'
+                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-600/50'
+                  : liveBackendStatus === 'syncing'
+                  ? 'bg-amber-950/60 text-amber-300 border-amber-600/50'
+                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+              }`}
             >
-              {languages.map((l) => (
-                <option key={l.key} value={l.key} className="bg-slate-900 text-white">
-                  {l.flag} {l.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              {liveBackendStatus === 'syncing' ? (
+                <RefreshCw className="w-3 h-3 animate-spin text-amber-300" />
+              ) : liveBackendStatus === 'connected' ? (
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <WifiOff className="w-3 h-3 text-slate-400" />
+              )}
+              <span>{liveBackendStatus === 'connected' ? 'Live Telemetry' : liveBackendStatus === 'syncing' ? 'Syncing...' : 'Sim Feed'}</span>
+            </button>
 
-          {/* Reset Baseline Button */}
-          <button
-            onClick={resetToDefault}
-            title="Reset to default corridor baseline state"
-            className="flex items-center gap-1 text-slate-400 hover:text-amber-300 px-1.5 py-0.5 rounded hover:bg-slate-800 transition text-xs"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span className="hidden lg:inline">Reset</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Main Brand Header */}
-      <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <Link to="/authority" className="flex items-center gap-3.5 group shrink-0">
-            <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm group-hover:border-gov-navy transition">
-              <div className="w-9 h-9 flex items-center justify-center text-gov-navy font-serif font-black text-base border-2 border-gov-navy rounded-full bg-amber-50">
-                🏛️
-              </div>
-              <span className="text-[7px] font-bold text-slate-600 uppercase tracking-tighter mt-0.5">
-                SATYAMEVA JAYATE
-              </span>
+            {/* Scenario Preset Selector */}
+            <div className="hidden xl:flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-xl text-xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <select
+                value={activeScenario}
+                onChange={(e) => applyPresetScenario(e.target.value as PresetScenario)}
+                aria-label="Scenario"
+                className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+              >
+                {Object.entries(scenarioLabels).map(([key, label]) => (
+                  <option key={key} value={key} className="bg-slate-900 text-white">
+                    {label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg text-gov-navy tracking-tight leading-tight group-hover:text-gov-navy-light transition">
-                  EcoRoute Bharat
-                </span>
-                <span className="bg-rose-100 text-rose-900 border border-rose-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                  District GIS Command
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                District Disaster Management & Traffic Regulation Console
-              </p>
+            {/* Telemetry Metrics Pill */}
+            <div className="hidden md:flex items-center gap-1.5 bg-emerald-950/70 border border-emerald-800/60 text-emerald-300 px-3 py-1 rounded-xl text-xs font-bold">
+              <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{divertedTripsCount} Diverted • {totalCarbonSavedKg.toFixed(0)} kg CO₂</span>
             </div>
-          </Link>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex items-center gap-3 lg:hidden">
+            {/* Officer Profile & Sign Out Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="flex items-center gap-2 py-1 px-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 transition"
+              >
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-500/40">
+                  {currentUser.name.charAt(0)}
+                </div>
+                <span className="text-xs font-bold text-white hidden sm:inline max-w-[130px] truncate">
+                  {currentUser.name}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {profileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-60 bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-4 py-2.5 border-b border-slate-800">
+                    <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{currentUser.designation || 'District Operations'}</p>
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-[10px] text-emerald-400 font-bold">Active Officer Session</span>
+                    </div>
+                  </div>
+
+                  <div className="py-1">
+                    <Link
+                      to="/"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Switch Portal</span>
+                    </Link>
+                  </div>
+
+                  <div className="pt-1 border-t border-slate-800">
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 font-semibold text-left transition"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg bg-gov-navy text-white hover:bg-gov-navy-light focus:outline-none"
-              aria-label="Toggle Command Menu"
+              className="lg:hidden p-2 rounded-xl text-slate-300 hover:bg-slate-800 focus:outline-none"
+              aria-label="Open menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -210,136 +223,63 @@ export const AuthorityNavbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Deep Navy Primary Navigation Bar (Authority Only!) */}
-      <nav className="bg-gov-navy text-white shadow-inner hidden lg:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          <div className="flex items-center space-x-1">
-            {authorityNavLinks.map((item) => {
-              const isActive = location.pathname === item.to || (item.to !== '/authority' && location.pathname.startsWith(item.to));
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold transition border-b-2 ${
-                    isActive
-                      ? 'bg-gov-navy-dark text-amber-300 border-gov-gold shadow-sm'
-                      : 'text-slate-200 border-transparent hover:bg-gov-navy-light hover:text-white'
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+      {/* Corridor Alert Ticker */}
+      {metrics.criticalCount > 0 && (
+        <div className="bg-rose-950/80 border-t border-rose-900/80 px-4 py-1.5 text-xs text-rose-200 flex items-center justify-between">
+          <div className="flex items-center gap-2 truncate">
+            <span className="bg-rose-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded uppercase">
+              Alert
+            </span>
+            <span className="truncate">
+              {metrics.criticalCount} red-zone bottlenecks detected. Active rerouting algorithms in effect.
+            </span>
           </div>
-
-          {/* Right Simulation Preset & Cumulative Government Savings */}
-          <div className="flex items-center gap-3 py-1.5">
-            {/* Simulation Scenario Selector (Official Sandbox Tool) */}
-            <div className="flex items-center gap-2 bg-gov-navy-dark px-3 py-1 rounded border border-slate-700 text-xs">
-              <Sparkles className="w-3.5 h-3.5 text-gov-gold shrink-0" />
-              <span className="text-slate-300 text-[11px] font-medium hidden xl:inline">Scenario Sandbox:</span>
-              <select
-                value={activeScenario}
-                onChange={(e) => applyPresetScenario(e.target.value as PresetScenario)}
-                aria-label="Corridor Simulation Scenario"
-                className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
-              >
-                {Object.entries(scenarioLabels).map(([key, label]) => (
-                  <option key={key} value={key} className="bg-gov-navy text-white">
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Government KPI Ticker */}
-            <div className="flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 border border-emerald-700 px-3 py-1 rounded text-xs font-medium">
-              <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
-              <span><strong>{divertedTripsCount}</strong> Diverted • {totalCarbonSavedKg.toFixed(0)} kg CO₂ Saved</span>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* 5. Live Authority Public Broadcast Advisory Strip */}
-      <div className="bg-amber-50 border-b border-amber-200 px-3 sm:px-6 py-2 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 max-w-4xl overflow-hidden text-ellipsis whitespace-nowrap">
-          <span className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            CORRIDOR STATUS
-          </span>
-          <span className="text-slate-700 font-medium truncate">
-            {metrics.criticalCount > 0
-              ? `Active Congestion Alert: Lonavala/Khandala choke points active. Automated deflection algorithms active.`
-              : `Corridor traffic flow is normal across all district checkpoints.`}
+          <span className="text-slate-400 text-[11px] hidden sm:inline">
+            Total Monitored Inflow: <strong className="text-white">{metrics.totalInflow.toLocaleString()}</strong>
           </span>
         </div>
+      )}
 
-        <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium">
-          <span>Monitored Inflow: <strong className="text-gov-navy">{metrics.totalInflow.toLocaleString()}</strong></span>
-          <span>Red Zones: <strong className={metrics.criticalCount > 0 ? 'text-rose-600 font-bold' : 'text-gov-green'}>{metrics.criticalCount} Destinations</strong></span>
-        </div>
-      </div>
-
-      {/* 6. Mobile Navigation Drawer (Authority Only!) */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-gov-navy border-b border-gov-navy-dark px-4 py-4 space-y-3 text-white animate-in slide-in-from-top duration-200">
-          <div className="text-xs font-bold text-gov-gold uppercase tracking-wider pb-1 border-b border-slate-700 flex items-center justify-between">
-            <span>District GIS Command Navigation</span>
-            <button
-              onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
-              className="text-xs text-rose-300 underline font-bold"
-            >
-              Sign Out
-            </button>
-          </div>
-
+        <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 space-y-3 animate-in slide-in-from-top duration-150 shadow-xl">
           <div className="space-y-1">
-            {authorityNavLinks.map((item) => (
+            {navLinks.map((link) => (
               <Link
-                key={item.to}
-                to={item.to}
+                key={link.to}
+                to={link.to}
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-100 transition"
+                className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
               >
                 <div className="flex items-center gap-2">
-                  {item.icon}
-                  <span>{item.label}</span>
+                  {link.icon}
+                  <span>{link.label}</span>
                 </div>
-                {item.badge && (
-                  <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 rounded-full">
-                    {item.badge}
+                {link.badge && (
+                  <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 rounded-full">
+                    {link.badge}
                   </span>
                 )}
               </Link>
             ))}
           </div>
 
-          {/* Scenario Sandbox Selector in Drawer */}
-          <div className="pt-2 border-t border-slate-700 space-y-1">
-            <label className="text-xs font-bold text-slate-300 block">
-              Simulation Scenario:
-            </label>
-            <select
-              value={activeScenario}
-              onChange={(e) => {
-                applyPresetScenario(e.target.value as PresetScenario);
-                setMobileMenuOpen(false);
-              }}
-              className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg p-2.5 font-medium"
+          <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+            <Link
+              to="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-xs font-bold text-slate-400 flex items-center gap-1.5"
             >
-              {Object.entries(scenarioLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              <Layers className="w-3.5 h-3.5" />
+              <span>Switch Portal</span>
+            </Link>
+
+            <button
+              onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+              className="text-xs font-bold text-rose-400"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       )}

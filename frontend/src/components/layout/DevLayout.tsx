@@ -9,10 +9,7 @@ export const DevLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* 1. National Flag Accent Stripe */}
-      <div className="tiranga-bar" />
-
-      {/* 2. Developer Header */}
+      {/* Developer Header */}
       <header className="bg-slate-900 border-b border-slate-800 px-4 sm:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-500/40 text-cyan-400 flex items-center justify-center">

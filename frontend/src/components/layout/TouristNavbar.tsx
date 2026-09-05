@@ -1,187 +1,192 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
+  Compass, 
   User, 
-  Languages, 
+  LogOut, 
   Menu, 
   X, 
-  AlertTriangle, 
-  UserCheck, 
-  Layers
+  Layers, 
+  Sparkles,
+  MapPin,
+  Calendar,
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
-import type { Language } from '../../lib/i18n';
 import { GlobalSearchBox } from '../common/GlobalSearchBox';
 
 export const TouristNavbar: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const {
     currentUser,
     logoutUser,
-    advisories,
-    language,
-    setLanguage
+    advisories
   } = useCorridorStore();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [fontSizeScale, setFontSizeScale] = useState<'sm' | 'md' | 'lg'>('md');
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const criticalAdvisories = advisories.filter(a => a.active && (a.severity === 'critical' || a.severity === 'high'));
 
-  const languages: { key: Language; label: string; flag: string }[] = [
-    { key: 'en', label: 'English', flag: '🇬🇧' },
-    { key: 'hi', label: 'Hindi', flag: '🇮🇳' },
-    { key: 'mr', label: 'Marathi', flag: '🚩' },
+  const navLinks = [
+    { to: '/tourist', label: 'Explore', icon: <MapPin className="w-4 h-4" /> },
+    { to: '/discover', label: 'Discover', icon: <Compass className="w-4 h-4" /> },
+    { to: '/plan/new', label: 'Trip Planner', icon: <Calendar className="w-4 h-4" /> },
+    { to: '/trips', label: 'My Trips', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
-  const handleFontSize = (size: 'sm' | 'md' | 'lg') => {
-    setFontSizeScale(size);
-    document.documentElement.classList.remove('font-scale-sm', 'font-scale-md', 'font-scale-lg');
-    document.documentElement.classList.add(`font-scale-${size}`);
+  const handleSignOut = () => {
+    logoutUser('tourist');
+    setProfileDropdownOpen(false);
   };
 
-  const touristNavLinks = [
-    { to: '/tourist', label: 'Home' },
-    { to: '/discover', label: 'Discover Feed' },
-    { to: '/plan/new', label: 'Trip Planner' },
-    { to: '/trips', label: 'My Trips' },
-  ];
-
-  const handleExitPortal = () => {
-    logoutUser();
-    navigate('/');
-  };
+  const isGuest = !currentUser.isAuthenticated || currentUser.id === 'CITIZEN-GUEST-01';
 
   return (
-    <header className="sticky top-0 z-50 shadow-md bg-white">
-      {/* 1. National Flag Accent Stripe */}
-      <div className="tiranga-bar" />
-
-      {/* 2. Top Accessibility & Official Statement Bar */}
-      <div className="bg-slate-100 border-b border-slate-200 px-3 sm:px-6 py-1.5 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 font-medium">
-          <span className="text-gov-navy font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-gov-green" />
-            Government of India
-          </span>
-          <span className="text-slate-300 hidden sm:inline">|</span>
-          <span className="text-slate-600 hidden md:inline">
-            Ministry of Tourism & Maharashtra Tourism (MTDC)
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {/* Active Citizen Traveler Pill */}
-          <div className="flex items-center gap-1.5 bg-white px-2.5 py-0.5 rounded border border-slate-300 shadow-sm text-xs">
-            <UserCheck className="w-3.5 h-3.5 text-gov-green" />
-            <span className="font-bold text-slate-800">
-              {currentUser.name || 'Citizen Tourist'}
-            </span>
-          </div>
-
-          {/* Change Portal Button */}
-          <button
-            onClick={handleExitPortal}
-            className="flex items-center gap-1 bg-slate-200 hover:bg-slate-300 text-slate-700 hover:text-slate-900 px-2 py-0.5 rounded text-xs font-semibold border border-slate-300 transition"
-            title="Switch to another stakeholder portal"
-          >
-            <Layers className="w-3 h-3 text-slate-500" />
-            <span>Change Portal</span>
-          </button>
-
-          {/* Text Size Controls */}
-          <div className="hidden sm:flex items-center bg-white rounded border border-slate-300 overflow-hidden text-[10px] font-bold">
-            <button
-              onClick={() => handleFontSize('sm')}
-              className={`px-2 py-0.5 hover:bg-slate-100 ${fontSizeScale === 'sm' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
-              title="Smaller Text"
-            >
-              A-
-            </button>
-            <button
-              onClick={() => handleFontSize('md')}
-              className={`px-2 py-0.5 border-x border-slate-200 hover:bg-slate-100 ${fontSizeScale === 'md' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
-              title="Default Text Size"
-            >
-              A
-            </button>
-            <button
-              onClick={() => handleFontSize('lg')}
-              className={`px-2 py-0.5 hover:bg-slate-100 ${fontSizeScale === 'lg' ? 'bg-gov-navy text-white' : 'text-slate-700'}`}
-              title="Larger Text"
-            >
-              A+
-            </button>
-          </div>
-
-          {/* Language Selector */}
-          <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-300">
-            <Languages className="w-3 h-3 text-gov-navy" />
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              aria-label="Language Selector"
-              className="bg-transparent text-xs text-slate-800 font-bold focus:outline-none cursor-pointer"
-            >
-              {languages.map((l) => (
-                <option key={l.key} value={l.key}>
-                  {l.flag} {l.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Main Brand Header */}
-      <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <Link to="/tourist" className="flex items-center gap-3.5 group shrink-0">
-            <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm group-hover:border-gov-navy transition">
-              <div className="w-9 h-9 flex items-center justify-center text-gov-navy font-serif font-black text-base border-2 border-gov-navy rounded-full bg-amber-50">
-                🏛️
-              </div>
-              <span className="text-[7px] font-bold text-slate-600 uppercase tracking-tighter mt-0.5">
-                SATYAMEVA JAYATE
-              </span>
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
+          {/* Brand Logo */}
+          <Link to="/tourist" className="flex items-center gap-3 group shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform duration-200">
+              <Compass className="w-5 h-5 group-hover:rotate-45 transition-transform duration-300" />
             </div>
-
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg text-gov-navy tracking-tight leading-tight group-hover:text-gov-navy-light transition">
-                  EcoRoute Bharat
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span className="font-black text-lg tracking-tight text-slate-900 group-hover:text-emerald-700 transition">
+                  EcoRoute
                 </span>
-                <span className="hidden sm:inline bg-gov-green/10 text-gov-green text-[10px] font-bold px-2 py-0.5 rounded border border-gov-green/30 uppercase">
-                  Citizen Portal
+                <span className="text-[10px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Corridor
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                Sustainable Tourism • Western Ghats & Maharashtra Corridor
+              <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
+                Western Ghats Sustainable Tourism
               </p>
             </div>
           </Link>
 
-          {/* Persistent 3-Tier Global Search Box */}
-          <div className="flex-1 max-w-md hidden md:block">
-            <GlobalSearchBox variant="nav" placeholder="Search destination, district (e.g. Raigad), or state…" />
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-full border border-slate-200/80 shadow-inner">
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.to || (link.to !== '/tourist' && location.pathname.startsWith(link.to));
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-150 flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-white text-emerald-700 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Center Search Pill for Wide Screens */}
+          <div className="hidden lg:block flex-1 max-w-xs xl:max-w-sm">
+            <GlobalSearchBox variant="nav" placeholder="Search destinations, passes..." />
           </div>
 
-          {/* Profile Button & Mobile Menu Toggle */}
-          <div className="flex items-center gap-3">
+          {/* Right Action Area: User Session & Switcher */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Switch Dashboard Button */}
             <Link
-              to="/account"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 hover:border-gov-navy text-xs font-bold text-slate-800 transition"
-              title="Traveler Profile & Preferences"
+              to="/"
+              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-xl hover:bg-slate-100 border border-slate-200/70 transition"
+              title="Switch to another portal"
             >
-              <User className="w-3.5 h-3.5 text-gov-navy" />
-              <span>Profile</span>
+              <Layers className="w-3.5 h-3.5 text-slate-500" />
+              <span>Portals</span>
             </Link>
 
+            {/* Profile Dropdown / Sign In */}
+            {isGuest ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login?role=tourist"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-900/30 transition flex items-center gap-1.5"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center gap-2 py-1 px-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 transition shadow-sm"
+                >
+                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center border border-emerald-300">
+                    {currentUser.name.charAt(0)}
+                  </div>
+                  <span className="text-xs font-bold text-slate-800 hidden sm:inline max-w-[120px] truncate">
+                    {currentUser.name}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                {/* Profile Popup Menu */}
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-2 border-b border-slate-100">
+                      <p className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{currentUser.designation || 'Traveler Account'}</p>
+                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Active Session
+                      </span>
+                    </div>
+
+                    <div className="py-1">
+                      <Link
+                        to="/account"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                      >
+                        <User className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Profile & Preferences</span>
+                      </Link>
+                      <Link
+                        to="/trips"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-slate-500" />
+                        <span>My Green Passes</span>
+                      </Link>
+                      <Link
+                        to="/"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Switch Dashboard</span>
+                      </Link>
+                    </div>
+
+                    <div className="pt-1 border-t border-slate-100">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 font-semibold text-left transition"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg bg-gov-navy text-white hover:bg-gov-navy-light focus:outline-none"
-              aria-label="Toggle Navigation Menu"
+              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 focus:outline-none"
+              aria-label="Open menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -189,97 +194,69 @@ export const TouristNavbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Deep Navy Primary Navigation Bar (Tourist Only!) */}
-      <nav className="bg-gov-navy text-white shadow-inner hidden lg:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          <div className="flex items-center space-x-1">
-            {touristNavLinks.map((item) => {
-              const isActive = location.pathname === item.to || (item.to !== '/tourist' && location.pathname.startsWith(item.to));
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-xs sm:text-sm font-semibold transition border-b-2 ${
-                    isActive
-                      ? 'bg-gov-navy-dark text-amber-300 border-gov-gold shadow-sm'
-                      : 'text-slate-200 border-transparent hover:bg-gov-navy-light hover:text-white'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-2 py-1.5 text-xs text-slate-300 font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Green Highway Corridors Active</span>
-          </div>
-        </div>
-      </nav>
-
-      {/* 5. Contextual Public Safety Notice (Only shown if active critical advisory exists) */}
+      {/* Contextual Advisory Banner (Only shown when active danger exists) */}
       {criticalAdvisories.length > 0 && (
-        <div className="bg-amber-50 border-b border-amber-200 px-3 sm:px-6 py-2 text-xs text-amber-950 flex items-center justify-between gap-2 animate-in fade-in">
-          <div className="flex items-center gap-2.5 max-w-4xl overflow-hidden text-ellipsis whitespace-nowrap">
-            <span className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0 flex items-center gap-1">
+        <div className="bg-amber-500/10 border-t border-b border-amber-500/30 px-4 py-2 text-xs text-amber-900 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 max-w-4xl overflow-hidden truncate">
+            <span className="bg-amber-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase shrink-0 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
-              SAFETY ADVISORY
+              Alert
             </span>
-            <span className="text-slate-700 font-medium truncate">
+            <span className="font-medium truncate">
               {criticalAdvisories[0].title}: {criticalAdvisories[0].message}
             </span>
           </div>
           <Link
             to={`/spot/${criticalAdvisories[0].destinationId === 'ALL' ? 'LON' : criticalAdvisories[0].destinationId}`}
-            className="text-amber-800 hover:text-amber-950 font-bold underline shrink-0 text-[11px]"
+            className="text-amber-800 font-bold hover:underline shrink-0 text-xs"
           >
-            Inspect Spot Status →
+            Check status →
           </Link>
         </div>
       )}
 
-      {/* 6. Mobile Navigation Drawer (Tourist Only!) */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-gov-navy border-b border-gov-navy-dark px-4 py-4 space-y-3 text-white animate-in slide-in-from-top duration-200">
-          <div className="text-xs font-bold text-gov-gold uppercase tracking-wider pb-1 border-b border-slate-700 flex items-center justify-between">
-            <span>Tourist Navigation</span>
-            <button
-              onClick={() => { handleExitPortal(); setMobileMenuOpen(false); }}
-              className="text-xs text-amber-300 underline font-bold"
-            >
-              Exit to Portals
-            </button>
-          </div>
-
+        <div className="md:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-2 animate-in slide-in-from-top duration-150 shadow-xl">
           <div className="space-y-1">
-            {touristNavLinks.map((item) => (
+            {navLinks.map((link) => (
               <Link
-                key={item.to}
-                to={item.to}
+                key={link.to}
+                to={link.to}
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-100 transition"
+                className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 transition"
               >
-                <span>{item.label}</span>
+                <span>{link.label}</span>
               </Link>
             ))}
-
-            <Link
-              to="/account"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-amber-300 transition"
-            >
-              <div className="flex items-center gap-2">
-                <User className="w-3.5 h-3.5" />
-                <span>My Profile & Preferences</span>
-              </div>
-            </Link>
           </div>
 
-          {/* Emergency Helplines in Drawer */}
-          <div className="pt-2 border-t border-slate-700 flex items-center justify-between text-xs text-slate-300">
-            <span>Tourist Helpline: <strong className="text-white">1363</strong></span>
-            <span>Emergency: <strong className="text-rose-400">112</strong></span>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <Link
+              to="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-xs font-bold text-slate-600 flex items-center gap-1.5"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Switch Portal</span>
+            </Link>
+
+            {isGuest ? (
+              <Link
+                to="/login?role=tourist"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-xs font-bold text-emerald-600"
+              >
+                Sign In →
+              </Link>
+            ) : (
+              <button
+                onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                className="text-xs font-bold text-rose-600"
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
       )}

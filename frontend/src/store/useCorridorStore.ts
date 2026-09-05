@@ -21,20 +21,22 @@ import {
 
 export type PresetScenario = 'monsoon_surge' | 'khandala_landslide' | 'normal_balanced' | 'coastal_rush';
 
+import { sessionManager } from '../lib/sessionManager';
+
 // Default Citizen Guest User
 export const DEFAULT_CITIZEN_USER: AuthUser = {
   id: 'CITIZEN-GUEST-01',
-  name: 'Citizen Tourist (नागरिक)',
+  name: 'Traveler Guest',
   role: 'tourist',
-  designation: 'General Traveler / Eco-Pass Holder',
-  department: 'National Tourism Citizen Gateway',
-  badgeNumber: 'IND-YATRA-2026',
+  designation: 'Eco-Corridor Explorer',
+  department: 'EcoRoute Traveler Network',
+  badgeNumber: 'ECO-GUEST',
   jurisdiction: null,
   isAuthenticated: false,
   homeCity: 'Mumbai',
   homeState: 'Maharashtra',
   travelStyleVector: [0.90, 0.70, 0.60, 0.85],
-  interests: ['Waterfalls', 'Hill Treks', 'Local Konkani Food', 'Heritage Forts']
+  interests: ['Waterfalls', 'Hill Treks', 'Scenic Routes', 'Heritage Forts']
 };
 
 export const INITIAL_CHECKINS: CheckIn[] = [
@@ -178,8 +180,8 @@ interface CorridorStore {
   authModalOpen: boolean;
   authModalTargetRole: UserRole | null;
   setAuthModalOpen: (open: boolean, targetRole?: UserRole) => void;
-  loginUser: (user: AuthUser) => void;
-  logoutUser: () => void;
+  loginUser: (user: AuthUser, rememberMe?: boolean) => void;
+  logoutUser: (roleToLogout?: UserRole) => void;
   updateUserProfile: (profile: Partial<AuthUser>) => void;
 
   // Localization
@@ -264,9 +266,13 @@ interface CorridorStore {
   runPolicySimulation: (spotId: string, proposedCap: number) => Promise<PolicySimulationResult | null>;
 }
 
-// Load persisted user or default
+// Load persisted user or default based on active role session
 const getSavedUser = (): AuthUser => {
   try {
+    const activeRole = sessionManager.getActiveRole();
+    const session = sessionManager.getSession(activeRole);
+    if (session && session.user) return session.user;
+
     const saved = localStorage.getItem('ecoroute_auth_user');
     if (saved) return JSON.parse(saved);
   } catch {
@@ -285,7 +291,9 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
     authModalTargetRole: targetRole || null 
   }),
 
-  loginUser: (user) => {
+  loginUser: (user, rememberMe = true) => {
+    // Create and persist an isolated session for this role
+    sessionManager.createSession(user.role, user, rememberMe);
     try {
       localStorage.setItem('ecoroute_auth_user', JSON.stringify(user));
     } catch {
@@ -299,20 +307,28 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
     });
   },
 
-  logoutUser: () => {
+  logoutUser: (roleToLogout?: UserRole) => {
+    const targetRole = roleToLogout || get().currentUser.role;
+    sessionManager.clearSession(targetRole);
+
+    // If logged out current active role, fallback to tourist or guest
+    const touristSession = sessionManager.getSession('tourist');
+    const fallbackUser = touristSession ? touristSession.user : DEFAULT_CITIZEN_USER;
+
     try {
       localStorage.removeItem('ecoroute_auth_user');
     } catch {
       // ignore
     }
     set({
-      currentUser: DEFAULT_CITIZEN_USER,
-      role: 'tourist'
+      currentUser: fallbackUser,
+      role: touristSession ? 'tourist' : 'tourist'
     });
   },
 
   updateUserProfile: (profile) => {
     const updated = { ...get().currentUser, ...profile };
+    sessionManager.createSession(updated.role, updated);
     try {
       localStorage.setItem('ecoroute_auth_user', JSON.stringify(updated));
     } catch {

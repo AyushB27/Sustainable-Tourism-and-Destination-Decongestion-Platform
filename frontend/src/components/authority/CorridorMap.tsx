@@ -166,13 +166,15 @@ export const CorridorMap: React.FC<CorridorMapProps> = ({
         </MapContainer>
 
         {/* Selected Hub Overlay Card in Map */}
-        <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-md text-white px-3 py-2 rounded-xl border border-slate-700 text-xs shadow-lg pointer-events-none z-[1000]">
-          <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
-            Focused Destination
-          </span>
-          <span className="font-bold text-sm text-white">{selectedDest.name}</span>
-          <span className="text-slate-300 ml-2">({selectedDest.currentInflow.toLocaleString()} visitors)</span>
-        </div>
+        {selectedDest && (
+          <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-md text-white px-3 py-2 rounded-xl border border-slate-700 text-xs shadow-lg pointer-events-none z-[1000]">
+            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+              Focused Destination
+            </span>
+            <span className="font-bold text-sm text-white">{selectedDest.name}</span>
+            <span className="text-slate-300 ml-2">({(selectedDest.currentInflow || 0).toLocaleString()} visitors)</span>
+          </div>
+        )}
       </div>
     </div>
   );

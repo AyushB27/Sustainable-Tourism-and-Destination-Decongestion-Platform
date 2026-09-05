@@ -9,7 +9,6 @@ import {
   Award,
   Layers,
   Calendar,
-  Lock,
   ArrowRight
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
@@ -21,6 +20,7 @@ import { AdvisoryManager } from './AdvisoryManager';
 import { PolicySimulator } from './PolicySimulator';
 import { ImpactReview } from './ImpactReview';
 import { Link } from 'react-router-dom';
+import { sessionManager, DEMO_ACCOUNTS } from '../../lib/sessionManager';
 
 export const AuthorityView: React.FC = () => {
   const {
@@ -29,13 +29,26 @@ export const AuthorityView: React.FC = () => {
     setSelectedDestinationId,
     advisories,
     currentUser,
+    loginUser,
     liveBackendStatus,
-    fetchLiveBackendFeed,
-    setAuthModalOpen
+    fetchLiveBackendFeed
   } = useCorridorStore();
 
   const [activeTab, setActiveTab] = useState<'command' | 'advisories' | 'simulator' | 'impact'>('command');
   const [forecastWindow, setForecastWindow] = useState<'current' | 'weekend' | 'holiday'>('current');
+
+  // Auto-sync authority session if needed
+  React.useEffect(() => {
+    if (currentUser.role !== 'authority') {
+      const authSession = sessionManager.getSession('authority');
+      if (authSession && authSession.user) {
+        loginUser(authSession.user);
+      } else {
+        const demoAuth = DEMO_ACCOUNTS.find(d => d.role === 'authority');
+        if (demoAuth) loginUser(demoAuth.user);
+      }
+    }
+  }, [currentUser.role, loginUser]);
 
   // RBAC Jurisdiction Check
   const isAuthority = currentUser.role === 'authority';
@@ -45,10 +58,16 @@ export const AuthorityView: React.FC = () => {
   const jurisdictionSpots = useMemo(() => {
     if (!jur || jur.type === 'state') return destinations;
     if (jur.type === 'district') {
-      return destinations.filter(d => d.district.toLowerCase().includes(String(jur.value).toLowerCase()));
+      const jurVal = String(jur.value).toLowerCase();
+      const filtered = destinations.filter(d => {
+        const dist = d.district.toLowerCase();
+        return jurVal.includes(dist) || dist.includes(jurVal);
+      });
+      return filtered.length > 0 ? filtered : destinations;
     }
     if (jur.type === 'spot_list' && Array.isArray(jur.value)) {
-      return destinations.filter(d => jur.value.includes(d.id));
+      const filtered = destinations.filter(d => jur.value.includes(d.id));
+      return filtered.length > 0 ? filtered : destinations;
     }
     return destinations;
   }, [destinations, jur]);
@@ -81,29 +100,23 @@ export const AuthorityView: React.FC = () => {
   // If user is not authenticated as authority, show official login barrier
   if (!isAuthority) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-3xl border-2 border-slate-300 p-8 shadow-xl text-center space-y-5">
-          <div className="w-16 h-16 bg-rose-50 border-2 border-rose-200 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-            <Lock className="w-8 h-8" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Official District Administration Gateway Protected
-            </h2>
-            <p className="text-xs text-slate-600 max-w-md mx-auto mt-1">
-              Access to regional emergency gazette dispatchers, capacity overrides, and GIS command triage requires verified IAS/IPS administrative credentials.
-            </p>
-          </div>
-
-          <div className="pt-2">
-            <button
-              onClick={() => setAuthModalOpen(true, 'authority')}
-              className="px-6 py-3 bg-gov-navy hover:bg-slate-800 text-white rounded-xl text-xs font-black transition shadow-md"
-            >
-              Sign In with Officer Credentials
-            </button>
-          </div>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+          <ShieldAlert className="w-7 h-7" />
         </div>
+        <h2 className="text-2xl font-black text-slate-900">Operations Desk Protected</h2>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          Corridor incident triage and capacity controls require an active operations session.
+        </p>
+        <button
+          onClick={() => {
+            const demo = DEMO_ACCOUNTS.find(d => d.role === 'authority');
+            if (demo) loginUser(demo.user);
+          }}
+          className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs rounded-xl shadow-md transition"
+        >
+          Activate Operations Session
+        </button>
       </div>
     );
   }

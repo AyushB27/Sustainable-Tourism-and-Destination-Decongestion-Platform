@@ -1,325 +1,297 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Compass, 
-  ShieldAlert, 
+  Shield, 
   Building2, 
   Code2, 
   ArrowRight, 
-  Sparkles, 
-  Lock, 
   CheckCircle2, 
-  ShieldCheck,
-  ExternalLink
+  User,
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { useCorridorStore, DEFAULT_CITIZEN_USER } from '../store/useCorridorStore';
+import { sessionManager, DEMO_ACCOUNTS } from '../lib/sessionManager';
 
 export const PortalSelectPage: React.FC = () => {
   const navigate = useNavigate();
   const { 
     currentUser, 
-    loginUser, 
-    setAuthModalOpen 
+    loginUser
   } = useCorridorStore();
 
   const handleSelectTourist = () => {
-    // If not already tourist, set to citizen tourist mode
-    if (currentUser.role !== 'tourist') {
-      loginUser({
-        ...DEFAULT_CITIZEN_USER,
-        isAuthenticated: true
-      });
+    const session = sessionManager.getSession('tourist');
+    if (session) {
+      loginUser(session.user);
+    } else if (currentUser.role !== 'tourist') {
+      loginUser(DEFAULT_CITIZEN_USER);
     }
     navigate('/tourist');
   };
 
   const handleSelectAuthority = () => {
-    if (currentUser.role === 'authority' && currentUser.isAuthenticated) {
-      navigate('/authority');
+    const session = sessionManager.getSession('authority');
+    if (session) {
+      loginUser(session.user);
     } else {
-      setAuthModalOpen(true, 'authority');
+      const demo = DEMO_ACCOUNTS.find(d => d.role === 'authority');
+      if (demo) loginUser(demo.user);
     }
+    navigate('/authority');
   };
 
   const handleSelectProvider = () => {
-    if (currentUser.role === 'provider' && currentUser.isAuthenticated) {
-      navigate('/provider');
+    const session = sessionManager.getSession('provider');
+    if (session) {
+      loginUser(session.user);
     } else {
-      setAuthModalOpen(true, 'provider');
+      const demo = DEMO_ACCOUNTS.find(d => d.role === 'provider');
+      if (demo) loginUser(demo.user);
     }
+    navigate('/provider');
   };
 
   const handleSelectDeveloper = () => {
-    if (currentUser.role === 'developer' && currentUser.isAuthenticated) {
-      navigate('/dev');
+    const session = sessionManager.getSession('developer');
+    if (session) {
+      loginUser(session.user);
     } else {
-      setAuthModalOpen(true, 'developer');
+      const demo = DEMO_ACCOUNTS.find(d => d.role === 'developer');
+      if (demo) loginUser(demo.user);
     }
+    navigate('/dev');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-gov-navy-dark to-slate-900 text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-slate-900">
-      {/* 1. National Flag Accent Stripe */}
-      <div className="tiranga-bar" />
-
-      {/* 2. Top Minimal Accessibility & Identity Bar */}
-      <header className="px-4 sm:px-8 py-3 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-2 font-medium">
-          <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Government of India
-          </span>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <span className="text-slate-300 hidden sm:inline">
-            Ministry of Tourism & Maharashtra Tourism (MTDC)
-          </span>
-        </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+      {/* Top Header */}
+      <header className="px-6 sm:px-10 py-4 border-b border-slate-800/80 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono text-gov-gold bg-gov-gold/10 border border-gov-gold/30 px-2.5 py-0.5 rounded-full">
-            SIH26204 Production Prototype
-          </span>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-950/50">
+            <Compass className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-extrabold text-base tracking-tight text-white">
+              EcoRoute
+            </span>
+            <span className="text-[10px] text-slate-400 block -mt-0.5">
+              Western Ghats Corridor Platform
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs">
+          <Link
+            to="/login"
+            className="flex items-center gap-1.5 text-slate-300 hover:text-white transition px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 font-semibold"
+          >
+            <User className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Sign In</span>
+          </Link>
         </div>
       </header>
 
-      {/* 3. Main Centerpiece: Portal Selection Hero & Cards */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-10 sm:py-16 max-w-6xl mx-auto w-full">
-        {/* Emblem & Portal Brand Heading */}
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10 sm:mb-14 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/80 shadow-inner mb-2">
-            <div className="w-6 h-6 rounded-full bg-amber-50 border border-gov-gold flex items-center justify-center text-xs text-gov-navy font-serif font-black shadow-sm">
-              🏛️
-            </div>
-            <span className="text-xs font-bold text-amber-300 tracking-wide uppercase">
-              EcoRoute Bharat Gateway
-            </span>
+      {/* Hero & Cards */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 max-w-6xl mx-auto w-full">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-12 sm:mb-14">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-600/30 text-emerald-300 text-xs font-semibold mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Intelligent Tourism & Mobility Decongestion</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-            Select Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-gov-gold to-emerald-400">Stakeholder Portal</span>
+            Select Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300">Workspace</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
-            National Sustainable Tourism & Mobility Decongestion Corridor across the Western Ghats. Choose your designated operational role to proceed into your isolated portal.
+          <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
+            Real-time carrying capacity, dynamic corridor diversion, and eco-mobility network. Choose your designated dashboard to begin.
           </p>
         </div>
 
-        {/* 3 Primary Role Cards (Large Focal Point) */}
+        {/* 3 Modern Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 w-full">
-          {/* Card 1: Tourist / Traveler */}
+          {/* Card 1: Traveler */}
           <motion.div
-            whileHover={{ y: -6, scale: 1.015 }}
+            whileHover={{ y: -5, scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.15 }}
             onClick={handleSelectTourist}
-            className="group relative bg-gradient-to-b from-slate-900/90 to-slate-950/90 rounded-3xl border-2 border-slate-700/80 hover:border-emerald-400/80 p-7 sm:p-8 flex flex-col justify-between cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-emerald-950/30 transition-all duration-200"
+            className="group relative bg-slate-900/80 hover:bg-slate-900 rounded-3xl border border-slate-800 hover:border-emerald-500/60 p-7 sm:p-8 flex flex-col justify-between cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-emerald-950/30 transition-all duration-200"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -z-10 pointer-events-none group-hover:bg-emerald-500/20 transition" />
-
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-inner group-hover:border-emerald-400 transition">
-                  <Compass className="w-7 h-7 group-hover:rotate-45 transition-transform duration-300" />
+                <div className="w-13 h-13 rounded-2xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 p-3 shadow-inner group-hover:scale-105 transition-transform">
+                  <Compass className="w-7 h-7" />
                 </div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-700/50">
-                  Open Public Access
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-950/70 text-emerald-300 border border-emerald-700/50">
+                  Open Public
                 </span>
               </div>
 
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-emerald-300 transition">
-                  Tourist / Traveler
+                <h2 className="text-xl sm:text-2xl font-bold text-white group-hover:text-emerald-300 transition">
+                  Traveler & Citizen
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                  Plan a trip, check live crowd levels, discover quieter destinations.
+                <p className="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
+                  Explore crowd density, find quieter twin destinations, and earn Green Passes.
                 </p>
               </div>
 
-              {/* Feature Highlights */}
-              <div className="pt-2 space-y-2 text-xs text-slate-400 border-t border-slate-800/80">
+              <div className="pt-2 space-y-2 text-xs text-slate-400 border-t border-slate-800">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Real-time crowd DCC metrics & forecast</span>
+                  <span>Live carrying capacity & crowd forecast</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Smart trip planner & Green Pass certificates</span>
+                  <span>Smart trip planner & verified green rewards</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Discover feed with scenic twin alternatives</span>
+                  <span>Scenic alternate route recommendations</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 mt-4 border-t border-slate-800/80">
+            <div className="pt-6 mt-4 border-t border-slate-800">
               <button
                 type="button"
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2 transition group-hover:gap-3"
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition group-hover:gap-3"
               >
-                <span>Enter Traveler Portal</span>
+                <span>Enter Traveler Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </motion.div>
 
-          {/* Card 2: Government Official */}
+          {/* Card 2: Operations & Command */}
           <motion.div
-            whileHover={{ y: -6, scale: 1.015 }}
+            whileHover={{ y: -5, scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.15 }}
             onClick={handleSelectAuthority}
-            className="group relative bg-gradient-to-b from-slate-900/90 to-slate-950/90 rounded-3xl border-2 border-slate-700/80 hover:border-gov-gold/80 p-7 sm:p-8 flex flex-col justify-between cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-amber-950/30 transition-all duration-200"
+            className="group relative bg-slate-900/80 hover:bg-slate-900 rounded-3xl border border-slate-800 hover:border-amber-500/60 p-7 sm:p-8 flex flex-col justify-between cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-amber-950/30 transition-all duration-200"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -z-10 pointer-events-none group-hover:bg-amber-500/20 transition" />
-
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="w-14 h-14 rounded-2xl bg-amber-950/80 border-2 border-gov-gold/50 text-amber-300 flex items-center justify-center shadow-inner group-hover:border-gov-gold transition">
-                  <ShieldAlert className="w-7 h-7 group-hover:scale-110 transition-transform duration-200" />
+                <div className="w-13 h-13 rounded-2xl bg-amber-950/70 border border-amber-500/40 text-amber-400 p-3 shadow-inner group-hover:scale-105 transition-transform">
+                  <Shield className="w-7 h-7" />
                 </div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-950/60 text-amber-300 border border-amber-700/50 flex items-center gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-950/70 text-amber-300 border border-amber-700/50 flex items-center gap-1">
                   <Lock className="w-2.5 h-2.5" />
-                  IAS / IPS Credentialed
+                  Authorized Desk
                 </span>
               </div>
 
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-300 transition">
-                  Government Official
+                <h2 className="text-xl sm:text-2xl font-bold text-white group-hover:text-amber-300 transition">
+                  Operations & Command
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                  Monitor destinations, issue advisories, manage district capacity.
+                <p className="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
+                  Monitor live corridor telemetry, apply capacity throttles, and broadcast alerts.
                 </p>
               </div>
 
-              {/* Feature Highlights */}
-              <div className="pt-2 space-y-2 text-xs text-slate-400 border-t border-slate-800/80">
+              <div className="pt-2 space-y-2 text-xs text-slate-400 border-t border-slate-800">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-gov-gold shrink-0" />
-                  <span>District GIS command map & capacity rings</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Corridor GIS incident command telemetry</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-gov-gold shrink-0" />
-                  <span>Emergency physical capacity override throttles</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Dynamic physical capacity overrides</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-gov-gold shrink-0" />
-                  <span>Official Gazette advisory dispatcher & simulator</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Automated diversion & policy simulation</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 mt-4 border-t border-slate-800/80">
+            <div className="pt-6 mt-4 border-t border-slate-800">
               <button
                 type="button"
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gov-navy hover:bg-gov-navy-light text-amber-300 border border-gov-gold/40 shadow-lg shadow-gov-navy/40 flex items-center justify-center gap-2 transition group-hover:gap-3"
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-slate-800 hover:bg-slate-750 text-amber-300 border border-amber-500/40 shadow-lg shadow-black/40 flex items-center justify-center gap-2 transition group-hover:gap-3"
               >
-                <span>Official Command Access</span>
+                <span>Access Operations Deck</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </motion.div>
 
-          {/* Card 3: Business / Provider */}
+          {/* Card 3: Partners & Hospitality */}
           <motion.div
-            whileHover={{ y: -6, scale: 1.015 }}
+            whileHover={{ y: -5, scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.15 }}
             onClick={handleSelectProvider}
-            className="group relative bg-gradient-to-b from-slate-900/90 to-slate-950/90 rounded-3xl border-2 border-slate-700/80 hover:border-amber-500/80 p-7 sm:p-8 flex flex-col justify-between cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-orange-950/30 transition-all duration-200"
+            className="group relative bg-slate-900/80 hover:bg-slate-900 rounded-3xl border border-slate-800 hover:border-sky-500/60 p-7 sm:p-8 flex flex-col justify-between cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-sky-950/30 transition-all duration-200"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl -z-10 pointer-events-none group-hover:bg-orange-500/20 transition" />
-
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-amber-500/40 text-amber-400 flex items-center justify-center shadow-inner group-hover:border-amber-400 transition">
-                  <Building2 className="w-7 h-7 group-hover:scale-110 transition-transform duration-200" />
+                <div className="w-13 h-13 rounded-2xl bg-sky-950/70 border border-sky-500/40 text-sky-400 p-3 shadow-inner group-hover:scale-105 transition-transform">
+                  <Building2 className="w-7 h-7" />
                 </div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-800 text-amber-300 border border-amber-600/40 flex items-center gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-sky-950/70 text-sky-300 border border-sky-700/50 flex items-center gap-1">
                   <Lock className="w-2.5 h-2.5" />
-                  MTDC Partner
+                  Partner Login
                 </span>
               </div>
 
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-300 transition">
-                  Business / Provider
+                <h2 className="text-xl sm:text-2xl font-bold text-white group-hover:text-sky-300 transition">
+                  Hospitality & Partners
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                  Manage your listing, pricing, and promotions.
+                <p className="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
+                  Manage inventory, publish off-peak vouchers, and redeem Green Passes.
                 </p>
               </div>
 
-              {/* Feature Highlights */}
-              <div className="pt-2 space-y-2 text-xs text-slate-400 border-t border-slate-800/80">
+              <div className="pt-2 space-y-2 text-xs text-slate-400 border-t border-slate-800">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Live room availability & occupancy reporting</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span>Real-time occupancy & room availability</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Publish verified off-peak discount vouchers</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span>Publish off-peak promotion discounts</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Green Pass guest redemption tracking</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span>Green Pass certificate redemptions</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 mt-4 border-t border-slate-800/80">
+            <div className="pt-6 mt-4 border-t border-slate-800">
               <button
                 type="button"
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-950/40 flex items-center justify-center gap-2 transition group-hover:gap-3"
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-slate-800 hover:bg-slate-750 text-sky-300 border border-sky-500/40 shadow-lg shadow-black/40 flex items-center justify-center gap-2 transition group-hover:gap-3"
               >
-                <span>Operator Console Access</span>
+                <span>Access Partner Hub</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </motion.div>
         </div>
-
-        {/* Note on Role Protection */}
-        <p className="text-xs text-slate-400 mt-8 text-center max-w-lg">
-          Official and Operator roles require statutory authentication. Fast demo credential profiles for IAS, IPS, and MTDC operators are available in the login dialog.
-        </p>
       </main>
 
-      {/* 4. Subordinate Footer with Unobtrusive Developer Link */}
-      <footer className="border-t border-slate-800/80 py-6 px-4 sm:px-8 text-xs text-slate-400 bg-slate-950/80">
+      {/* Subordinate Footer */}
+      <footer className="border-t border-slate-800/80 py-5 px-6 sm:px-10 text-xs text-slate-500 bg-slate-950">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-center sm:text-left space-y-0.5">
-            <p className="font-medium text-slate-400">
-              © 2026 Ministry of Tourism, Government of India. All Rights Reserved.
-            </p>
-            <p className="text-[11px] text-slate-400">
-              Designed & Developed under SIH26204 • Hosted on National Informatics Centre (NIC) node.
-            </p>
-          </div>
+          <p>© 2026 EcoRoute Network. Next-generation sustainable mobility corridor.</p>
 
-          {/* Internal Tooling: Small, unobtrusive developer link */}
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleSelectDeveloper}
-              className="text-slate-400 hover:text-cyan-400 transition inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-900 border border-transparent hover:border-slate-800"
-              title="Internal developer and telemetry diagnostic portal"
+              className="text-slate-500 hover:text-purple-400 transition inline-flex items-center gap-1.5 py-1 px-2 rounded hover:bg-slate-900 font-mono text-[11px]"
             >
               <Code2 className="w-3.5 h-3.5" />
               <span>Developer Diagnostics</span>
             </button>
-
-            <span className="text-slate-700">|</span>
-
-            <a
-              href="https://tourism.gov.in"
-              target="_blank"
-              rel="noreferrer"
-              className="text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-1"
-            >
-              <span>tourism.gov.in</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
-            </a>
           </div>
         </div>
       </footer>

@@ -169,28 +169,25 @@ export const AuthModal: React.FC = () => {
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           className="bg-white rounded-2xl border-2 border-slate-300 shadow-2xl w-full max-w-xl overflow-hidden"
         >
-          {/* Top National Flag Accent Strip */}
-          <div className="tiranga-bar" />
-
           {/* Modal Header */}
-          <div className="bg-gov-navy text-white p-4 sm:p-5 flex items-center justify-between">
+          <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 text-gov-navy font-bold text-lg flex items-center justify-center border border-gov-gold">
-                🏛️
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-base shadow-md">
+                <Compass className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-extrabold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
-                  <span>Stakeholder Portal Gateway</span>
+                <h3 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
+                  <span>Sign in to EcoRoute</span>
                 </h3>
-                <p className="text-xs text-slate-300">
-                  Government of India • Ministry of Tourism & MTDC Portal Login
+                <p className="text-xs text-slate-400">
+                  Select your workspace to access your authenticated session
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => setAuthModalOpen(false)}
-              className="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition"
               aria-label="Close Modal"
             >
               <X className="w-5 h-5" />

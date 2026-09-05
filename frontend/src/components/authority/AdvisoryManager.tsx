@@ -47,7 +47,9 @@ export const AdvisoryManager: React.FC = () => {
       const targetDest = destinations.find(d => d.id === a.destinationId);
       if (!targetDest) return false;
       if (jur.type === 'district') {
-        return targetDest.district.toLowerCase().includes(String(jur.value).toLowerCase());
+        const jurVal = String(jur.value).toLowerCase();
+        const dist = targetDest.district.toLowerCase();
+        return jurVal.includes(dist) || dist.includes(jurVal);
       }
       if (jur.type === 'spot_list' && Array.isArray(jur.value)) {
         return jur.value.includes(a.destinationId);

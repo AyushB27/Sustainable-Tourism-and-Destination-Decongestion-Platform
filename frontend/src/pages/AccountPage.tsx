@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   User, 
   ShieldCheck, 
@@ -15,7 +16,6 @@ export const AccountPage: React.FC = () => {
     role,
     requestRoleChange,
     logoutUser,
-    setAuthModalOpen,
     userPreferences,
     togglePreferenceTag
   } = useCorridorStore();
@@ -95,21 +95,20 @@ export const AccountPage: React.FC = () => {
           {currentUser.isAuthenticated ? (
             <button
               type="button"
-              onClick={logoutUser}
+              onClick={() => logoutUser()}
               className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-300 transition flex items-center gap-1.5 self-start sm:self-auto"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-500" />
               <span>Sign Out</span>
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={() => setAuthModalOpen(true)}
-              className="px-3.5 py-1.5 bg-gov-navy text-amber-300 text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5 self-start sm:self-auto"
+            <Link
+              to="/login?role=tourist"
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Stakeholder Gateway Login</span>
-            </button>
+              <span>Sign In to Account</span>
+            </Link>
           )}
         </div>
 

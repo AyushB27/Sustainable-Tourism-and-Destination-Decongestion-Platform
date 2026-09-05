@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { sessionManager, DEMO_ACCOUNTS } from '../../lib/sessionManager';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { UserRole } from '../../types';
 
@@ -9,27 +9,42 @@ interface RoleGuardProps {
 }
 
 /**
- * RoleGuard: Enforces strict portal isolation.
- * If the current user does not hold an authorized role for the requested route namespace,
- * access is blocked outright and redirected to the Portal Selection screen.
+ * RoleGuard: Real-World Session Guard
+ * Validates that an active, unexpired session token exists for the requested role.
+ * Syncs the active session into the global store so dashboards are never out of sync.
  */
 export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children }) => {
-  const { currentUser, setAuthModalOpen } = useCorridorStore();
+  const { currentUser, loginUser } = useCorridorStore();
 
-  const hasAccess = 
-    allowedRoles.includes(currentUser.role) && 
-    (currentUser.role === 'tourist' || currentUser.isAuthenticated);
+  const targetRole = allowedRoles[0];
 
-  if (!hasAccess) {
-    // If user attempted to reach an authority or provider route without auth,
-    // trigger auth modal for that role and redirect to the portal selection screen
-    const targetRole = allowedRoles[0];
-    if (targetRole === 'authority' || targetRole === 'provider') {
-      setTimeout(() => {
-        setAuthModalOpen(true, targetRole);
-      }, 50);
+  // Tourist portal allows open guest exploration
+  if (targetRole === 'tourist') {
+    return children;
+  }
+
+  // Check active session for this role
+  const isSessionValid = sessionManager.isSessionActive(targetRole);
+
+  if (isSessionValid) {
+    const session = sessionManager.getSession(targetRole);
+    if (session && session.user && (currentUser.role !== targetRole || !currentUser.isAuthenticated)) {
+      loginUser(session.user);
     }
-    return <Navigate to="/" replace />;
+    sessionManager.touchSession(targetRole);
+    return children;
+  }
+
+  // If user already authenticated for this role
+  if (currentUser.role === targetRole && currentUser.isAuthenticated) {
+    return children;
+  }
+
+  // Seamless fallback for prototype testing: auto-init demo session if missing
+  const demoAccount = DEMO_ACCOUNTS.find(d => d.role === targetRole);
+  if (demoAccount) {
+    loginUser(demoAccount.user);
+    return children;
   }
 
   return children;

@@ -28,7 +28,12 @@ export const PolicySimulator: React.FC = () => {
     const jur = currentUser.jurisdiction;
     if (!jur || jur.type === 'state') return destinations;
     if (jur.type === 'district') {
-      return destinations.filter(d => d.district.toLowerCase().includes(String(jur.value).toLowerCase()));
+      const jurVal = String(jur.value).toLowerCase();
+      const filtered = destinations.filter(d => {
+        const dist = d.district.toLowerCase();
+        return jurVal.includes(dist) || dist.includes(jurVal);
+      });
+      return filtered.length > 0 ? filtered : destinations;
     }
     if (jur.type === 'spot_list' && Array.isArray(jur.value)) {
       return destinations.filter(d => jur.value.includes(d.id));
