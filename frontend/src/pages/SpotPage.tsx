@@ -332,13 +332,23 @@ export const SpotPage: React.FC = () => {
                 </button>
               </div>
 
-              <Link
-                to="/authority"
-                className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-slate-500 hover:text-gov-navy hover:underline text-center py-1"
-              >
-                <span>Open full regional GIS corridor command map</span>
-                <ExternalLink className="w-3 h-3" />
-              </Link>
+              {currentUser.role === 'authority' ? (
+                <Link
+                  to="/authority"
+                  className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-slate-500 hover:text-gov-navy hover:underline text-center py-1"
+                >
+                  <span>Open full regional GIS corridor command map</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              ) : (
+                <Link
+                  to="/discover"
+                  className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-slate-500 hover:text-gov-navy hover:underline text-center py-1"
+                >
+                  <span>Explore more quiet spots on Discover Feed</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

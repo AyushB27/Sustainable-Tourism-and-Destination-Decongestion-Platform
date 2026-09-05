@@ -95,8 +95,10 @@ export const AuthModal: React.FC = () => {
           navigate('/authority');
         } else if (user.role === 'provider') {
           navigate('/provider');
+        } else if (user.role === 'developer') {
+          navigate('/dev');
         } else {
-          navigate('/');
+          navigate('/tourist');
         }
       }
     };
@@ -150,8 +152,10 @@ export const AuthModal: React.FC = () => {
         navigate('/authority');
       } else if (profile.role === 'provider') {
         navigate('/provider');
+      } else if (profile.role === 'developer') {
+        navigate('/dev');
       } else {
-        navigate('/');
+        navigate('/tourist');
       }
     }
   };
