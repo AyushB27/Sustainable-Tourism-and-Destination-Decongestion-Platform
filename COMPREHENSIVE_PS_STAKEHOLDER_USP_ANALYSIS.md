@@ -363,6 +363,97 @@ graph TD
 
 ---
 
+### 2.6 Granular App Requirements Catalog: "We Need an App That Could..."
+
+The following catalog provides an exhaustive, granular breakdown of every single functional need and micro-capability required in the app, explicitly mapped to each stakeholder persona:
+
+#### 2.6.1 Requirements for Stakeholder 1: Tourists, Citizens & Travelers
+1. **We need an app that could provide instant 3-tier fuzzy search (Spots, Districts, States) without guessing or returning false assumptions for the Tourist stakeholder.**
+2. **We need an app that could compute and display real-time Dynamic Carrying Capacity (DCC) status (Optimal <0.70 in emerald, Moderate 0.70-0.84 in amber, Critical ≥0.85 in rose) for the Tourist stakeholder.**
+3. **We need an app that could calculate and display exact checkpoint, parking, and entrance queue delays in minutes for the Tourist stakeholder.**
+4. **We need an app that could plot an interactive 12-hour predictive diurnal forecast strip (06:00 AM to 06:00 PM) with condition-colored numerical points for the Tourist stakeholder.**
+5. **We need an app that could render an interactive 7-day historical weekly crowd rhythm graph (Mon–Sun) showing peak vs. off-peak days for the Tourist stakeholder.**
+6. **We need an app that could evaluate traveler styles across 4 dimensions (Scenic, Budget, Adventure, Family) using vector cosine similarity to recommend uncrowded twin destinations for the Tourist stakeholder.**
+7. **We need an app that could present side-by-side twin alternative comparison cards detailing distance differentials, road travel times, and queue hours saved for the Tourist stakeholder.**
+8. **We need an app that could dynamically rank destinations on a personalized discovery feed using a multi-objective formula balancing travel affinity (45%), crowd headroom (30%), and under-visited promotions (25%) for the Tourist stakeholder.**
+9. **We need an app that could generate an eco-balanced, crowd-aware travel itinerary through a 4-step trip wizard (Destinations, Dates, Budget, Group Dynamic) for the Tourist stakeholder.**
+10. **We need an app that could employ progressive profiling to capture traveler origin city and preferences only upon trip save, eliminating tedious up-front registration forms for the Tourist stakeholder.**
+11. **We need an app that could issue an official, printable Government Verified Green Yatra Pass Certificate equipped with a verifiable QR code for the Tourist stakeholder.**
+12. **We need an app that could calculate the exact kilograms of CO₂ avoided by bypassing congested highway bottleneck routes for the Tourist stakeholder.**
+13. **We need an app that could embed a partner MTDC homestay discount voucher (15%–30% off) directly onto the Green Pass for the Tourist stakeholder.**
+14. **We need an app that could provide 1-click trip summary export formatted specifically for WhatsApp sharing and print layouts for the Tourist stakeholder.**
+15. **We need an app that could query OpenStreetMap Overpass APIs to display verified on-ground amenities including clean drinking water points, food stops, fuel stations, and public restrooms for the Tourist stakeholder.**
+16. **We need an app that could display verified nearby hotels and homestays with real-time room counts, nightly pricing, and ratings for the Tourist stakeholder.**
+17. **We need an app that could display active emergency gazette bulletins and police travel advisories prominently on destination pages with safety instructions for the Tourist stakeholder.**
+18. **We need an app that could stream crowdsourced community check-in ratings (1★ to 5★), ground-truth observations, and geofence verification badges for the Tourist stakeholder.**
+19. **We need an app that could allow travelers to submit their own on-ground crowd check-ins via an interactive modal while visiting a destination for the Tourist stakeholder.**
+20. **We need an app that could provide a persistent 24x7 floating AI Tourism Helpline Assistant ("Sahyadri Guide 1363") answering travel questions grounded in live corridor telemetry for the Tourist stakeholder.**
+21. **We need an app that could support trilingual localization across English, Hindi (हिन्दी), and Marathi (मराठी) for the Tourist stakeholder.**
+22. **We need an app that could cache saved trip plans, itineraries, and Green Pass certificates in browser local storage for offline access in mountain areas without cellular reception for the Tourist stakeholder.**
+
+#### 2.6.2 Requirements for Stakeholder 2: District Tourism & Administrative Authorities
+23. **We need an app that could provide an isolated, purpose-built administrative layout (`/authority`) guarded against unauthorized citizen access for the District Authority stakeholder.**
+24. **We need an app that could enforce server-side Role-Based Access Control (RBAC) and geographic jurisdiction scoping, returning HTTP 403 Forbidden if an officer attempts actions outside their district for the District Authority stakeholder.**
+25. **We need an app that could render an interactive District GIS Incident Command Center map with dynamic Green, Amber, and Red capacity stress halo rings for the District Authority stakeholder.**
+26. **We need an app that could summarize corridor-wide key performance indicators (Total Inflow, Capacity Utilization %, Critical Hotspot counts, and Diverted Volume) in a real-time KPI bar for the District Authority stakeholder.**
+27. **We need an app that could provide multi-horizon predictive triage toggles to preview anticipated crowd pressure across 2-hour, 6-hour, and 12-hour lookaheads for the District Authority stakeholder.**
+28. **We need an app that could provide a ranked threshold monitoring table with 1-click drill-downs directly into canonical destination pages for the District Authority stakeholder.**
+29. **We need an app that could compute and visualize a regional mobility diffusion flow matrix (Origin-Destination O-D flows) tracking outbound tourist vehicles from feeder hubs (Mumbai, Pune, Thane) for the District Authority stakeholder.**
+30. **We need an app that could attach a dedicated Authority Management Panel onto canonical spot pages when viewed by authenticated officers for the District Authority stakeholder.**
+31. **We need an app that could provide an administrative capacity override slider calling `PUT /api/destinations/:id/capacity-override` to instantly throttle safe visitor limits during emergencies for the District Authority stakeholder.**
+32. **We need an app that could provide a fast destination-scoped emergency advisory dispatcher to broadcast bulletins targeting a specific hotspot for the District Authority stakeholder.**
+33. **We need an app that could maintain an Official Gazette Advisory Lifecycle Manager displaying active, expired, and revoked notices with severity classifications for the District Authority stakeholder.**
+34. **We need an app that could allow officers to revoke an active emergency advisory with instant SQLite timestamping for the District Authority stakeholder.**
+35. **We need an app that could allow officers to extend the expiration date of an active emergency advisory using a datetime picker for the District Authority stakeholder.**
+36. **We need an app that could provide a predictive Policy Simulator sandbox modeling synthetic capacity throttles and calculating deflected visitor counts without modifying live production state for the District Authority stakeholder.**
+37. **We need an app that could simulate how secondary twin destinations will absorb deflected visitors and calculate projected DCC stress reductions in the policy simulator for the District Authority stakeholder.**
+38. **We need an app that could provide a 1-click shortcut to immediately publish a validated simulated policy as a binding public advisory for the District Authority stakeholder.**
+39. **We need an app that could provide a post-incident impact review audit table evaluating historical advisory effectiveness with before-and-after DCC stress and wait-time reductions for the District Authority stakeholder.**
+40. **We need an app that could track cumulative corridor sustainability achievements, including total diverted vehicles and cumulative CO₂ emissions avoided, for the District Authority stakeholder.**
+41. **We need an app that could provide a dedicated promotion interface to activate incentive schemes and direct tourists toward under-utilized heritage destinations for the District Authority stakeholder.**
+42. **We need an app that could maintain an immutable SQLite audit log of all administrative actions, recording officer badge numbers, timestamps, and justification reasons for the District Authority stakeholder.**
+
+#### 2.6.3 Requirements for Stakeholder 3: Local Tourism Businesses & Service Providers
+43. **We need an app that could provide a dedicated, role-isolated Provider Console layout (`/provider`) tailored for business operations for the Hospitality Provider stakeholder.**
+44. **We need an app that could display accredited property listings with room inventories and local corridor demand trends for the Hospitality Provider stakeholder.**
+45. **We need an app that could provide an interactive room inventory and occupancy slider (10% to 100%) syncing via `PUT /api/destinations/{id}/occupancy` for the Hospitality Provider stakeholder.**
+46. **We need an app that could automatically integrate reported room occupancy into destination parking saturation and local pressure algorithms for the Hospitality Provider stakeholder.**
+47. **We need an app that could provide an Off-Peak Incentive Campaign Manager allowing operators to create and publish discount vouchers for the Hospitality Provider stakeholder.**
+48. **We need an app that could enable operators to customize voucher parameters including discount percentage (15%–30%), coupon code (e.g. `HOMESTAY25`), validity dates, and campaign titles for the Hospitality Provider stakeholder.**
+49. **We need an app that could automatically distribute operator discount vouchers onto Green Yatra Passes issued to tourists diverted from congested hubs for the Hospitality Provider stakeholder.**
+50. **We need an app that could showcase accredited local lodging and dining options on the canonical destination page under Practical Travel Amenities for the Hospitality Provider stakeholder.**
+51. **We need an app that could provide local operators with forward-looking crowd forecast curves so they can anticipate weekend demand, manage staff, and stock food supplies for the Hospitality Provider stakeholder.**
+52. **We need an app that could allow operators to record and verify Green Pass voucher redemptions in person for the Hospitality Provider stakeholder.**
+53. **We need an app that could attach a dedicated Provider Management Panel directly onto canonical spot pages when viewed by authenticated business owners for the Hospitality Provider stakeholder.**
+
+#### 2.6.4 Requirements for Stakeholder 4: Local Communities & Ecological Bodies
+54. **We need an app that could ground destination safe baseline capacities in official statutory environmental studies (e.g., Maharashtra Forest Dept Carrying Capacity Study 2023) for the Ecological Body stakeholder.**
+55. **We need an app that could weight real-time environmental hazards (precipitation rate, wind speed, landslide risk) at 30% of the Dynamic Carrying Capacity calculation for the Ecological Body stakeholder.**
+56. **We need an app that could track ecological vulnerability indicators including vegetation stress, groundwater table depletion, and wildfire risk in real time for the Ecological Body stakeholder.**
+57. **We need an app that could trigger municipal solid waste alerts when visitor inflow exceeds local waste management processing capacity for the Local Community stakeholder.**
+58. **We need an app that could calculate and display cumulative corridor-wide carbon emissions avoided ($\text{kg CO}_2$) through traffic diversion for the Ecological Body stakeholder.**
+59. **We need an app that could empower village residents and panchayats to submit geofenced check-in reports flagging traffic bottlenecks, noise pollution, and unauthorized camping for the Local Community stakeholder.**
+60. **We need an app that could protect eco-sensitive zones (such as Matheran Eco-Sensitive Zone and Kas Plateau UNESCO World Heritage Site) from vehicular overcrowding by actively diverting tourists before thresholds are breached for the Ecological Body stakeholder.**
+61. **We need an app that could channel tourist spending directly into rural village economies and agro-tourism initiatives rather than saturated commercial conglomerates for the Local Community stakeholder.**
+
+#### 2.6.5 Requirements for Stakeholder 5: Platform Administrators, Data Engineers & System Evaluators
+62. **We need an app that could provide a dedicated Developer Diagnostics Lab (`/dev`) with 6-section technical health monitoring for the Platform Administrator stakeholder.**
+63. **We need an app that could track real-time server uptime, background worker daemon heartbeats, and total logged sensor telemetry records for the Platform Administrator stakeholder.**
+64. **We need an app that could provide transparent indicators of external API key statuses for TomTom Traffic, BestTime Footfall, Open-Meteo, and Open Government Data (data.gov.in) for the System Evaluator stakeholder.**
+65. **We need an app that could explicitly declare whether live commercial API endpoints or mathematically calibrated diurnal fallbacks are actively driving the platform for the System Evaluator stakeholder.**
+66. **We need an app that could provide an interactive BestTime Footfall Telemetry Inspector rendering live 24-hour busyness curves, venue profile mappings, and calibration multipliers for the System Evaluator stakeholder.**
+67. **We need an app that could provide an auditable 4-Tier Data Provenance breakdown (Tier 1 Ground-Truth, Tier 2 Calibrated APIs, Tier 3 Diurnal Models, Tier 4 Statutory Baselines) on every destination page for the System Evaluator stakeholder.**
+68. **We need an app that could dynamically compute and display an authoritative confidence score (50% to 98%) based on sensor health and community check-in density for the System Evaluator stakeholder.**
+69. **We need an app that could maintain an interactive SIH26204 Requirement Traceability Matrix auditing operational compliance with all 14 statutory requirements for the System Evaluator stakeholder.**
+70. **We need an app that could provide an embedded SQLite database browser displaying record counts and schema structures for sensor readings, passes, advisories, and overrides for the Platform Administrator stakeholder.**
+71. **We need an app that could provide 1-Click Fast Demo Credentials (`DEMO_ACCOUNTS`) for instant pre-authenticated evaluator testing across all 4 stakeholder roles for the System Evaluator stakeholder.**
+72. **We need an app that could implement an independent multi-portal token session manager (`sessionManager.ts`) storing role-isolated tokens in `localStorage` to allow concurrent logins across tabs for the System Evaluator stakeholder.**
+73. **We need an app that could provide interactive Swagger UI / OpenAPI documentation natively served at `/docs` and `/openapi.json` for the Developer stakeholder.**
+74. **We need an app that could pass a 100% automated backend unit test suite (`test_backend.py`) covering all mathematical engines, RBAC policies, jurisdiction scoping, and API contracts for the System Evaluator stakeholder.**
+75. **We need an app that could execute concurrent background sensor ingestion for all corridor destinations every 60 seconds using Python's `ThreadingHTTPServer` and `ThreadPoolExecutor` with in-memory POI caching for the Data Engineer stakeholder.**
+
+---
+
 ## 3. Granular Feature Gap Analysis: Done vs. Not Yet Done
 
 This section provides a rigorous audit of every platform feature across all 5 stakeholder groups, demarcating what is **DONE**, what is **PARTIAL**, and what is **NOT STARTED (PLANNED)**.
