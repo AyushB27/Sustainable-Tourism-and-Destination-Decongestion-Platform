@@ -60,6 +60,7 @@ All comprehensive project documentation is organized in the [`docs/`](./docs) di
 - 📑 **[Master Comprehensive Project Dossier](./docs/PROJECT_COMPREHENSIVE_SUMMARY.md)** — Definitive 13-chapter technical report detailing architecture, telemetry pipelines, ML benchmarks, formulas, and deployment guides.
 - 📐 **[Centralized Architecture Diagrams](./docs/architecture_diagrams/README.md)** — Complete catalog of 7 end-to-end Mermaid architecture diagrams (System Overview, Telemetry, ML Engine, Gatekeeper Flow, etc.).
 - 🎯 **[Problem Statement & Traceability Matrix](./docs/PROBLEM_STATEMENT.md)** — Official Smart India Hackathon PS (SIH26204) & 14-requirement mapping *(Immutable Reference — Do Not Modify)*.
+- 🔬 **[Deep PS, Stakeholder, Gap & Market USP Analysis](./COMPREHENSIVE_PS_STAKEHOLDER_USP_ANALYSIS.md)** — Comprehensive Problem Statement breakdown, granular 5-stakeholder requirements, Done vs Not Yet Done gap audit, 10+ platform market research, and 9 architectural USPs.
 - 📖 **[Main Documentation Entry Point](./docs/README.md)** — Project overview, current audit status, and index.
 - 📋 **[Project Task Management (TODO)](./docs/TODO.md)** — Master task tracker ([Completed](./docs/TODO_DONE.md) • [Partially Executed](./docs/TODO_PARTIAL.md) • [Future Roadmap](./docs/TODO_FUTURE.md)).
 - 🌟 **[Features Specification](./docs/FEATURES.md)** — Plain-language guide to all platform capabilities, user flows, and limitations.

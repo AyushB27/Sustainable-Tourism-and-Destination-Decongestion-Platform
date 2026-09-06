@@ -64,6 +64,7 @@ Explore the dedicated documentation files below:
 - 📑 **[Master Comprehensive Project Dossier](./PROJECT_COMPREHENSIVE_SUMMARY.md)** — Definitive 13-chapter technical reference detailing architecture, pipelines, ML models, benchmarks, equations, and deployment.
 - 📐 **[Centralized Architecture Diagrams](./architecture_diagrams/README.md)** — Catalog of 7 high-resolution Mermaid diagrams illustrating end-to-end telemetry, machine learning, and multi-stakeholder workflows.
 - [Problem Statement & Traceability Matrix](./PROBLEM_STATEMENT.md) — Official Smart India Hackathon PS (SIH26204), background, and requirement mapping *(Canonical & Immutable — Do Not Modify)*.
+- [Deep PS, Stakeholder, Gap & Market USP Analysis](./COMPREHENSIVE_PS_STAKEHOLDER_USP_ANALYSIS.md) — Exhaustive Problem Statement breakdown, granular 5-stakeholder requirements, Done vs Not Yet Done gap audit, 10+ platform market research, and 9 architectural USPs.
 - [Task Management Index (TODO)](./TODO.md) — Master task tracker and project status breakdown:
   - 🟢 [Completed Tasks (TODO_DONE.md)](./TODO_DONE.md) — 26 fully operational and verified features.
   - 🟡 [Partially Executed Tasks (TODO_PARTIAL.md)](./TODO_PARTIAL.md) — 4 active features requiring final wiring/API keys.
