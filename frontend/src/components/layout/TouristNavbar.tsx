@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Compass, 
   User, 
   LogOut, 
   Menu, 
   X, 
-  Layers, 
   Sparkles,
   MapPin,
   Calendar,
@@ -17,6 +16,7 @@ import { useCorridorStore } from '../../store/useCorridorStore';
 import { GlobalSearchBox } from '../common/GlobalSearchBox';
 
 export const TouristNavbar: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const {
     currentUser,
@@ -39,6 +39,7 @@ export const TouristNavbar: React.FC = () => {
   const handleSignOut = () => {
     logoutUser('tourist');
     setProfileDropdownOpen(false);
+    navigate('/');
   };
 
   const isGuest = !currentUser.isAuthenticated || currentUser.id === 'CITIZEN-GUEST-01';
@@ -58,7 +59,7 @@ export const TouristNavbar: React.FC = () => {
                   EcoRoute
                 </span>
                 <span className="text-[10px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Corridor
+                  Tourist
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
@@ -94,15 +95,6 @@ export const TouristNavbar: React.FC = () => {
 
           {/* Right Action Area: User Session & Switcher */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Switch Dashboard Button */}
-            <Link
-              to="/"
-              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-xl hover:bg-slate-100 border border-slate-200/70 transition"
-              title="Switch to another portal"
-            >
-              <Layers className="w-3.5 h-3.5 text-slate-500" />
-              <span>Portals</span>
-            </Link>
 
             {/* Profile Dropdown / Sign In */}
             {isGuest ? (
@@ -157,14 +149,6 @@ export const TouristNavbar: React.FC = () => {
                       >
                         <Sparkles className="w-3.5 h-3.5 text-slate-500" />
                         <span>My Green Passes</span>
-                      </Link>
-                      <Link
-                        to="/"
-                        onClick={() => setProfileDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                      >
-                        <Layers className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Switch Dashboard</span>
                       </Link>
                     </div>
 
@@ -231,16 +215,7 @@ export const TouristNavbar: React.FC = () => {
             ))}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-            <Link
-              to="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-xs font-bold text-slate-600 flex items-center gap-1.5"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Switch Portal</span>
-            </Link>
-
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
             {isGuest ? (
               <Link
                 to="/login?role=tourist"

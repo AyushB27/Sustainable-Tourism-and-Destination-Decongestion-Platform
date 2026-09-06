@@ -1,0 +1,11 @@
+{
+  "cache_key": "osm:KAS",
+  "destination_id": "KAS",
+  "api_source": "osm",
+  "fetched_at": "2026-09-06T17:51:43.118630",
+  "expires_at": "2026-09-07T17:51:43.118630",
+  "payload": {
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
+  }
+}

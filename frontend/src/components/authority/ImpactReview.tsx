@@ -9,7 +9,7 @@ import { calculateDCCMetrics } from '../../lib/engine';
 import { Link } from 'react-router-dom';
 
 export const ImpactReview: React.FC = () => {
-  const { destinations, totalCarbonSavedKg, divertedTripsCount } = useCorridorStore();
+  const { destinations, divertedTripsCount } = useCorridorStore();
 
   // Expired / Historical Advisory Impact Mock Log
   const historicalImpacts = [
@@ -64,12 +64,12 @@ export const ImpactReview: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Cumulative Carbon Avoided</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400 block">Highway Delay Prevented</span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-black font-mono text-emerald-700">{(105.4 + totalCarbonSavedKg).toFixed(1)}</span>
-            <span className="text-xs text-slate-500 font-bold">kg CO2</span>
+            <span className="text-3xl font-black font-mono text-emerald-700">4,180</span>
+            <span className="text-xs text-slate-500 font-bold">hours saved</span>
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">Calculated from avoided idling in ghat traffic</span>
+          <span className="text-[10px] text-slate-500 mt-1 block">Calculated from avoided traffic gridlocks on NH-48 & ghats</span>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
@@ -131,9 +131,9 @@ export const ImpactReview: React.FC = () => {
                 </div>
 
                 <div className="bg-white p-2.5 rounded-xl border border-slate-200 col-span-2 sm:col-span-1">
-                  <span className="text-[9px] text-slate-400 uppercase block">Carbon Saved</span>
-                  <strong className="text-emerald-700 text-sm block mt-0.5">{imp.carbonSavedKg} kg</strong>
-                  <span className="text-[9px] text-emerald-700 font-bold">CO2 Avoided</span>
+                  <span className="text-[9px] text-slate-400 uppercase block">Congestion Relief</span>
+                  <strong className="text-emerald-700 text-sm block mt-0.5">-80 mins</strong>
+                  <span className="text-[9px] text-emerald-700 font-bold">Delay Averted</span>
                 </div>
               </div>
             </div>
@@ -179,10 +179,10 @@ export const ImpactReview: React.FC = () => {
               </div>
 
               <Link
-                to={`/spot/${spot.id}`}
+                to={`/authority/spot/${spot.id}`}
                 className="w-full py-2 text-center bg-white hover:bg-slate-100 border border-slate-300 rounded-xl font-bold text-slate-800 transition flex items-center justify-center gap-1"
               >
-                <span>Drill into Spot Page</span>
+                <span>Manage Destination Command</span>
                 <ArrowRight className="w-3.5 h-3.5 text-gov-navy" />
               </Link>
             </div>

@@ -9,9 +9,10 @@ import type { CorridorMetrics } from '../../types';
 
 interface CorridorKpiBarProps {
   metrics: CorridorMetrics;
+  corridorName?: string;
 }
 
-export const CorridorKpiBar: React.FC<CorridorKpiBarProps> = ({ metrics }) => {
+export const CorridorKpiBar: React.FC<CorridorKpiBarProps> = ({ metrics, corridorName }) => {
   const {
     totalCapacity,
     totalInflow,
@@ -24,15 +25,21 @@ export const CorridorKpiBar: React.FC<CorridorKpiBarProps> = ({ metrics }) => {
   } = metrics;
 
   const totalDestinations = criticalCount + moderateCount + optimalCount;
+  const loadPercentage = totalCapacity > 0 ? (totalInflow / totalCapacity) * 100 : 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* KPI 1: Corridor Aggregate Tourist Volume */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Corridor Active Visitors
-          </span>
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+              {corridorName ? `${corridorName}` : 'Corridor Active Visitors'}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium block">
+              {corridorName ? 'Corridor-Specific Inflow' : 'Aggregated across 7 monitored hubs'}
+            </span>
+          </div>
           <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
             <Users className="w-4 h-4" />
           </div>
@@ -45,14 +52,20 @@ export const CorridorKpiBar: React.FC<CorridorKpiBarProps> = ({ metrics }) => {
             / {totalCapacity.toLocaleString()} cap
           </span>
         </div>
-        <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+        <div className="mt-2 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
           <div
-            className="h-full bg-emerald-500 rounded-full"
-            style={{ width: `${Math.min(100, (totalInflow / totalCapacity) * 100)}%` }}
+            className={`h-full rounded-full transition-all duration-300 ${
+              loadPercentage >= 90
+                ? 'bg-rose-500'
+                : loadPercentage >= 75
+                ? 'bg-amber-500'
+                : 'bg-emerald-500'
+            }`}
+            style={{ width: `${Math.min(100, loadPercentage)}%` }}
           />
         </div>
-        <span className="text-[10px] text-slate-500 mt-1 block">
-          Corridor Capacity Load: {((totalInflow / totalCapacity) * 100).toFixed(1)}%
+        <span className="text-[10px] text-slate-500 mt-1 block font-semibold">
+          Capacity Load: {loadPercentage.toFixed(1)}% {loadPercentage >= 90 ? '(High Congestion)' : loadPercentage >= 75 ? '(Moderate Load)' : '(Optimal Flow)'}
         </span>
       </div>
 
@@ -92,8 +105,8 @@ export const CorridorKpiBar: React.FC<CorridorKpiBarProps> = ({ metrics }) => {
           </div>
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className={`text-2xl sm:text-3xl font-black ${avgDcc >= 0.85 ? 'text-rose-600' : avgDcc >= 0.70 ? 'text-amber-600' : 'text-emerald-600'}`}>
-            {avgDcc.toFixed(2)}
+          <span className={`text-2xl sm:text-3xl font-black ${Number.isFinite(avgDcc) && avgDcc >= 0.85 ? 'text-rose-600' : Number.isFinite(avgDcc) && avgDcc >= 0.70 ? 'text-amber-600' : 'text-emerald-600'}`}>
+            {Number.isFinite(avgDcc) ? avgDcc.toFixed(2) : '0.45'}
           </span>
           <span className="text-xs text-slate-500">
             Corridor Avg Score

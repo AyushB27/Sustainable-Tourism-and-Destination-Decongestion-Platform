@@ -45,6 +45,8 @@ def _build_initial_baseline():
             "status": metrics["status"],
             "capacity_utilization": metrics["capacity_utilization"],
             "estimated_wait_minutes": metrics["wait_time_minutes"],
+            "weather_hazard_score": 0.05,
+            "weatherHazardScore": 0.05,
             "live_sensors": {
                 "weather": {
                     "temperature_c": 22.0,
@@ -123,6 +125,8 @@ def _process_destination(d, is_weekend):
         "status": metrics["status"],
         "capacity_utilization": metrics["capacity_utilization"],
         "estimated_wait_minutes": metrics["wait_time_minutes"],
+        "weather_hazard_score": weather.get("hazard_score", 0.15),
+        "weatherHazardScore": weather.get("hazard_score", 0.15),
         "live_sensors": {
             "weather": weather,
             "traffic": traffic,

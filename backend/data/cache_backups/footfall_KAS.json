@@ -1,0 +1,20 @@
+{
+  "cache_key": "footfall:KAS",
+  "destination_id": "KAS",
+  "api_source": "footfall",
+  "fetched_at": "2026-09-06T17:51:40.761420",
+  "expires_at": "2026-09-06T23:51:40.761420",
+  "payload": {
+    "footfall_factor": 1.36,
+    "live_busyness_pct": 68,
+    "raw_busyness_pct": 80,
+    "calibration_factor": 0.85,
+    "source": "BestTime Live API",
+    "status": "connected",
+    "destination_id": "KAS",
+    "destination_name": "Kaas Plateau UNESCO Biosphere",
+    "profile_name": "Regulated Flora Reserve",
+    "venue_id": "ven_51387131543761435650505241346a394a6432395362654a496843",
+    "day_name": "Sunday"
+  }
+}

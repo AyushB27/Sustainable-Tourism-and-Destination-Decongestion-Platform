@@ -38,7 +38,6 @@ export const Navbar: React.FC = () => {
     applyPresetScenario,
     resetToDefault,
     divertedTripsCount,
-    totalCarbonSavedKg,
     language,
     setLanguage,
     liveBackendStatus,
@@ -354,7 +353,7 @@ export const Navbar: React.FC = () => {
 
             <div className="flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 border border-emerald-700 px-3 py-1 rounded text-xs font-medium">
               <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
-              <span><strong>{divertedTripsCount}</strong> Trips Diverted • {totalCarbonSavedKg.toFixed(0)} kg CO₂ Saved</span>
+              <span><strong>{divertedTripsCount}</strong> Trips Guided Away From Jams</span>
             </div>
           </div>
         </div>

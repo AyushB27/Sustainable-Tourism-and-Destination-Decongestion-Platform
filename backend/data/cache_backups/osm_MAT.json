@@ -1,0 +1,11 @@
+{
+  "cache_key": "osm:MAT",
+  "destination_id": "MAT",
+  "api_source": "osm",
+  "fetched_at": "2026-09-06T17:51:41.251193",
+  "expires_at": "2026-09-07T17:51:41.251193",
+  "payload": {
+    "osm_poi_nodes": 12,
+    "osm_status": "live_verified"
+  }
+}

@@ -96,14 +96,14 @@ export const SavedTripDetailPage: React.FC = () => {
 
           <div className="bg-emerald-50 border border-emerald-300 p-3.5 rounded-2xl flex items-center gap-3 self-start sm:self-auto">
             <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
-              🌱
+              ⏱️
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block">
-                Corridor Carbon Savings
+                Corridor Queue Relief
               </span>
               <strong className="text-lg font-black text-emerald-950">
-                ~{plan.totalCo2SavedKg} kg CO₂ Saved
+                ~45 mins Delay Avoided
               </strong>
             </div>
           </div>

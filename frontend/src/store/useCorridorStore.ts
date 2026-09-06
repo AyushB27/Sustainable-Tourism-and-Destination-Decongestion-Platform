@@ -422,12 +422,16 @@ export const useCorridorStore = create<CorridorStore>((set, get) => ({
       
       if (data && data.destinations && Array.isArray(data.destinations)) {
         const updatedDestinations = get().destinations.map(d => {
-          const live = data.destinations.find((ld: { id: string; current_inflow: number; weather_hazard_score: number }) => ld.id === d.id);
+          const live = data.destinations.find((ld: any) => ld.id === d.id);
           if (live) {
+            const rawInflow = live.current_inflow ?? live.currentInflow;
+            const liveInflow = typeof rawInflow === 'number' && Number.isFinite(rawInflow) ? rawInflow : d.currentInflow;
+            const rawHazard = live.weather_hazard_score ?? live.weatherHazardScore ?? live.live_sensors?.weather?.hazard_score;
+            const liveHazard = typeof rawHazard === 'number' && Number.isFinite(rawHazard) ? rawHazard : (d.weatherHazardScore ?? 0.15);
             return {
               ...d,
-              currentInflow: live.current_inflow,
-              weatherHazardScore: live.weather_hazard_score
+              currentInflow: liveInflow,
+              weatherHazardScore: liveHazard
             };
           }
           return d;

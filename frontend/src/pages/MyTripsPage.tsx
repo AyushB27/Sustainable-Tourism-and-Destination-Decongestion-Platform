@@ -50,7 +50,7 @@ export const MyTripsPage: React.FC = () => {
 
         {greenPasses.length === 0 ? (
           <div className="p-8 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
-            No Green Passes issued yet. Choose an alternative twin route in the trip planner to earn carbon reduction rebates!
+            No Green Passes issued yet. Choose an alternative twin route in the trip planner to earn exclusive eco-rewards and homestay discounts!
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,0 +1,15 @@
+{
+  "cache_key": "weather:TAP",
+  "destination_id": "TAP",
+  "api_source": "weather",
+  "fetched_at": "2026-09-06T20:03:43.260165",
+  "expires_at": "2026-09-06T20:33:43.260165",
+  "payload": {
+    "temperature_c": 20.6,
+    "rain_mm": 0.1,
+    "wind_kmh": 9.1,
+    "hazard_score": 0.06,
+    "source": "Open-Meteo Live API",
+    "status": "connected"
+  }
+}

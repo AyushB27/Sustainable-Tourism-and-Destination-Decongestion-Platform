@@ -12,7 +12,7 @@ interface EcoPassCardProps {
 }
 
 export const EcoPassCard: React.FC<EcoPassCardProps> = ({ destination }) => {
-  const { divertedTripsCount, totalCarbonSavedKg, lastRerouteNotice, clearRerouteNotice } = useCorridorStore();
+  const { divertedTripsCount, lastRerouteNotice, clearRerouteNotice } = useCorridorStore();
 
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-5 space-y-4">
@@ -71,7 +71,7 @@ export const EcoPassCard: React.FC<EcoPassCardProps> = ({ destination }) => {
             By choosing a certified under-visited destination, you help protect delicate Western Ghats biodiversity and avoid up to 2 hours of bottleneck traffic.
           </p>
 
-          {/* Cumulative Carbon Offset Summary */}
+          {/* Congestion Relief Impact Summary */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div className="bg-white p-3 rounded-xl border border-slate-200">
               <span className="text-[10px] text-slate-500 font-bold uppercase block">
@@ -84,10 +84,10 @@ export const EcoPassCard: React.FC<EcoPassCardProps> = ({ destination }) => {
 
             <div className="bg-white p-3 rounded-xl border border-slate-200">
               <span className="text-[10px] text-slate-500 font-bold uppercase block">
-                Corridor CO₂ Saved
+                Queue Delay Avoided
               </span>
               <span className="text-xl font-black text-gov-green">
-                ~{totalCarbonSavedKg.toFixed(1)} kg
+                ~{(divertedTripsCount * 1.5).toFixed(0)} hrs
               </span>
             </div>
           </div>

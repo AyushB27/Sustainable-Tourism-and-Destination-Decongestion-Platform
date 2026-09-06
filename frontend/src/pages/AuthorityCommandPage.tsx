@@ -44,7 +44,7 @@ export const AuthorityCommandPage: React.FC = () => {
 
   const handleSelectSpot = (id: string) => {
     setSelectedDestinationId(id);
-    navigate(`/spot/${id}`);
+    navigate(`/authority/spot/${id}`);
   };
 
   return (

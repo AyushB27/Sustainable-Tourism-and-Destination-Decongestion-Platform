@@ -2,13 +2,13 @@
   "cache_key": "weather:18.756,73.409",
   "destination_id": "",
   "api_source": "weather",
-  "fetched_at": "2026-09-06T13:21:16.054600",
-  "expires_at": "2026-09-06T13:51:16.054600",
+  "fetched_at": "2026-09-06T18:19:49.952522",
+  "expires_at": "2026-09-06T18:49:49.952522",
   "payload": {
-    "temperature_c": 23.2,
-    "rain_mm": 0.2,
-    "wind_kmh": 11.9,
-    "hazard_score": 0.08,
+    "temperature_c": 22.0,
+    "rain_mm": 0.1,
+    "wind_kmh": 7.4,
+    "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

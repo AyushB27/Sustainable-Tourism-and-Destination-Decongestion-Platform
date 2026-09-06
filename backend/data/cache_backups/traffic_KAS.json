@@ -1,0 +1,14 @@
+{
+  "cache_key": "traffic:KAS",
+  "destination_id": "KAS",
+  "api_source": "traffic",
+  "fetched_at": "2026-09-06T20:03:44.386646",
+  "expires_at": "2026-09-06T20:23:44.386646",
+  "payload": {
+    "delay_factor": 1.0,
+    "current_speed_kmh": 37.0,
+    "free_flow_speed_kmh": 37.0,
+    "source": "TomTom Live Traffic API",
+    "status": "connected"
+  }
+}

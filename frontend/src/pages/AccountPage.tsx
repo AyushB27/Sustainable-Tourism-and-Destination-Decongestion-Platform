@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   User, 
   ShieldCheck, 
@@ -10,6 +10,7 @@ import {
 import { useCorridorStore } from '../store/useCorridorStore';
 
 export const AccountPage: React.FC = () => {
+  const navigate = useNavigate();
   const {
     currentUser,
     updateUserProfile,
@@ -69,7 +70,7 @@ export const AccountPage: React.FC = () => {
           Traveler Profile & Persona
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 mt-1">
-          Configure your regional origin and travel vector. We never ask for intrusive surveys; your preferences shape Discover recommendations and carbon calculations.
+          Configure your regional origin and travel vector. We never ask for intrusive surveys; your preferences shape Discover recommendations and route suggestions.
         </p>
       </div>
 
@@ -95,7 +96,10 @@ export const AccountPage: React.FC = () => {
           {currentUser.isAuthenticated ? (
             <button
               type="button"
-              onClick={() => logoutUser()}
+              onClick={() => {
+                logoutUser();
+                navigate('/');
+              }}
               className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-300 transition flex items-center gap-1.5 self-start sm:self-auto"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-500" />
@@ -115,7 +119,7 @@ export const AccountPage: React.FC = () => {
         {/* 1. Home City & State (§4.3) */}
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-800 block">
-            1. Home Origin (For ETA and Carbon Savings math)
+            1. Home Origin (For ETA and Travel Time calculation)
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

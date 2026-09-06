@@ -8,6 +8,7 @@ import type {
   TwinRecommendation,
   SpotTelemetrySnapshot,
   HourlyForecastPoint,
+  MLForecastData,
   Advisory,
   Promotion,
   CheckIn,
@@ -30,6 +31,7 @@ export interface UseSpotDataResult {
   telemetry: SpotTelemetrySnapshot | null;
   forecast: HourlyForecastPoint[];
   loadingForecast: boolean;
+  mlData: MLForecastData | null;
   twins: TwinRecommendation[];
   advisories: Advisory[];
   promotions: Promotion[];
@@ -64,6 +66,7 @@ export function useSpotData(spotId?: string): UseSpotDataResult {
 
   const [forecast, setForecast] = useState<HourlyForecastPoint[]>([]);
   const [loadingForecast, setLoadingForecast] = useState<boolean>(false);
+  const [mlData, setMlData] = useState<MLForecastData | null>(null);
 
   // 1. Find the target spot
   const spot: Destination | null = useMemo(() => {
@@ -143,16 +146,30 @@ export function useSpotData(spotId?: string): UseSpotDataResult {
               capacity: Number(pt.capacity ?? spot.physicalCapacity ?? 1000),
               dccScore: Number.isFinite(dcc) ? dcc : 0.5,
               weatherRisk: Number(pt.weatherRisk ?? pt.weather_hazard ?? 0),
-              isBestTime: dcc < 0.60
+              isBestTime: dcc < 0.60,
+              lower_ci_95: pt.lower_ci_95,
+              upper_ci_95: pt.upper_ci_95,
+              breach_probability: pt.breach_probability,
+              is_ml_predicted: Boolean(pt.is_ml_predicted)
             };
           });
           setForecast(normalized);
+          setMlData({
+            is_ml_active: Boolean(data.is_ml_active),
+            model_engine: data.model_engine || 'Diurnal Heuristic Formula',
+            critical_breach_probability_4h: Number(data.critical_breach_probability_4h ?? 0.15),
+            peak_forecast_hour: data.peak_forecast_hour,
+            peak_forecast_visitors: data.peak_forecast_visitors,
+            forecast_points: normalized
+          });
         } else {
           setForecast(generate12HourForecast(spot));
+          setMlData(null);
         }
       })
       .catch(() => {
         setForecast(generate12HourForecast(spot));
+        setMlData(null);
       })
       .finally(() => {
         setLoadingForecast(false);
@@ -217,6 +234,7 @@ export function useSpotData(spotId?: string): UseSpotDataResult {
     telemetry,
     forecast,
     loadingForecast,
+    mlData,
     twins,
     advisories: relevantAdvisories,
     promotions: relevantPromotions,

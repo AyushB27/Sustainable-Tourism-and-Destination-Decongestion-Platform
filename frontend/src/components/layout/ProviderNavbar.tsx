@@ -7,7 +7,6 @@ import {
   X, 
   LogOut, 
   Sparkles, 
-  Layers,
   ChevronDown
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
@@ -129,18 +128,7 @@ export const ProviderNavbar: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="py-1">
-                    <Link
-                      to="/"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition"
-                    >
-                      <Layers className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Switch Portal</span>
-                    </Link>
-                  </div>
-
-                  <div className="pt-1 border-t border-slate-800">
+                  <div className="pt-1">
                     <button
                       onClick={handleSignOut}
                       className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 font-semibold text-left transition"
@@ -189,16 +177,7 @@ export const ProviderNavbar: React.FC = () => {
             ))}
           </div>
 
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-            <Link
-              to="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-xs font-bold text-slate-400 flex items-center gap-1.5"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Switch Portal</span>
-            </Link>
-
+          <div className="pt-3 border-t border-slate-800 flex items-center justify-end">
             <button
               onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
               className="text-xs font-bold text-rose-400"

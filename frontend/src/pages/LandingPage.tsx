@@ -14,7 +14,7 @@ import { GlobalSearchBox } from '../components/common/GlobalSearchBox';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { destinations, divertedTripsCount, totalCarbonSavedKg } = useCorridorStore();
+  const { destinations, divertedTripsCount } = useCorridorStore();
 
   // Top 5 spots for the live preview strip (§4.1)
   const previewSpots = destinations.slice(0, 5);
@@ -48,7 +48,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Real-time crowd estimates derived from weather, calendar models, and crowdsourced telemetry. Discover queue-free twin destinations and earn verified Green Passes.
+            Check live crowds and parking wait times in real time, discover peaceful queue-free sister spots, and unlock exclusive discounts on verified homestays across the Western Ghats.
           </p>
 
           {/* 3-Tier Search Box (§2.1, §4.1) */}
@@ -85,10 +85,10 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div>
               <span className="text-[10px] font-extrabold text-gov-navy uppercase tracking-wider">
-                Live Ground Telemetry Preview
+                Live Tourist Guide
               </span>
               <h2 className="text-lg font-black text-slate-900">
-                Current Corridor Pressure Snapshot
+                Popular Destinations & Live Crowd Levels
               </h2>
             </div>
             <Link
@@ -169,7 +169,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── VALUE PROPOSITION / CORRIDOR IMPACT ── */}
+      {/* ── VALUE PROPOSITION / TOURIST BENEFITS ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-3 shadow-sm">
@@ -177,28 +177,28 @@ export const LandingPage: React.FC = () => {
               🌿
             </div>
             <h3 className="font-extrabold text-base text-slate-900">
-              Capacity-Aware Load Balancing
+              Skip The Jams, Find Hidden Gems
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              When hotspots like Lonavala and Mahabaleshwar breach physical carrying limits, our cosine twin engine surfaces uncrowded hidden gems like Bhandardara and Tapola.
+              When famous hotspots like Lonavala or Mahabaleshwar are packed, discover equally stunning, peaceful sister destinations like Bhandardara and Tapola just a short scenic drive away.
             </p>
             <div className="pt-2 text-xs font-bold text-emerald-800 flex items-center gap-1">
-              <span>{divertedTripsCount.toLocaleString()} trips rerouted away from jams</span>
+              <span>{divertedTripsCount.toLocaleString()} travelers guided away from highway jams</span>
             </div>
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-3 shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-900 flex items-center justify-center font-bold text-xl">
-              🛡️
+              ⏱️
             </div>
             <h3 className="font-extrabold text-base text-slate-900">
-              Traceable Data Tiers (§8)
+              Live Crowd & 12-Hour Forecast
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              No black-box sensors. Every crowd number is transparently attributed to Tier 1 Open-Meteo weather, Tier 2 statutory arrivals, and Tier 3 calibrated footfall models.
+              Know before you go! Check real-time crowd meters, parking wait times, and weather conditions hour-by-hour so you always arrive when it's peaceful and calm.
             </p>
             <div className="pt-2 text-xs font-bold text-sky-800 flex items-center gap-1">
-              <span>Auditable provenance on every destination page</span>
+              <span>Hourly crowd & wait time predictions</span>
             </div>
           </div>
 
@@ -207,13 +207,13 @@ export const LandingPage: React.FC = () => {
               🎫
             </div>
             <h3 className="font-extrabold text-base text-slate-900">
-              Green Yatra Pass Rewards
+              GreenPass Discounts & Perks
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Accept an eco-route nudge to earn up to 35% off verified MTDC homestays, reducing vehicle tailpipe emissions and supporting rural community tourism.
+              Save big while traveling better! Unlock up to 35% OFF verified MTDC homestays, lakeside camping, and local adventure activities when you choose off-peak times or sister spots.
             </p>
-            <div className="pt-2 text-xs font-bold text-amber-800 flex items-center gap-1">
-              <span>{totalCarbonSavedKg.toLocaleString()} kg CO₂ saved to date</span>
+            <div className="pt-2 text-xs font-bold text-amber-900 flex items-center gap-1">
+              <span>Up to 35% OFF stays, food & activities</span>
             </div>
           </div>
         </div>

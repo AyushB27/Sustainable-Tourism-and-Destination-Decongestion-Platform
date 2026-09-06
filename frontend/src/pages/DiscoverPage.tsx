@@ -87,13 +87,13 @@ export const DiscoverPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-extrabold text-gov-navy uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Algorithmic Demand Diffusion Feed (§4.5)</span>
+            <span>Curated Just For You</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Personalized & Under-Visited Discoveries
+            Personalized & Hidden Gem Escapes
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-            Surfacing high-value scenic destinations below common tourist radar. Blends your travel style vector with crowd diffusion math to avoid over-visited chokepoints.
+            Discover breathtaking, peaceful getaways matched to your travel vibe. Skip the highway gridlock and enjoy queue-free holidays across Maharashtra.
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export const DiscoverPage: React.FC = () => {
         {/* Style Vector Tap-Cards (§4.3, §4.5) */}
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700 block">
-            Customize Travel Style Weights (Tap to toggle):
+            What kind of holiday are you looking for? (Tap to select):
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {styleTags.map(tag => {
@@ -194,13 +194,15 @@ export const DiscoverPage: React.FC = () => {
 
       {/* ── RANKED FEED GRID ── */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-          <span>Found {rankedDestinations.length} destinations ranked by custom affinity & carrying capacity</span>
-          <span className="font-mono text-[11px]">Rank formula: 45% Style + 30% Crowd Headroom + 25% Boost</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 font-semibold">
+          <span>Found {rankedDestinations.length} destinations matching your travel vibe</span>
+          <span className="text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+            ✨ Ranked by calmest crowds & best experience
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rankedDestinations.map(({ spot, metrics, sim, finalScore }) => {
+          {rankedDestinations.map(({ spot, metrics, sim }) => {
             const statusConfig = {
               OPTIMAL: {
                 badge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
@@ -236,10 +238,10 @@ export const DiscoverPage: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-                    {/* Algorithmic Boost Badge */}
+                    {/* Hidden Gem Badge */}
                     {spot.isUnderVisited ? (
                       <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shadow flex items-center gap-1">
-                        🌿 Algorithmic Promotion +28%
+                        🌿 Hidden Gem • Peaceful
                       </span>
                     ) : (
                       <span className="absolute top-3 left-3 bg-white/95 text-slate-900 text-[10px] font-black px-2.5 py-1 rounded-xl shadow">
@@ -298,8 +300,9 @@ export const DiscoverPage: React.FC = () => {
 
                 {/* Footer action */}
                 <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Rank Score: {finalScore}
+                  <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{metrics.status === 'OPTIMAL' ? 'Queue-Free Entry' : metrics.status === 'MODERATE' ? 'Moderate Inflow' : 'Peak Waiting Times'}</span>
                   </span>
                   <Link
                     to={`/spot/${spot.id}`}

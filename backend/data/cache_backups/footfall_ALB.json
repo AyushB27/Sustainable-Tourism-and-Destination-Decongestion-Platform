@@ -1,0 +1,20 @@
+{
+  "cache_key": "footfall:ALB",
+  "destination_id": "ALB",
+  "api_source": "footfall",
+  "fetched_at": "2026-09-06T17:51:40.761024",
+  "expires_at": "2026-09-06T23:51:40.761024",
+  "payload": {
+    "footfall_factor": 1.64,
+    "live_busyness_pct": 82,
+    "raw_busyness_pct": 80,
+    "calibration_factor": 1.02,
+    "source": "BestTime Live API",
+    "status": "connected",
+    "destination_id": "ALB",
+    "destination_name": "Alibaug Coastal Belt",
+    "profile_name": "Coastal Waterfront Hub",
+    "venue_id": "ven_51387131543761435650505241346a394a6432395362654a496843",
+    "day_name": "Sunday"
+  }
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, Sparkles, Layers } from 'lucide-react';
+import { Compass, Sparkles } from 'lucide-react';
 
 export const TouristFooter: React.FC = () => {
   return (
@@ -21,15 +21,6 @@ export const TouristFooter: React.FC = () => {
             <p className="text-slate-400 leading-relaxed text-[11px]">
               Intelligent destination decongestion, carrying capacity telemetry, and eco-rewards across the Western Ghats corridor.
             </p>
-            <div className="pt-1">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Switch Portal View</span>
-              </Link>
-            </div>
           </div>
 
           {/* Quick Links */}
@@ -70,7 +61,7 @@ export const TouristFooter: React.FC = () => {
                 <span>Green Pass Rewards</span>
               </li>
               <li>Dynamic Rerouting Off-Peak</li>
-              <li>Carbon Footprint Offset Tracking</li>
+              <li>Live Capacity & Wait Intelligence</li>
               <li className="text-slate-500 pt-1">Corridor Emergency: <strong className="text-slate-300">112</strong></li>
             </ul>
           </div>

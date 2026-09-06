@@ -13,19 +13,29 @@ export const InflowPredictorTimeline: React.FC<InflowPredictorTimelineProps> = (
   const baseInflow = destination.currentInflow;
   const capacity = destination.physicalCapacity;
 
-  // 3-day projection points
+  // Dynamic 3-day projection points
+  const today = new Date();
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const d0 = new Date(today);
+  const d1 = new Date(today);
+  d1.setDate(today.getDate() + 1);
+  const d2 = new Date(today);
+  d2.setDate(today.getDate() + 2);
+
   const projectionDays = [
     {
       day: 'Today (Live Velocity)',
-      date: 'Saturday (Peak)',
+      date: `${dayNames[d0.getDay()]}, ${monthNames[d0.getMonth()]} ${d0.getDate()}`,
       inflow: baseInflow,
       ratio: baseInflow / capacity,
       peakHours: '11:00 AM – 3:30 PM',
-      staffRecommendation: baseInflow > capacity ? 'Full emergency staffing + extra valet' : 'Standard weekend crew'
+      staffRecommendation: baseInflow > capacity ? 'Full emergency staffing + extra valet' : 'Standard crew'
     },
     {
       day: 'Tomorrow (Forecast)',
-      date: 'Sunday (Sustained)',
+      date: `${dayNames[d1.getDay()]}, ${monthNames[d1.getMonth()]} ${d1.getDate()}`,
       inflow: Math.round(baseInflow * 0.92),
       ratio: (baseInflow * 0.92) / capacity,
       peakHours: '10:30 AM – 2:00 PM',
@@ -33,7 +43,7 @@ export const InflowPredictorTimeline: React.FC<InflowPredictorTimelineProps> = (
     },
     {
       day: 'Day 3 (Forecast)',
-      date: 'Monday (Off-Peak)',
+      date: `${dayNames[d2.getDay()]}, ${monthNames[d2.getMonth()]} ${d2.getDate()}`,
       inflow: Math.round(capacity * 0.40),
       ratio: 0.40,
       peakHours: '12:00 PM – 2:00 PM',

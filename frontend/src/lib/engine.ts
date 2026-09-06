@@ -12,18 +12,21 @@ import type {
  * 1. Compute Dynamic Carrying Capacity (DCC) Index and Queuing Wait Times
  */
 export function calculateDCCMetrics(destination: Destination): DCCMetrics {
-  const capacity = Math.max(1, destination.physicalCapacity);
-  const inflow = Math.max(0, destination.currentInflow);
+  const capacity = Math.max(1, Number(destination.physicalCapacity) || 1);
+  const inflow = Math.max(0, Number(destination.currentInflow) || 0);
   
   // Capacity Utilization = Inflow / Physical Capacity
   const capacityUtilization = inflow / capacity;
   
   // Weather Hazard Risk (0.0 to 1.0)
-  const weatherRisk = Math.min(1, Math.max(0, destination.weatherHazardScore));
+  const rawHazard = typeof destination.weatherHazardScore === 'number' && Number.isFinite(destination.weatherHazardScore)
+    ? destination.weatherHazardScore
+    : 0.15;
+  const weatherRisk = Math.min(1, Math.max(0, rawHazard));
   
   // DCC Score = (0.70 * Capacity Utilization) + (0.30 * Weather Hazard Risk)
   const rawDcc = (0.70 * capacityUtilization) + (0.30 * weatherRisk);
-  const dccScore = Number(rawDcc.toFixed(2));
+  const dccScore = Number.isFinite(rawDcc) ? Number(rawDcc.toFixed(2)) : 0.45;
   
   // Status mapping
   let status: DCCStatus = 'OPTIMAL';
@@ -38,14 +41,14 @@ export function calculateDCCMetrics(destination: Destination): DCCMetrics {
   let waitTimeMinutes = 0;
   if (inflow > capacity) {
     const overflowRatio = (inflow - capacity) / capacity;
-    const dwellHours = destination.avgDwellTimeHours || 2.5;
+    const dwellHours = Number(destination.avgDwellTimeHours) || 2.5;
     waitTimeMinutes = Math.round(overflowRatio * dwellHours * 60);
   }
   
   return {
     dccScore,
     status,
-    capacityUtilization: Number(capacityUtilization.toFixed(2)),
+    capacityUtilization: Number.isFinite(capacityUtilization) ? Number(capacityUtilization.toFixed(2)) : 0,
     waitTimeMinutes
   };
 }
@@ -198,11 +201,14 @@ export function calculateCorridorMetrics(
   let totalDcc = 0;
   
   destinations.forEach(dest => {
-    totalCapacity += dest.physicalCapacity;
-    totalInflow += dest.currentInflow;
+    const cap = Math.max(1, Number(dest.physicalCapacity) || 0);
+    const inf = Math.max(0, Number(dest.currentInflow) || 0);
+    totalCapacity += cap;
+    totalInflow += inf;
     
     const { dccScore, status } = calculateDCCMetrics(dest);
-    totalDcc += dccScore;
+    const safeDcc = Number.isFinite(dccScore) ? dccScore : 0.45;
+    totalDcc += safeDcc;
     
     if (status === 'CRITICAL') criticalCount++;
     else if (status === 'MODERATE') moderateCount++;
@@ -211,7 +217,8 @@ export function calculateCorridorMetrics(
   
   const count = destinations.length || 1;
   const redPercentage = Math.round((criticalCount / count) * 100);
-  const avgDcc = Number((totalDcc / count).toFixed(2));
+  const rawAvgDcc = totalDcc / count;
+  const avgDcc = Number.isFinite(rawAvgDcc) ? Number(rawAvgDcc.toFixed(2)) : 0.45;
   
   let corridorStressStatus: DCCStatus = 'OPTIMAL';
   if (redPercentage >= 35 || avgDcc >= 0.85) {

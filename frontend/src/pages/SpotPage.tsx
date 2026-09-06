@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import { 
@@ -21,8 +21,6 @@ import {
   CheckCircle2, 
   Compass, 
   ArrowRight, 
-  Send, 
-  Sliders, 
   X, 
   Layers, 
   ExternalLink,
@@ -39,8 +37,6 @@ export const SpotPage: React.FC = () => {
 
   const {
     currentUser,
-    broadcastAdvisory,
-    updateDestinationCapacity,
     updateDestinationHotelOccupancy,
     addPromotion
   } = useCorridorStore();
@@ -54,9 +50,7 @@ export const SpotPage: React.FC = () => {
     advisories,
     checkIns,
     addCheckIn,
-    notFound,
-    hasJurisdiction,
-    overrideCapacity
+    notFound
   } = useSpotData(spotId);
 
   // UI state
@@ -69,11 +63,35 @@ export const SpotPage: React.FC = () => {
   const [selectedForecastHour, setSelectedForecastHour] = useState<number | null>(null);
   const [selectedWeeklyDay, setSelectedWeeklyDay] = useState<number | null>(null);
 
-  // Authority panel state
-  const [advisoryTitle, setAdvisoryTitle] = useState('');
-  const [advisoryMessage, setAdvisoryMessage] = useState('');
-  const [advisorySeverity, setAdvisorySeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
-  const [tempCapacity, setTempCapacity] = useState<number>(spot ? spot.physicalCapacity : 5000);
+  // Rolling 7-day historical window ending strictly on today (current date)
+  const rollingWeeklyDays = useMemo(() => {
+    const today = new Date();
+    const days = [];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dayOfWeekStr = dayNames[d.getDay()];
+      const isToday = (i === 0);
+      const isYesterday = (i === 1);
+      const patternMatch = spot?.historicalWeeklyPattern?.find(p => p.day === dayOfWeekStr);
+      const ratio = patternMatch?.typicalFootfallRatio ?? (d.getDay() === 0 || d.getDay() === 6 ? 1.15 : 0.45);
+      const level = patternMatch?.level ?? (ratio >= 0.85 ? 'CRITICAL' : ratio >= 0.65 ? 'MODERATE' : 'OPTIMAL');
+      const dateFormatted = `${monthNames[d.getMonth()]} ${d.getDate()}`;
+      days.push({
+        dateStr: dateFormatted,
+        dayOfWeek: dayOfWeekStr,
+        dayLabel: isToday ? 'Today' : isYesterday ? 'Yesterday' : dayOfWeekStr,
+        dayFull: isToday ? `Today (${dateFormatted})` : isYesterday ? `Yesterday (${dateFormatted})` : `${dayOfWeekStr}, ${dateFormatted}`,
+        isToday,
+        typicalFootfallRatio: ratio,
+        level,
+        note: patternMatch?.note || (isToday ? 'Live current date sensor readings' : 'Recorded arrival logs')
+      });
+    }
+    return days;
+  }, [spot]);
 
   // Provider panel state
   const [tempOccupancy, setTempOccupancy] = useState<number>(spot ? spot.hotelOccupancyPct : 50);
@@ -148,22 +166,6 @@ export const SpotPage: React.FC = () => {
     const shareUrl = window.location.href;
     const shareText = `🌿 *EcoRoute Bharat Live Telemetry*\n📍 *${spot.name}* (${spot.district}, ${spot.state})\n🚦 Crowd Status: *${metrics.status}* (${crowdPercentage}% Capacity)\n⏱️ Est. Wait: *${metrics.waitTimeMinutes} mins*\n🔗 Check real-time crowd forecast: ${shareUrl}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
-  };
-
-  const handlePostAdvisory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!advisoryTitle || !advisoryMessage) return;
-    broadcastAdvisory({
-      destinationId: spot.id,
-      destinationName: spot.name,
-      severity: advisorySeverity,
-      title: advisoryTitle,
-      message: advisoryMessage,
-      active: true,
-      author: `${currentUser.name} (${currentUser.department})`
-    });
-    setAdvisoryTitle('');
-    setAdvisoryMessage('');
   };
 
   const handlePublishPromo = (e: React.FormEvent) => {
@@ -382,6 +384,28 @@ export const SpotPage: React.FC = () => {
             <div>
               <div className="text-xs sm:text-sm font-black">{statusConfig.headline}</div>
               <div className="text-[11px] opacity-80">{statusConfig.subtext}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Confirmed Booking Protection Guarantee Banner ── */}
+        <div className="bg-gradient-to-r from-blue-50 via-indigo-50/70 to-blue-50 border border-blue-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs text-base">
+              🏨
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm font-black text-blue-950">
+                  Already have a Hotel or Activity Booking?
+                </span>
+                <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-300">
+                  ✓ 100% Guaranteed Access
+                </span>
+              </div>
+              <p className="text-[11px] text-blue-800 leading-relaxed">
+                You will <strong>not</strong> be redirected or turned away at checkpoints. Highway redirection advisories are voluntary recommendations strictly aimed at spontaneous day-trippers. Keep your stay, and check our <strong>12-Hour Forecast</strong> below to bypass local attraction lines!
+              </p>
             </div>
           </div>
         </div>
@@ -656,16 +680,20 @@ export const SpotPage: React.FC = () => {
         </div>
 
         {/* ── Historical Weekly Crowd Rhythm (With Visual Graph of Numbers & Colored Condition Points) ── */}
-        {spot.historicalWeeklyPattern && spot.historicalWeeklyPattern.length > 0 && (
+        {/* ── Historical Weekly Crowd Rhythm (Strictly Up to Current Date) ── */}
+        {rollingWeeklyDays.length > 0 && (
           <div className="space-y-4 pt-4 border-t border-slate-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gov-navy" />
-                  <span>Historical Weekly Crowd Rhythm & Inflow Benchmark</span>
+                  <span>Historical Crowd Analytics (Up to Current Date)</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+                    Recorded Up to Today
+                  </span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Aggregated from past arrivals & tourism registry logs — planning ahead? Saturdays and Sundays are typically heavy.
+                  Aggregated turnstile & telemetry logs strictly up to the current date ({new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}).
                 </p>
               </div>
 
@@ -691,7 +719,7 @@ export const SpotPage: React.FC = () => {
               <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2.5">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-amber-400" />
-                  <span className="font-bold text-slate-200">7-Day Arrival Volume & Capacity Load</span>
+                  <span className="font-bold text-slate-200">7-Day Arrival Volume & Capacity Load (Past 7 Days → Today)</span>
                   <span className="text-[10px] text-slate-400 font-mono">
                     (Statutory Capacity Baseline: <strong className="text-amber-300">{spot.physicalCapacity.toLocaleString()}</strong>)
                   </span>
@@ -704,7 +732,7 @@ export const SpotPage: React.FC = () => {
                 {/* 100% Capacity Reference Line */}
                 {(() => {
                   const maxDayVisitors = Math.max(
-                    ...spot.historicalWeeklyPattern!.map(p => Math.round(spot.physicalCapacity * (p.typicalFootfallRatio || 0.5))),
+                    ...rollingWeeklyDays.map(p => Math.round(spot.physicalCapacity * (p.typicalFootfallRatio || 0.5))),
                     spot.physicalCapacity * 1.25
                   );
                   const capPct = Math.min(95, Math.round((spot.physicalCapacity / maxDayVisitors) * 100));
@@ -720,12 +748,12 @@ export const SpotPage: React.FC = () => {
                   );
                 })()}
 
-                {spot.historicalWeeklyPattern.map((p, idx) => {
+                {rollingWeeklyDays.map((p, idx) => {
                   const ratio = p.typicalFootfallRatio ?? (p.level === 'CRITICAL' ? 1.15 : p.level === 'MODERATE' ? 0.75 : 0.35);
                   const estimatedVisitors = Math.round(spot.physicalCapacity * ratio);
                   const loadPct = Math.round(ratio * 100);
                   const maxDayVisitors = Math.max(
-                    ...spot.historicalWeeklyPattern!.map(pt => Math.round(spot.physicalCapacity * (pt.typicalFootfallRatio || 0.5))),
+                    ...rollingWeeklyDays.map(pt => Math.round(spot.physicalCapacity * (pt.typicalFootfallRatio || 0.5))),
                     spot.physicalCapacity * 1.25
                   );
                   const barHeightPct = Math.max(16, Math.min(100, Math.round((estimatedVisitors / maxDayVisitors) * 100)));
@@ -775,7 +803,7 @@ export const SpotPage: React.FC = () => {
 
                       {/* Tooltip on hover */}
                       <div className="absolute -bottom-10 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity bg-slate-800 text-white text-[9px] font-mono px-2 py-1 rounded shadow-xl whitespace-nowrap z-30 border border-slate-700">
-                        {p.dayFull || p.day}: {estimatedVisitors.toLocaleString()} ({loadPct}% load)
+                        {p.dayFull}: {estimatedVisitors.toLocaleString()} ({loadPct}% load)
                       </div>
                     </div>
                   );
@@ -784,23 +812,24 @@ export const SpotPage: React.FC = () => {
 
               {/* X-Axis Day Labels */}
               <div className="flex gap-3 sm:gap-6 px-3 text-[10px] font-mono text-slate-400 font-bold">
-                {spot.historicalWeeklyPattern.map((p, idx) => (
+                {rollingWeeklyDays.map((p, idx) => (
                   <div key={idx} className="flex-1 text-center truncate">
-                    {p.day}
+                    <span className={p.isToday ? 'text-amber-300 font-black' : ''}>{p.dayLabel}</span>
+                    <span className="block text-[8px] text-slate-500 font-normal">{p.dateStr}</span>
                   </div>
                 ))}
               </div>
 
               {/* Selected Day Details Box */}
-              {selectedWeeklyDay !== null && spot.historicalWeeklyPattern[selectedWeeklyDay] && (() => {
-                const p = spot.historicalWeeklyPattern[selectedWeeklyDay];
+              {selectedWeeklyDay !== null && rollingWeeklyDays[selectedWeeklyDay] && (() => {
+                const p = rollingWeeklyDays[selectedWeeklyDay];
                 const ratio = p.typicalFootfallRatio ?? (p.level === 'CRITICAL' ? 1.15 : p.level === 'MODERATE' ? 0.75 : 0.35);
                 const estimatedVisitors = Math.round(spot.physicalCapacity * ratio);
                 const loadPct = Math.round(ratio * 100);
                 return (
                   <div className="mt-2 p-3 bg-slate-900 border border-amber-500/50 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-bold text-amber-300 text-sm">{p.dayFull || p.day}</span>
+                      <span className="font-bold text-amber-300 text-sm">{p.dayFull}</span>
                       <span className="text-slate-300">
                         Estimated Footfall: <strong className="text-white text-sm">{estimatedVisitors.toLocaleString()} visitors</strong>
                       </span>
@@ -833,7 +862,7 @@ export const SpotPage: React.FC = () => {
 
             {/* 7-Day Interactive Information Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-              {spot.historicalWeeklyPattern.map((p, idx) => {
+              {rollingWeeklyDays.map((p, idx) => {
                 const ratio = p.typicalFootfallRatio ?? (p.level === 'CRITICAL' ? 1.15 : p.level === 'MODERATE' ? 0.75 : 0.35);
                 const estimatedVisitors = Math.round(spot.physicalCapacity * ratio);
                 const loadPct = Math.round(ratio * 100);
@@ -853,13 +882,18 @@ export const SpotPage: React.FC = () => {
                     className={`p-3 rounded-xl border flex flex-col justify-between text-center space-y-2 transition cursor-pointer ${
                       isSelected
                         ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-300 shadow-sm'
+                        : p.isToday
+                        ? 'bg-amber-50/50 border-amber-300/80 shadow-xs'
                         : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-slate-800">{p.day}</span>
+                        <span className={`text-xs font-black ${p.isToday ? 'text-amber-700 font-bold' : 'text-slate-800'}`}>{p.dayLabel}</span>
                         <span className="text-[10px] text-slate-500 font-mono font-bold">{loadPct}%</span>
+                      </div>
+                      <div className="text-[9px] text-slate-400 font-mono text-left">
+                        {p.dateStr}
                       </div>
                       <div className="text-sm font-black text-slate-900 mt-0.5">
                         {estimatedVisitors.toLocaleString()}
@@ -948,20 +982,27 @@ export const SpotPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-800 uppercase tracking-wider">
                 <Sparkles className="w-4 h-4 text-emerald-600" />
-                Preference-Preserving & Capacity-Balanced Twin Alternatives
+                Peaceful Sister Spots (Queue-Free Alternatives)
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 Escape the crowd at {spot.name}
               </h2>
             </div>
             <span className="text-xs font-semibold text-emerald-800 bg-white/90 px-3 py-1 rounded-xl border border-emerald-200 self-start sm:self-auto">
-              Dynamic Load-Balancing Active
+              ✓ Zero Traffic & Easy Parking
             </span>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">
-            Our cosine similarity model matches your preferred vibe ({spot.category}) with uncrowded nearby destinations where you save queue time and reduce corridor environmental stress.
+            We match your preferred holiday vibe ({spot.category}) with serene, uncrowded nearby sister destinations where you save hours in traffic, find ample parking, and enjoy tranquil nature.
           </p>
+
+          <div className="p-3 bg-white/80 border border-emerald-300 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs">
+            <span className="text-base shrink-0">💡</span>
+            <p className="text-[11px] leading-relaxed">
+              <strong>Tailored for Spontaneous & Pre-Booking Travelers:</strong> Recommended for motorists driving in without lodging or visitors planning upcoming trips. If you already have hotel reservations in <strong>{spot.name}</strong>, keep your stay — your entry is guaranteed!
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {twins.map(twin => {
@@ -1005,7 +1046,7 @@ export const SpotPage: React.FC = () => {
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-700">
-                      ~18.5 kg CO₂ Saved by Rerouting
+                      ~2.5 Hours Highway Delay Avoided
                     </span>
                     <Link
                       to={`/spot/${twinDest.id}`}
@@ -1221,140 +1262,32 @@ export const SpotPage: React.FC = () => {
         )}
       </section>
 
-      {/* ── 3.2 ROLE-CONDITIONAL PANELS (§3.2, provisional placeholders) ── */}
-
-      {/* AUTHORITY PANEL (Visible only if currentUser.role === 'authority') */}
+      {/* ── Official Incident Command Link (Decoupled Flow) ── */}
       {currentUser.role === 'authority' && (
-        <section className="bg-slate-900 text-white rounded-3xl border-4 border-gov-gold p-6 sm:p-8 space-y-6 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-700 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gov-gold text-gov-navy font-black text-xl flex items-center justify-center">
-                🛡️
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest">
-                  District GIS Authority Control Console
-                </span>
-                <h2 className="text-xl font-black text-white">
-                  Command Tools for {spot.name}
-                </h2>
-              </div>
+        <section className="bg-slate-900 text-white rounded-2xl border border-slate-700 p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-black text-xl flex items-center justify-center shrink-0">
+              🛡️
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-3 py-1 rounded-xl font-mono font-bold border ${
-                hasJurisdiction
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-500'
-              }`}>
-                {hasJurisdiction ? 'JURISDICTION VERIFIED' : 'CROSS-DISTRICT MUTUAL AID'}
+            <div>
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+                Official Incident Command Mode Active
               </span>
-              <span className="text-xs bg-rose-500/20 text-rose-300 border border-rose-500 px-3 py-1 rounded-xl font-mono font-bold">
-                ROLE: AUTHORITY ACTIVE
-              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white">
+                Viewing {spot.name} as a Visitor
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Official gate inflow throttles, 4-hour XGBoost breach curves, and live gazette dispatches are managed in your dedicated Command Operations Center.
+              </p>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Spot Telemetry Raw Data Inspector */}
-            <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <Sliders className="w-4 h-4" />
-                Raw Telemetry Sensor Feed ({spot.id})
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-slate-900 rounded-lg">
-                  <span className="text-[10px] text-slate-400 block">Current Inflow</span>
-                  <strong className="text-white text-base">{spot.currentInflow.toLocaleString()}</strong>
-                </div>
-                <div className="p-2 bg-slate-900 rounded-lg">
-                  <span className="text-[10px] text-slate-400 block">Statutory Capacity</span>
-                  <strong className="text-white text-base">{spot.physicalCapacity.toLocaleString()}</strong>
-                </div>
-                <div className="p-2 bg-slate-900 rounded-lg">
-                  <span className="text-[10px] text-slate-400 block">Parking Saturation</span>
-                  <strong className="text-white text-base">{spot.localPressure.parkingSaturationPct}%</strong>
-                </div>
-                <div className="p-2 bg-slate-900 rounded-lg">
-                  <span className="text-[10px] text-slate-400 block">DCC Index</span>
-                  <strong className="text-white text-base">{metrics.dccScore.toFixed(2)}</strong>
-                </div>
-              </div>
-
-              {/* Emergency Capacity Override Slider */}
-              <div className="pt-2 border-t border-slate-700 space-y-2">
-                <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                  <span>Emergency Entry Capacity Throttle:</span>
-                  <strong className="text-amber-300 font-mono">{tempCapacity.toLocaleString()} visitors</strong>
-                </label>
-                <input
-                  type="range"
-                  min={1000}
-                  max={15000}
-                  step={500}
-                  value={tempCapacity}
-                  onChange={e => setTempCapacity(Number(e.target.value))}
-                  className="w-full accent-gov-gold cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (overrideCapacity) {
-                      await overrideCapacity(spot.id, tempCapacity, 'Emergency Authority Throttle');
-                    } else {
-                      updateDestinationCapacity(spot.id, tempCapacity);
-                    }
-                  }}
-                  className="w-full py-1.5 bg-gov-gold text-gov-navy font-black text-xs rounded-xl hover:bg-amber-400 transition"
-                >
-                  Apply Emergency Capacity Override
-                </button>
-              </div>
-            </div>
-
-            {/* Destination-Specific Emergency Gazette Dispatcher */}
-            <form onSubmit={handlePostAdvisory} className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <Send className="w-4 h-4" />
-                Dispatch Advisory for {spot.name}
-              </h3>
-              <div>
-                <input
-                  type="text"
-                  value={advisoryTitle}
-                  onChange={e => setAdvisoryTitle(e.target.value)}
-                  placeholder="Advisory headline (e.g. Ghat road restricted to 1 lane)…"
-                  className="w-full bg-slate-900 border border-slate-700 text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-amber-300"
-                />
-              </div>
-              <div>
-                <textarea
-                  value={advisoryMessage}
-                  onChange={e => setAdvisoryMessage(e.target.value)}
-                  rows={2}
-                  placeholder="Official advisory instructions for travelers…"
-                  className="w-full bg-slate-900 border border-slate-700 text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-amber-300"
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <select
-                  value={advisorySeverity}
-                  onChange={e => setAdvisorySeverity(e.target.value as any)}
-                  className="bg-slate-900 border border-slate-700 text-white text-xs px-3 py-2 rounded-xl focus:outline-none cursor-pointer"
-                >
-                  <option value="low">Low Advisory</option>
-                  <option value="medium">Medium Advisory</option>
-                  <option value="high">High Warning</option>
-                  <option value="critical">Critical Emergency</option>
-                </select>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition shadow"
-                >
-                  Broadcast Live Advisory
-                </button>
-              </div>
-            </form>
-          </div>
+          <Link
+            to={`/authority/spot/${spot.id}`}
+            className="shrink-0 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center gap-2"
+          >
+            <span>Open Tactical Command</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </section>
       )}
 

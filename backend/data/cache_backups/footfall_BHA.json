@@ -1,0 +1,20 @@
+{
+  "cache_key": "footfall:BHA",
+  "destination_id": "BHA",
+  "api_source": "footfall",
+  "fetched_at": "2026-09-06T17:51:40.865910",
+  "expires_at": "2026-09-06T23:51:40.865910",
+  "payload": {
+    "footfall_factor": 0.7,
+    "live_busyness_pct": 20,
+    "raw_busyness_pct": 25,
+    "calibration_factor": 0.78,
+    "source": "BestTime Live API",
+    "status": "connected",
+    "destination_id": "BHA",
+    "destination_name": "Bhandardara Lake Sanctuary",
+    "profile_name": "Tranquil Water Sanctuary",
+    "venue_id": "ven_6f39545031476b54345f5852676b6445596457484a79674a496843",
+    "day_name": "Sunday"
+  }
+}

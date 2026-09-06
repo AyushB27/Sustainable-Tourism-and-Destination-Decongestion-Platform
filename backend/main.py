@@ -829,6 +829,9 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             if dest:
                 curve = []
                 is_ml = False
+                ml_breach_prob = 0.15
+                peak_hour = None
+                peak_visitors = None
                 try:
                     from app.engine.ml_forecaster import predict_12hr_crowd_ml
                     ml_res = predict_12hr_crowd_ml(
@@ -840,6 +843,9 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                     )
                     if ml_res.get("is_ml_active"):
                         is_ml = True
+                        ml_breach_prob = ml_res.get("critical_breach_probability_4h", 0.15)
+                        peak_hour = ml_res.get("peak_forecast_hour")
+                        peak_visitors = ml_res.get("peak_forecast_visitors")
                         for pt in ml_res.get("hourly_curve", []):
                             h_24 = pt["hour"]
                             h_str = f"{h_24:02d}:00"
@@ -882,6 +888,9 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                     "destination_name": dest["name"],
                     "is_ml_active": is_ml,
                     "model_engine": "XGBoost Regressor + Statutory DCC" if is_ml else "Diurnal Heuristic Formula",
+                    "critical_breach_probability_4h": ml_breach_prob,
+                    "peak_forecast_hour": peak_hour,
+                    "peak_forecast_visitors": peak_visitors,
                     "forecast_points": curve
                 })
             else:

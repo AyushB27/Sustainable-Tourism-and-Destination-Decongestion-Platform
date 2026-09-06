@@ -1,0 +1,15 @@
+{
+  "cache_key": "weather:MAT",
+  "destination_id": "MAT",
+  "api_source": "weather",
+  "fetched_at": "2026-09-06T20:03:43.256944",
+  "expires_at": "2026-09-06T20:33:43.256944",
+  "payload": {
+    "temperature_c": 20.1,
+    "rain_mm": 0.1,
+    "wind_kmh": 6.2,
+    "hazard_score": 0.05,
+    "source": "Open-Meteo Live API",
+    "status": "connected"
+  }
+}

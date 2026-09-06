@@ -14,9 +14,10 @@ interface FutureTripPlannerProps {
 
 export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = () => {
   const [travelDate, setTravelDate] = useState('2026-09-12'); // Next Weekend
-  const [duration, setDuration] = useState<'1-day' | '2-day' | '3-day'>('2-day');
+  const [duration, setDuration] = useState<'1-day' | '2-day' | '3-day' | '4-day' | '5-day' | '7-day'>('2-day');
   const [travelStyle, setTravelStyle] = useState<'scenic' | 'adventure' | 'family' | 'budget'>('scenic');
   const [backendPlanStatus, setBackendPlanStatus] = useState<'idle' | 'loading' | 'connected' | 'offline'>('idle');
+  const [backendDays, setBackendDays] = useState<any[] | null>(null);
 
   // Call backend itinerary API whenever user changes their trip parameters
   React.useEffect(() => {
@@ -28,7 +29,12 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = () => {
       signal: AbortSignal.timeout(3500)
     })
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then(() => setBackendPlanStatus('connected'))
+      .then((data) => {
+        setBackendPlanStatus('connected');
+        if (data && data.itinerary_days && Array.isArray(data.itinerary_days)) {
+          setBackendDays(data.itinerary_days);
+        }
+      })
       .catch(() => setBackendPlanStatus('offline'));
   }, [travelDate, duration, travelStyle]);
 
@@ -150,12 +156,15 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = () => {
           </label>
           <select
             value={duration}
-            onChange={(e) => setDuration(e.target.value as '1-day' | '2-day' | '3-day')}
+            onChange={(e) => setDuration(e.target.value as any)}
             className="w-full bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-gov-navy shadow-inner cursor-pointer"
           >
             <option value="1-day">1-Day (Daytrip)</option>
             <option value="2-day">2-Day Weekend Trip</option>
             <option value="3-day">3-Day Long Holiday</option>
+            <option value="4-day">4-Day Extended Escape</option>
+            <option value="5-day">5-Day Vacation</option>
+            <option value="7-day">7-Day Grand Explorer</option>
           </select>
         </div>
 
@@ -217,63 +226,51 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = () => {
             Optimized Smart Itinerary
           </h4>
           <span className="text-[11px] text-gov-green font-bold bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-            🌿 Avoids ~2.5 Hours Traffic Delay • Saves ~24 kg CO₂
+            🌿 Avoids ~2.5 Hours Traffic Delay • Easy Parking Guaranteed
           </span>
         </div>
 
         <div className="space-y-4">
-          {itineraryPlan.map((dayPlan, dIdx) => (
+          {(backendDays && backendDays.length > 0 ? backendDays : itineraryPlan.map(ip => ({
+            day_label: ip.day,
+            slots: [
+              { ...ip.morningSlot, location: 'Sahyadri Corridor' },
+              { ...ip.afternoonSlot, location: 'Eco-Twin Hub' },
+              { ...ip.eveningSlot, location: 'Accredited Homestay' }
+            ]
+          }))).map((dayPlan: any, dIdx: number) => (
             <div key={dIdx} className="border-2 border-slate-300 rounded-2xl overflow-hidden shadow-sm">
               <div className="bg-gov-navy text-white px-4 py-2.5 font-bold text-xs flex items-center justify-between">
-                <span>{dayPlan.day}</span>
+                <span>{dayPlan.day_label || dayPlan.day || `Day ${dIdx + 1}`}</span>
                 <span className="text-[10px] text-amber-300 font-medium">Decongested Schedule</span>
               </div>
 
               <div className="p-4 bg-white space-y-3">
-                {/* Morning Slot */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-gov-navy flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {dayPlan.morningSlot.time}
-                    </span>
-                    <strong className="text-slate-900 text-sm block">{dayPlan.morningSlot.title}</strong>
-                    <p className="text-slate-600 text-xs leading-relaxed">{dayPlan.morningSlot.desc}</p>
+                {dayPlan.slots && dayPlan.slots.map((slot: any, sIdx: number) => (
+                  <div
+                    key={sIdx}
+                    className={`flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-3 rounded-xl border text-xs ${
+                      sIdx === 0 ? 'bg-slate-50 border-slate-200' : sIdx === 1 ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-gov-navy flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        {slot.time}
+                        {slot.location && <span className="text-slate-400 font-normal">• {slot.location}</span>}
+                      </span>
+                      <strong className="text-slate-900 text-sm block">{slot.title}</strong>
+                      <p className="text-slate-600 text-xs leading-relaxed">{slot.desc}</p>
+                    </div>
+                    {slot.badge && (
+                      <span className={`font-bold px-2.5 py-0.5 rounded text-[10px] self-start sm:self-auto shrink-0 border ${
+                        sIdx === 0 ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : sIdx === 1 ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-slate-200 text-slate-800 border-slate-300'
+                      }`}>
+                        {slot.badge}
+                      </span>
+                    )}
                   </div>
-                  <span className="bg-emerald-100 text-emerald-900 font-bold px-2.5 py-0.5 rounded text-[10px] self-start sm:self-auto shrink-0 border border-emerald-300">
-                    {dayPlan.morningSlot.badge}
-                  </span>
-                </div>
-
-                {/* Afternoon Slot */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-xs">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-gov-navy flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {dayPlan.afternoonSlot.time}
-                    </span>
-                    <strong className="text-slate-900 text-sm block">{dayPlan.afternoonSlot.title}</strong>
-                    <p className="text-slate-600 text-xs leading-relaxed">{dayPlan.afternoonSlot.desc}</p>
-                  </div>
-                  <span className="bg-amber-100 text-amber-950 font-bold px-2.5 py-0.5 rounded text-[10px] self-start sm:self-auto shrink-0 border border-amber-300">
-                    {dayPlan.afternoonSlot.badge}
-                  </span>
-                </div>
-
-                {/* Evening Slot */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-gov-navy flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {dayPlan.eveningSlot.time}
-                    </span>
-                    <strong className="text-slate-900 text-sm block">{dayPlan.eveningSlot.title}</strong>
-                    <p className="text-slate-600 text-xs leading-relaxed">{dayPlan.eveningSlot.desc}</p>
-                  </div>
-                  <span className="bg-slate-200 text-slate-800 font-bold px-2.5 py-0.5 rounded text-[10px] self-start sm:self-auto shrink-0 border border-slate-300">
-                    {dayPlan.eveningSlot.badge}
-                  </span>
-                </div>
+                ))}
               </div>
             </div>
           ))}

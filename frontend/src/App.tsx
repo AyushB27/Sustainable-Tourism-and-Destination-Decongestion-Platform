@@ -18,6 +18,7 @@ import { DiscoverPage } from './pages/DiscoverPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
 import { RegionPage } from './pages/RegionPage';
 import { SpotPage } from './pages/SpotPage';
+import { AuthoritySpotPage } from './pages/AuthoritySpotPage';
 import { TripPlannerPage } from './pages/TripPlannerPage';
 import { SavedTripDetailPage } from './pages/SavedTripDetailPage';
 import { MyTripsPage } from './pages/MyTripsPage';
@@ -82,7 +83,7 @@ export function App() {
           <Route path="/authority/policy-simulator" element={<AuthorityView />} />
           <Route path="/authority/impact" element={<AuthorityView />} />
           <Route path="/authority/overview" element={<AuthorityCommandPage />} />
-          <Route path="/authority/spot/:spotId" element={<SpotPage />} />
+          <Route path="/authority/spot/:spotId" element={<AuthoritySpotPage />} />
         </Route>
 
         {/* ── PART 2C: ISOLATED MTDC OPERATOR CONSOLE SHELL (PROTECTED) ── */}

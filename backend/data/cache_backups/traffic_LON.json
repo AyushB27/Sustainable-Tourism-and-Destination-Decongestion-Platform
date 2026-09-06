@@ -1,0 +1,14 @@
+{
+  "cache_key": "traffic:LON",
+  "destination_id": "LON",
+  "api_source": "traffic",
+  "fetched_at": "2026-09-06T20:03:43.974852",
+  "expires_at": "2026-09-06T20:23:43.974852",
+  "payload": {
+    "delay_factor": 1.5,
+    "current_speed_kmh": 28.0,
+    "free_flow_speed_kmh": 42.0,
+    "source": "TomTom Live Traffic API",
+    "status": "connected"
+  }
+}

@@ -223,6 +223,19 @@ export interface HourlyForecastPoint {
   status?: string;
   waitMinutes?: number;
   wait_minutes?: number;
+  lower_ci_95?: number;
+  upper_ci_95?: number;
+  breach_probability?: number;
+  is_ml_predicted?: boolean;
+}
+
+export interface MLForecastData {
+  is_ml_active: boolean;
+  model_engine: string;
+  critical_breach_probability_4h: number;
+  peak_forecast_hour?: string;
+  peak_forecast_visitors?: number;
+  forecast_points: HourlyForecastPoint[];
 }
 
 export interface CorridorMetrics {

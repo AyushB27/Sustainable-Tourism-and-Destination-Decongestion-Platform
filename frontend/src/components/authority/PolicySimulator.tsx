@@ -165,6 +165,16 @@ export const PolicySimulator: React.FC = () => {
             </div>
           </div>
 
+          {/* Statutory Booking & Resident Exemption Note */}
+          <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1 text-xs">
+            <span className="font-bold text-amber-900 block text-[11px] flex items-center gap-1.5">
+              <span>🛡️ Hospitality & Resident Protection Factor</span>
+            </span>
+            <p className="text-[10px] text-amber-800 leading-relaxed">
+              Deflection algorithm targets surplus transient day-trippers (~65% of weekend surges). Confirmed lodging bookings and local residents are 100% exempt from physical checkpoint caps.
+            </p>
+          </div>
+
           <button
             onClick={handleRunSimulation}
             disabled={loading}

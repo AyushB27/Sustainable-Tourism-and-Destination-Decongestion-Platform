@@ -5,11 +5,9 @@ import {
   CheckCircle2,
   WifiOff,
   AlertTriangle,
-  Sliders,
-  Award,
-  Layers,
-  Calendar,
-  ArrowRight
+  ArrowRight,
+  Filter,
+  Clock
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import { calculateCorridorMetrics, calculateDCCMetrics } from '../../lib/engine';
@@ -19,10 +17,66 @@ import { DemandDiffusionFlow } from './DemandDiffusionFlow';
 import { AdvisoryManager } from './AdvisoryManager';
 import { PolicySimulator } from './PolicySimulator';
 import { ImpactReview } from './ImpactReview';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { sessionManager, DEMO_ACCOUNTS } from '../../lib/sessionManager';
 
+export type CorridorFilterId = 'ALL' | 'EXPRESSWAY' | 'COASTAL' | 'HIGHLAND' | 'ECO_RESERVE';
+
+export interface CorridorDefinition {
+  id: CorridorFilterId;
+  name: string;
+  shortName: string;
+  district: string;
+  spotIds: string[];
+  description: string;
+}
+
+export const CORRIDOR_DEFINITIONS: CorridorDefinition[] = [
+  {
+    id: 'ALL',
+    name: 'All Monitored Corridors (Statewide Aggregate)',
+    shortName: 'All Corridors',
+    district: 'Statewide',
+    spotIds: ['LON', 'MAT', 'BHA', 'ALB', 'KAS', 'MAH', 'TAP'],
+    description: 'Aggregated view covering all 7 monitored tourist hubs across Pune, Raigad, Satara, and Ahmednagar districts.'
+  },
+  {
+    id: 'EXPRESSWAY',
+    name: 'Mumbai–Pune Expressway Corridor',
+    shortName: 'Expressway Corridor',
+    district: 'Pune / Raigad',
+    spotIds: ['LON', 'MAT'],
+    description: 'NH-48 transit artery encompassing Lonavala, Khandala & Matheran eco-zone.'
+  },
+  {
+    id: 'COASTAL',
+    name: 'Raigad Coastal & Maritime Corridor',
+    shortName: 'Coastal Corridor',
+    district: 'Raigad',
+    spotIds: ['ALB', 'KAS'],
+    description: 'Arabian Sea coastal route covering Mandwa Ro-Ro, Alibaug, and Kashid / Murud Janjira.'
+  },
+  {
+    id: 'HIGHLAND',
+    name: 'Western Ghats & Satara Heritage Corridor',
+    shortName: 'Satara Highland',
+    district: 'Satara',
+    spotIds: ['MAH', 'TAP'],
+    description: 'High-altitude Sahyadri plateau covering Mahabaleshwar strawberry valley & Tapola Koyna fjord backwaters.'
+  },
+  {
+    id: 'ECO_RESERVE',
+    name: 'Nashik–Bhandardara Highland Eco-Corridor',
+    shortName: 'Bhandardara Reserve',
+    district: 'Ahmednagar',
+    spotIds: ['BHA'],
+    description: 'Arthur Lake & Kalsubai Peak pristine catchment eco-reserve.'
+  }
+];
+
 export const AuthorityView: React.FC = () => {
+  const location = useLocation();
+
   const {
     destinations,
     selectedDestinationId,
@@ -34,7 +88,15 @@ export const AuthorityView: React.FC = () => {
     fetchLiveBackendFeed
   } = useCorridorStore();
 
-  const [activeTab, setActiveTab] = useState<'command' | 'advisories' | 'simulator' | 'impact'>('command');
+  // Derive activeTab from current route path
+  const activeTab: 'command' | 'advisories' | 'simulator' | 'impact' = useMemo(() => {
+    if (location.pathname.startsWith('/authority/advisories')) return 'advisories';
+    if (location.pathname.startsWith('/authority/policy-simulator')) return 'simulator';
+    if (location.pathname.startsWith('/authority/impact')) return 'impact';
+    return 'command';
+  }, [location.pathname]);
+
+  const [selectedCorridor, setSelectedCorridor] = useState<CorridorFilterId>('ALL');
   const [forecastWindow, setForecastWindow] = useState<'current' | 'weekend' | 'holiday'>('current');
 
   // Auto-sync authority session if needed
@@ -72,12 +134,22 @@ export const AuthorityView: React.FC = () => {
     return destinations;
   }, [destinations, jur]);
 
+  // Active Corridor Definition and Filtered Spots
+  const activeCorridorDef = useMemo(() => {
+    return CORRIDOR_DEFINITIONS.find(c => c.id === selectedCorridor) || CORRIDOR_DEFINITIONS[0];
+  }, [selectedCorridor]);
+
+  const corridorFilteredSpots = useMemo(() => {
+    if (selectedCorridor === 'ALL') return jurisdictionSpots;
+    const filtered = jurisdictionSpots.filter(d => activeCorridorDef.spotIds.includes(d.id));
+    return filtered.length > 0 ? filtered : jurisdictionSpots;
+  }, [jurisdictionSpots, selectedCorridor, activeCorridorDef]);
+
   // Ranked Triage List (Urgency Sorted: CRITICAL -> MODERATE -> OPTIMAL)
   const rankedTriageSpots = useMemo(() => {
-    // Multiplier based on forecast window
     const multiplier = forecastWindow === 'weekend' ? 1.35 : forecastWindow === 'holiday' ? 1.60 : 1.0;
 
-    return jurisdictionSpots.map(d => {
+    return corridorFilteredSpots.map(d => {
       const simulatedInflow = Math.round(d.currentInflow * multiplier);
       const simulatedHazard = forecastWindow === 'holiday' ? Math.min(1.0, d.weatherHazardScore * 1.2) : d.weatherHazardScore;
       const metrics = calculateDCCMetrics({
@@ -92,10 +164,10 @@ export const AuthorityView: React.FC = () => {
         simulatedInflow
       };
     }).sort((a, b) => b.metrics.dccScore - a.metrics.dccScore);
-  }, [jurisdictionSpots, forecastWindow]);
+  }, [corridorFilteredSpots, forecastWindow]);
 
   const activeAdvisoriesCount = advisories.filter(a => a.active).length;
-  const corridorMetrics = calculateCorridorMetrics(jurisdictionSpots, activeAdvisoriesCount);
+  const corridorMetrics = calculateCorridorMetrics(corridorFilteredSpots, activeAdvisoriesCount);
 
   // If user is not authenticated as authority, show official login barrier
   if (!isAuthority) {
@@ -185,92 +257,113 @@ export const AuthorityView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Sub-Navigation Tabs ── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab('command')}
-          className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 ${
-            activeTab === 'command'
-              ? 'bg-gov-navy text-white shadow-xs'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Command Overview & Triage</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('advisories')}
-          className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 ${
-            activeTab === 'advisories'
-              ? 'bg-gov-navy text-white shadow-xs'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-          }`}
-        >
-          <ShieldAlert className="w-4 h-4" />
-          <span>Advisory Management ({advisories.filter(a => a.active).length} Active)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('simulator')}
-          className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 ${
-            activeTab === 'simulator'
-              ? 'bg-gov-navy text-white shadow-xs'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-          }`}
-        >
-          <Sliders className="w-4 h-4" />
-          <span>Policy Simulator (DCC Math Sandbox)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('impact')}
-          className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 ${
-            activeTab === 'impact'
-              ? 'bg-gov-navy text-white shadow-xs'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-          }`}
-        >
-          <Award className="w-4 h-4" />
-          <span>Impact Review & Promotion Planning</span>
-        </button>
-      </div>
-
       {/* ── TAB 1: COMMAND OVERVIEW & TRIAGE ── */}
       {activeTab === 'command' && (
         <div className="space-y-6">
           {/* Corridor KPI Statistics Bar */}
-          <CorridorKpiBar metrics={corridorMetrics} />
+          <CorridorKpiBar
+            metrics={corridorMetrics}
+            corridorName={selectedCorridor === 'ALL' ? undefined : activeCorridorDef.shortName}
+          />
 
-          {/* Forecast Window Toggle */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs text-slate-700">
-              <Calendar className="w-4 h-4 text-gov-navy" />
-              <span className="font-bold">Temporal Triage Window:</span>
-              <span className="text-slate-500 hidden sm:inline">
-                Reuses 12-hour diurnal forecast model to predict upcoming surges
-              </span>
-            </div>
+          {/* Operations Control Toolbar: Corridor-Wise Filter & Temporal Triage Window */}
+          <div className="bg-white rounded-2xl border-2 border-slate-300 p-4 sm:p-5 shadow-sm space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Corridor Filter Controls */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gov-navy" />
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                    Corridor Sector Filter:
+                  </span>
+                  <span className="text-xs font-bold text-gov-navy bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                    {activeCorridorDef.shortName}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  {activeCorridorDef.description}
+                </p>
 
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold text-slate-600">
-              <button
-                onClick={() => setForecastWindow('current')}
-                className={`px-3 py-1 rounded-lg transition ${forecastWindow === 'current' ? 'bg-white text-slate-900 shadow-xs' : ''}`}
-              >
-                Live Now
-              </button>
-              <button
-                onClick={() => setForecastWindow('weekend')}
-                className={`px-3 py-1 rounded-lg transition ${forecastWindow === 'weekend' ? 'bg-white text-gov-navy shadow-xs' : ''}`}
-              >
-                Saturday Peak (+35%)
-              </button>
-              <button
-                onClick={() => setForecastWindow('holiday')}
-                className={`px-3 py-1 rounded-lg transition ${forecastWindow === 'holiday' ? 'bg-white text-rose-700 shadow-xs' : ''}`}
-              >
-                Next Holiday Surge (+60%)
-              </button>
+                {/* Corridor Filter Chips */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  {CORRIDOR_DEFINITIONS.map(corridor => {
+                    const isSelected = selectedCorridor === corridor.id;
+                    return (
+                      <button
+                        key={corridor.id}
+                        type="button"
+                        onClick={() => setSelectedCorridor(corridor.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected
+                            ? 'bg-gov-navy text-white border-gov-navy shadow-sm ring-2 ring-gov-navy/20'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                        }`}
+                      >
+                        <span>{corridor.shortName}</span>
+                        {corridor.id !== 'ALL' && (
+                          <span className={`ml-1.5 text-[10px] font-mono px-1 rounded ${isSelected ? 'bg-white/20 text-amber-300' : 'bg-slate-200 text-slate-600'}`}>
+                            {corridor.spotIds.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Temporal Triage Window Selector */}
+              <div className="space-y-1.5 lg:border-l lg:border-slate-200 lg:pl-6 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gov-navy" />
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                    Temporal Triage Window:
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Forecast multiplier for predictive capacity interventions
+                </p>
+
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setForecastWindow('current')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                      forecastWindow === 'current'
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/20'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${forecastWindow === 'current' ? 'bg-white' : 'bg-emerald-500'}`} />
+                    <span>Live Telemetry (Now)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setForecastWindow('weekend')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                      forecastWindow === 'weekend'
+                        ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-500/20'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${forecastWindow === 'weekend' ? 'bg-white' : 'bg-amber-500'}`} />
+                    <span>Weekend Peak (+35%)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setForecastWindow('holiday')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                      forecastWindow === 'holiday'
+                        ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-500/20'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${forecastWindow === 'holiday' ? 'bg-white' : 'bg-rose-500'}`} />
+                    <span>Holiday Surge (+60%)</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -279,7 +372,7 @@ export const AuthorityView: React.FC = () => {
             {/* Interactive GIS Map */}
             <div className="lg:col-span-7">
               <CorridorMap
-                destinations={jurisdictionSpots}
+                destinations={corridorFilteredSpots}
                 selectedId={selectedDestinationId}
                 onSelectDestination={setSelectedDestinationId}
               />
@@ -291,11 +384,22 @@ export const AuthorityView: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span>Ranked Priority Triage List</span>
+                    <span>Priority Triage Queue</span>
                   </h3>
-                  <span className="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                    {jurisdictionSpots.length} Hubs Monitored
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                      {corridorFilteredSpots.length} Zones in Scope
+                    </span>
+                    {selectedCorridor !== 'ALL' && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCorridor('ALL')}
+                        className="text-[10px] font-bold text-gov-navy underline hover:text-gov-navy-light"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2.5 mt-3">
@@ -327,11 +431,11 @@ export const AuthorityView: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Canonical Spot Page Drilldown (Per Non-Negotiable Directives) */}
+                        {/* Dedicated Authority Operations Command Drilldown */}
                         <Link
-                          to={`/spot/${spot.id}`}
+                          to={`/authority/spot/${spot.id}`}
                           className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-lg border border-slate-300 transition shadow-2xs flex items-center gap-1 shrink-0"
-                          title={`Drill into ${spot.name} canonical spot page`}
+                          title={`Launch ${spot.name} District Operations Command Desk`}
                         >
                           <span>Manage</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -342,14 +446,14 @@ export const AuthorityView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-500">
-                💡 Clicking <strong>Manage</strong> navigates to the canonical <code>/spot/:spotId</code> page where the Authority Capacity Control & Incident Dispatcher panel is composed at the bottom.
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
+                <span>💡 Click <strong>Manage</strong> on any corridor hub to access dedicated toll gate throttles, AI forecast breach curves, and 1-click gazette advisories.</span>
               </div>
             </div>
           </div>
 
           {/* Regional Demand Diffusion Matrix (Origin-Destination Movement Patterns) */}
-          <DemandDiffusionFlow destinations={jurisdictionSpots} />
+          <DemandDiffusionFlow destinations={corridorFilteredSpots} />
         </div>
       )}
 

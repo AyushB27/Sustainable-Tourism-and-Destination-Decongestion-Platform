@@ -1,0 +1,11 @@
+{
+  "cache_key": "osm:BHA",
+  "destination_id": "BHA",
+  "api_source": "osm",
+  "fetched_at": "2026-09-06T17:51:43.196971",
+  "expires_at": "2026-09-07T17:51:43.196971",
+  "payload": {
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
+  }
+}
