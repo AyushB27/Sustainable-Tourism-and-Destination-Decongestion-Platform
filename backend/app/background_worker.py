@@ -90,10 +90,11 @@ def _build_initial_baseline():
 _telemetry_cache = _build_initial_baseline()
 
 def _process_destination(d, is_weekend):
-    weather = fetch_live_weather(d["lat"], d["lon"])
-    traffic = fetch_live_traffic_delay(d["lat"], d["lon"])
-    footfall = fetch_live_footfall(d["name"], destination_id=d["id"])
-    osm = scan_osm_amenities(d["lat"], d["lon"])
+    dest_id = d["id"]
+    weather = fetch_live_weather(d["lat"], d["lon"], destination_id=dest_id)
+    traffic = fetch_live_traffic_delay(d["lat"], d["lon"], destination_id=dest_id)
+    footfall = fetch_live_footfall(d["name"], destination_id=dest_id)
+    osm = scan_osm_amenities(d["lat"], d["lon"], destination_id=dest_id)
 
     traffic_mult = traffic["delay_factor"]
     footfall_mult = footfall["footfall_factor"]

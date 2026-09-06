@@ -607,12 +607,64 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "override_capacity": override_cap,
                 "reason": reason
             })
+
+        # Cache Purge & Force Refresh Control
+        elif path == "/api/cache/purge":
+            from app.cache_manager import purge_cache, get_cache_status
+            target_key = body.get("cache_key")
+            dest_id = body.get("destination_id")
+            source = body.get("api_source")
+            deleted = purge_cache(cache_key=target_key, destination_id=dest_id, api_source=source)
+            self._send_json_response({
+                "status": "success",
+                "message": f"Purged {deleted} cache entries",
+                "purged_count": deleted,
+                "current_cache": get_cache_status()
+            })
         else:
             self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
 
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
+
+        # 0A. Telemetry Cache Status & Token Savings Metrics
+        if path == "/api/cache/status":
+            from app.cache_manager import get_cache_status
+            self._send_json_response(get_cache_status())
+            return
+
+        # 0B. ML Model Benchmark Comparison Report
+        if path == "/api/ml/benchmark":
+            from app.engine.ml_forecaster import get_benchmark_report
+            self._send_json_response(get_benchmark_report())
+            return
+
+        # 0C. ML 12-Hour Predictive Curve with Confidence Intervals
+        if path.startswith("/api/ml/forecast"):
+            from app.engine.ml_forecaster import predict_12hr_crowd_ml
+            parts = path.strip("/").split("/")
+            dest_id = parts[3].upper() if len(parts) >= 4 else "LON"
+
+            dest = next((d for d in INITIAL_DESTINATIONS if d["id"] == dest_id), INITIAL_DESTINATIONS[0])
+            telemetry = get_latest_telemetry()
+            dest_telemetry = next((d for d in telemetry.get("destinations", []) if d.get("id") == dest_id), None)
+
+            curr_inflow = dest_telemetry.get("current_inflow", dest["base_inflow"]) if dest_telemetry else dest["base_inflow"]
+            live_sensors = dest_telemetry.get("live_sensors", {}) if dest_telemetry else {}
+            weather = live_sensors.get("weather", {})
+            traffic = live_sensors.get("traffic", {})
+
+            forecast_res = predict_12hr_crowd_ml(
+                destination_id=dest["id"],
+                base_capacity=dest["base_capacity"],
+                current_visitors=curr_inflow,
+                weather=weather,
+                traffic=traffic
+            )
+            forecast_res["destination_name"] = dest["name"]
+            self._send_json_response(forecast_res)
+            return
 
         # 0. Developer Production Status & Transparency Portal
         if path == "/api/dev/status":
@@ -765,7 +817,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "destinations": telemetry.get("destinations", [])
             })
 
-        # 2. 12-Hour Destination Predictive Hourly Forecast
+        # 2. 12-Hour Destination Predictive Hourly Forecast (Hybrid ML + Mathematical Engine)
         elif path.startswith("/api/destinations/") and path.endswith("/forecast"):
             parts = path.strip("/").split("/")
             dest_id = parts[2].upper()
@@ -775,16 +827,61 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             dest = next((d for d in destinations if d["id"] == dest_id), None)
 
             if dest:
-                curve = generate_12hr_forecast(
-                    dest["current_inflow"],
-                    dest["physical_capacity"],
-                    dest["live_sensors"]["weather"]["hazard_score"],
-                    dest["avg_dwell_time_hours"]
-                )
+                curve = []
+                is_ml = False
+                try:
+                    from app.engine.ml_forecaster import predict_12hr_crowd_ml
+                    ml_res = predict_12hr_crowd_ml(
+                        destination_id=dest["id"],
+                        base_capacity=dest["physical_capacity"],
+                        current_visitors=dest["current_inflow"],
+                        weather=dest["live_sensors"].get("weather", {}),
+                        traffic=dest["live_sensors"].get("traffic", {})
+                    )
+                    if ml_res.get("is_ml_active"):
+                        is_ml = True
+                        for pt in ml_res.get("hourly_curve", []):
+                            h_24 = pt["hour"]
+                            h_str = f"{h_24:02d}:00"
+                            h_12 = f"{(h_24 % 12) or 12}:00 {'AM' if h_24 < 12 else 'PM'}"
+                            inflow = pt["predicted_visitors"]
+                            cap = dest["physical_capacity"]
+                            hazard = dest["live_sensors"].get("weather", {}).get("hazard_score", 0.1)
+                            dcc_metrics = calculate_dcc_metrics(inflow, cap, hazard, dest["avg_dwell_time_hours"])
+                            curve.append({
+                                "hour": h_str,
+                                "time_label": h_12,
+                                "timeLabel": h_12,
+                                "inflow": inflow,
+                                "capacity": cap,
+                                "dcc_score": dcc_metrics["dcc_score"],
+                                "dccScore": dcc_metrics["dcc_score"],
+                                "status": dcc_metrics["status"],
+                                "wait_minutes": dcc_metrics["wait_time_minutes"],
+                                "waitMinutes": dcc_metrics["wait_time_minutes"],
+                                "weatherRisk": hazard,
+                                "lower_ci_95": pt.get("lower_ci_95", int(inflow * 0.85)),
+                                "upper_ci_95": pt.get("upper_ci_95", int(inflow * 1.15)),
+                                "is_ml_predicted": True
+                            })
+                except Exception:
+                    pass
+
+                # Graceful fallback to purely mathematical diurnal heuristic
+                if not curve:
+                    curve = generate_12hr_forecast(
+                        dest["current_inflow"],
+                        dest["physical_capacity"],
+                        dest["live_sensors"]["weather"]["hazard_score"],
+                        dest["avg_dwell_time_hours"]
+                    )
+
                 self._send_json_response({
                     "status": "success",
                     "destination_id": dest_id,
                     "destination_name": dest["name"],
+                    "is_ml_active": is_ml,
+                    "model_engine": "XGBoost Regressor + Statutory DCC" if is_ml else "Diurnal Heuristic Formula",
                     "forecast_points": curve
                 })
             else:

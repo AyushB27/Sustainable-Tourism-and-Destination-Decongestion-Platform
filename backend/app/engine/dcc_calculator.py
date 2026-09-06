@@ -89,3 +89,17 @@ def generate_12hr_forecast(
         })
 
     return curve
+
+def generate_ml_12hr_forecast(
+    destination_id: str,
+    base_capacity: int,
+    current_visitors: int,
+    weather: dict = None,
+    traffic: dict = None
+) -> dict:
+    """
+    Produces high-precision ML crowd and carrying capacity forecast using trained XGBoost models.
+    Includes 95% confidence intervals and 4-hour critical breach alert probability.
+    """
+    from .ml_forecaster import predict_12hr_crowd_ml
+    return predict_12hr_crowd_ml(destination_id, base_capacity, current_visitors, weather, traffic)

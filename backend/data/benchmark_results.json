@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "evaluation_date": "2026-09-06 12:42:18",
+    "dataset_rows": 90804,
+    "train_rows": 63562,
+    "validation_rows": 13621,
+    "test_rows": 13621,
+    "forecast_horizon_hours": 12,
+    "early_warning_window_hours": 4
+  },
+  "regression_benchmarks": {
+    "Naive Persistence (Lag 168h)": {
+      "mae": 1878.3,
+      "rmse": 2190.2,
+      "mape": 116.49,
+      "mda": 16.94,
+      "r2": -1.6547,
+      "type": "Naive Baseline"
+    },
+    "Diurnal Heuristic Formula": {
+      "mae": 1453.1,
+      "rmse": 1858.6,
+      "mape": 65.43,
+      "mda": 25.51,
+      "r2": -0.9116,
+      "type": "Rule-Based Heuristic"
+    },
+    "Ridge L2 Regression": {
+      "mae": 6085.3,
+      "rmse": 7465.7,
+      "mape": 318.18,
+      "mda": 68.22,
+      "r2": -29.8441,
+      "type": "Linear ML Baseline"
+    },
+    "Random Forest Regressor": {
+      "mae": 665.5,
+      "rmse": 949.0,
+      "mape": 29.2,
+      "mda": 82.64,
+      "r2": 0.5017,
+      "type": "Ensemble Tree Baseline"
+    },
+    "XGBoost Regressor (EcoRoute Champion)": {
+      "mae": 612.1,
+      "rmse": 795.2,
+      "mape": 29.95,
+      "mda": 89.42,
+      "r2": 0.6501,
+      "train_time_sec": 2.45,
+      "type": "Champion Gradient Boosting"
+    }
+  },
+  "classification_benchmarks": {
+    "Majority Baseline": {
+      "accuracy": 0.629,
+      "precision": 0.629,
+      "recall": 1.0,
+      "f1": 0.7723,
+      "pr_auc": 0.629,
+      "type": "Naive Dummy"
+    },
+    "Balanced Logistic Regression": {
+      "accuracy": 0.9447,
+      "precision": 0.9844,
+      "recall": 0.9268,
+      "f1": 0.9547,
+      "pr_auc": 0.9955,
+      "type": "Linear Classifier"
+    },
+    "XGBoost Early-Warning Classifier": {
+      "accuracy": 0.9575,
+      "precision": 0.9989,
+      "recall": 0.9335,
+      "f1": 0.9651,
+      "pr_auc": 0.9983,
+      "confusion_matrix": {
+        "true_negatives": 5044,
+        "false_positives": 9,
+        "false_negatives": 570,
+        "true_positives": 7998
+      },
+      "type": "Champion Alert Classifier"
+    }
+  },
+  "top_feature_importances": [
+    {
+      "feature": "base_capacity",
+      "importance": 0.2864
+    },
+    {
+      "feature": "is_weekend",
+      "importance": 0.1657
+    },
+    {
+      "feature": "dest_ALB",
+      "importance": 0.1376
+    },
+    {
+      "feature": "hour_sin",
+      "importance": 0.0624
+    },
+    {
+      "feature": "day_sin",
+      "importance": 0.0614
+    },
+    {
+      "feature": "visitor_roll_mean_6h",
+      "importance": 0.0519
+    },
+    {
+      "feature": "is_monsoon",
+      "importance": 0.047
+    },
+    {
+      "feature": "hour_cos",
+      "importance": 0.0281
+    },
+    {
+      "feature": "highway_ingress_vph",
+      "importance": 0.0235
+    },
+    {
+      "feature": "dcc_load_ratio",
+      "importance": 0.0225
+    }
+  ],
+  "summary": {
+    "best_forecaster": "XGBoost Regressor (EcoRoute Champion)",
+    "mape_improvement_vs_naive": "74.3%",
+    "mape_improvement_vs_heuristic": "54.2%",
+    "critical_breach_recall": "93.3%"
+  }
+}
