@@ -150,6 +150,19 @@ def init_database():
     )
     """)
 
+    # 8. Persistent API Telemetry Cache Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS api_cache (
+        cache_key TEXT PRIMARY KEY,
+        destination_id TEXT,
+        api_source TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        fetched_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_cache_lookup ON api_cache (cache_key, expires_at);")
+
     # Seed Destinations if not populated
     cursor.execute("SELECT COUNT(*) FROM destinations")
     if cursor.fetchone()[0] == 0:

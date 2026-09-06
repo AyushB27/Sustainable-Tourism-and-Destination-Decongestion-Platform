@@ -4,6 +4,7 @@ import urllib.parse
 import time
 from datetime import datetime
 from ..config import BESTTIME_API_KEY
+from ..cache_manager import get_cached_telemetry, set_cached_telemetry
 
 # ─── BestTime Multi-Venue Profiles & Corridor Calibration ─────────────────────
 # BestTime.app Public API keys (pub_...) query pre-existing venue forecasts by `venue_id`.
@@ -133,6 +134,13 @@ def fetch_live_footfall(venue_name: str, api_key: str = None, destination_id: st
     """
     key = (api_key or BESTTIME_API_KEY).strip()
     dest_id = destination_id or _resolve_dest_id(venue_name)
+    persistent_key = f"footfall:{dest_id}"
+
+    # Check persistent SQLite cache first (6-hour validity to preserve tokens)
+    cached_db = get_cached_telemetry(persistent_key)
+    if cached_db:
+        return cached_db
+
     profile = DESTINATION_VENUE_PROFILES.get(dest_id, DESTINATION_VENUE_PROFILES["LON"])
     target_venue_id = venue_id or profile["venue_id"]
     calibration = profile.get("calibration", 1.0)
@@ -143,7 +151,7 @@ def fetch_live_footfall(venue_name: str, api_key: str = None, destination_id: st
         hour = now.hour
         base_factor = 1.45 if (11 <= hour <= 16 and now.weekday() >= 5) else 1.15 if (11 <= hour <= 16) else 0.85 if (6 <= hour <= 10) else 1.0
         calibrated_factor = round(base_factor * calibration, 2)
-        return {
+        simulated_res = {
             "footfall_factor": calibrated_factor,
             "live_busyness_pct": int(min(100, calibrated_factor * 50)),
             "source": "BestTime Hourly Model",
@@ -152,6 +160,8 @@ def fetch_live_footfall(venue_name: str, api_key: str = None, destination_id: st
             "destination_name": profile["name"],
             "profile_name": profile["profile_name"]
         }
+        set_cached_telemetry(persistent_key, dest_id, "footfall", simulated_res, ttl_seconds=1800)
+        return simulated_res
 
     cache_key = f"footfall_{dest_id}_{now.weekday()}_{now.hour}"
     cached = _get_cache(cache_key)
@@ -196,10 +206,11 @@ def fetch_live_footfall(venue_name: str, api_key: str = None, destination_id: st
                 "day_name": day_data.get("day_info", {}).get("day_text", "") if day_data else ""
             }
             _set_cache(cache_key, res)
+            set_cached_telemetry(persistent_key, dest_id, "footfall", res, ttl_seconds=21600)
             return res
         except Exception as e:
             fallback_factor = round(1.10 * calibration, 2)
-            return {
+            fallback_res = {
                 "footfall_factor": fallback_factor,
                 "live_busyness_pct": int(fallback_factor * 50),
                 "source": "BestTime Fallback",
@@ -207,6 +218,8 @@ def fetch_live_footfall(venue_name: str, api_key: str = None, destination_id: st
                 "destination_id": dest_id,
                 "error": str(e)
             }
+            set_cached_telemetry(persistent_key, dest_id, "footfall", fallback_res, ttl_seconds=300)
+            return fallback_res
 
     # 2. Private API Key path (pri_...) -> Use BestTime live forecast endpoint
     try:
@@ -227,16 +240,19 @@ def fetch_live_footfall(venue_name: str, api_key: str = None, destination_id: st
                 "profile_name": profile["profile_name"]
             }
             _set_cache(cache_key, res)
+            set_cached_telemetry(persistent_key, dest_id, "footfall", res, ttl_seconds=21600)
             return res
     except Exception:
         fallback_factor = round(1.10 * calibration, 2)
-        return {
+        fallback_res = {
             "footfall_factor": fallback_factor,
             "live_busyness_pct": int(fallback_factor * 50),
             "source": "BestTime Fallback",
             "status": "fallback",
             "destination_id": dest_id
         }
+        set_cached_telemetry(persistent_key, dest_id, "footfall", fallback_res, ttl_seconds=300)
+        return fallback_res
 
 def get_besttime_full_telemetry(api_key: str = None, destination_id: str = "LON", venue_id: str = None) -> dict:
     """
@@ -465,12 +481,17 @@ def get_besttime_full_telemetry(api_key: str = None, destination_id: str = "LON"
 
 _osm_cache = {}
 
-def scan_osm_amenities(lat: float, lon: float) -> dict:
+def scan_osm_amenities(lat: float, lon: float, destination_id: str = None) -> dict:
     """
     Queries OpenStreetMap Overpass API for registered parking lots & viewpoints
     within a 3km radius to evaluate local infrastructure readiness.
-    Caches results in-memory to prevent rate limiting and avoid blocking API requests.
+    Checks persistent database cache first (24h TTL) to eliminate Overpass API rate limits.
     """
+    persistent_key = f"osm:{destination_id or f'{lat:.3f},{lon:.3f}'}"
+    cached_db = get_cached_telemetry(persistent_key)
+    if cached_db:
+        return cached_db
+
     cache_key = (round(lat, 3), round(lon, 3))
     if cache_key in _osm_cache:
         return _osm_cache[cache_key]
@@ -492,8 +513,10 @@ def scan_osm_amenities(lat: float, lon: float) -> dict:
             count = len(res.get("elements", []))
             result = {"osm_poi_nodes": max(12, count), "osm_status": "live_verified"}
             _osm_cache[cache_key] = result
+            set_cached_telemetry(persistent_key, destination_id or "", "osm", result, ttl_seconds=86400)
             return result
     except Exception:
         fallback = {"osm_poi_nodes": 18, "osm_status": "cached_estimate"}
         _osm_cache[cache_key] = fallback
+        set_cached_telemetry(persistent_key, destination_id or "", "osm", fallback, ttl_seconds=86400)
         return fallback
