@@ -9,6 +9,7 @@ import { TouristLayout } from './components/layout/TouristLayout';
 import { AuthorityLayout } from './components/layout/AuthorityLayout';
 import { ProviderLayout } from './components/layout/ProviderLayout';
 import { DevLayout } from './components/layout/DevLayout';
+import { StakeholderLayout } from './components/layout/StakeholderLayout';
 
 // Pages
 import { PortalSelectPage } from './pages/PortalSelectPage';
@@ -23,11 +24,14 @@ import { TripPlannerPage } from './pages/TripPlannerPage';
 import { SavedTripDetailPage } from './pages/SavedTripDetailPage';
 import { MyTripsPage } from './pages/MyTripsPage';
 import { AccountPage } from './pages/AccountPage';
-import { AuthorityCommandPage } from './pages/AuthorityCommandPage';
 import { ProviderConsolePage } from './pages/ProviderConsolePage';
 import { AuthorityView } from './components/authority/AuthorityView';
 import { ProviderView } from './components/provider/ProviderView';
 import { DevPortal } from './components/developer/DevPortal';
+
+// Stakeholder Dashboards
+import { NgoDashboardPage } from './pages/NgoDashboardPage';
+import { CommunityDashboardPage } from './pages/CommunityDashboardPage';
 
 export function App() {
   const { fetchLiveBackendFeed } = useCorridorStore();
@@ -49,28 +53,34 @@ export function App() {
       {/* Role-Isolated Routing Hierarchy */}
       <Routes>
         {/* ── PART 1: DEDICATED PORTAL SELECTION & AUTHENTICATION ── */}
-        <Route path="/" element={<PortalSelectPage />} />
         <Route path="/select-portal" element={<PortalSelectPage />} />
-        <Route path="/portals" element={<PortalSelectPage />} />
-        <Route path="/login" element={<AuthPage />} />
+        <Route path="/portals" element={<Navigate to="/select-portal" replace />} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/signin" element={<AuthPage />} />
-        <Route path="/signup" element={<AuthPage />} />
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        <Route path="/signin" element={<Navigate to="/auth" replace />} />
+        <Route path="/signup" element={<Navigate to="/auth" replace />} />
 
-        {/* ── PART 2A: ISOLATED TOURIST PORTAL SHELL ── */}
+        {/* ── PART 2A: ISOLATED TOURIST SHELL ── */}
         <Route element={<TouristLayout />}>
-          <Route path="/tourist" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="/region/:type/:value" element={<RegionPage />} />
           <Route path="/spot/:spotId" element={<SpotPage />} />
-          <Route path="/plan/new" element={<TripPlannerPage />} />
+          <Route path="/plan" element={<TripPlannerPage />} />
+          <Route path="/itinerary" element={<Navigate to="/plan" replace />} />
           <Route path="/plan/:tripId" element={<SavedTripDetailPage />} />
           <Route path="/trips" element={<MyTripsPage />} />
           <Route path="/account" element={<AccountPage />} />
         </Route>
 
-        {/* ── PART 2B: ISOLATED DISTRICT GIS AUTHORITY SHELL (PROTECTED) ── */}
+        {/* ── PART 2B: INDEPENDENT STAKEHOLDER SHELL (NGO/Community) ── */}
+        <Route element={<StakeholderLayout />}>
+          <Route path="/ngo" element={<NgoDashboardPage />} />
+          <Route path="/community" element={<CommunityDashboardPage />} />
+        </Route>
+
+        {/* ── PART 2C: ISOLATED DISTRICT GIS AUTHORITY SHELL (PROTECTED) ── */}
         <Route
           element={
             <RoleGuard allowedRoles={['authority']}>
@@ -82,11 +92,10 @@ export function App() {
           <Route path="/authority/advisories" element={<AuthorityView />} />
           <Route path="/authority/policy-simulator" element={<AuthorityView />} />
           <Route path="/authority/impact" element={<AuthorityView />} />
-          <Route path="/authority/overview" element={<AuthorityCommandPage />} />
           <Route path="/authority/spot/:spotId" element={<AuthoritySpotPage />} />
         </Route>
 
-        {/* ── PART 2C: ISOLATED MTDC OPERATOR CONSOLE SHELL (PROTECTED) ── */}
+        {/* ── PART 2D: ISOLATED MTDC OPERATOR CONSOLE SHELL (PROTECTED) ── */}
         <Route
           element={
             <RoleGuard allowedRoles={['provider']}>
@@ -99,7 +108,7 @@ export function App() {
           <Route path="/provider/spot/:spotId" element={<SpotPage />} />
         </Route>
 
-        {/* ── PART 2D: INTERNAL DEVELOPER DIAGNOSTICS SHELL (PROTECTED) ── */}
+        {/* ── PART 2E: INTERNAL DEVELOPER DIAGNOSTICS SHELL (PROTECTED) ── */}
         <Route
           element={
             <RoleGuard allowedRoles={['developer']}>

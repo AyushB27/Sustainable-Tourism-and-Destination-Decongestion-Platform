@@ -7,7 +7,9 @@ import {
   AlertTriangle,
   ArrowRight,
   Filter,
-  Clock
+  Clock,
+  Trash2,
+  Truck
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import { calculateCorridorMetrics, calculateDCCMetrics } from '../../lib/engine';
@@ -19,6 +21,7 @@ import { PolicySimulator } from './PolicySimulator';
 import { ImpactReview } from './ImpactReview';
 import { Link, useLocation } from 'react-router-dom';
 import { sessionManager, DEMO_ACCOUNTS } from '../../lib/sessionManager';
+import { apiGet, apiPost } from '../../lib/api';
 
 export type CorridorFilterId = 'ALL' | 'EXPRESSWAY' | 'COASTAL' | 'HIGHLAND' | 'ECO_RESERVE';
 
@@ -98,6 +101,66 @@ export const AuthorityView: React.FC = () => {
 
   const [selectedCorridor, setSelectedCorridor] = useState<CorridorFilterId>('ALL');
   const [forecastWindow, setForecastWindow] = useState<'current' | 'weekend' | 'holiday'>('current');
+
+  // Municipal Zero-Waste Clean-Up Dispatch States (Pillar 3)
+  const [wasteIncidents, setWasteIncidents] = useState<any[]>([
+    {
+      id: 'WST-101',
+      destination_id: 'LON',
+      destination_name: 'Lonavala & Khandala',
+      reporter_name: 'Pooja Deshmukh',
+      category: 'Plastic Bottles (PET)',
+      severity: 'high',
+      description: 'Discarded PET bottles near Tiger Point viewing deck cliff edge.',
+      photo_url: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=400&q=80',
+      status: 'pending',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'WST-102',
+      destination_id: 'MAH',
+      destination_name: 'Mahabaleshwar Plateau',
+      reporter_name: 'Rahul Patil',
+      category: 'Packaging / Wrappers',
+      severity: 'medium',
+      description: 'Overflowing tourist dustbin near Arthur Seat viewpoint walkway.',
+      photo_url: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=400&q=80',
+      status: 'dispatched',
+      created_at: new Date(Date.now() - 3600000).toISOString()
+    }
+  ]);
+  const [wasteFilter, setWasteFilter] = useState<'all' | 'pending' | 'dispatched' | 'resolved'>('all');
+  const [dispatchLoading, setDispatchLoading] = useState<string | null>(null);
+
+  const fetchWasteIncidents = () => {
+    apiGet('/api/waste/incidents')
+      .then(data => {
+        if (data && data.incidents && data.incidents.length > 0) {
+          setWasteIncidents(data.incidents);
+        }
+      })
+      .catch(() => {});
+  };
+
+  React.useEffect(() => {
+    fetchWasteIncidents();
+  }, []);
+
+  const handleUpdateIncidentStatus = async (reportId: string, newStatus: 'dispatched' | 'resolved') => {
+    setDispatchLoading(reportId);
+    try {
+      await apiPost('/api/waste/dispatch', { incident_id: reportId, report_id: reportId, status: newStatus });
+      setWasteIncidents(prev =>
+        prev.map(item => item.id === reportId ? { ...item, status: newStatus } : item)
+      );
+    } catch {
+      setWasteIncidents(prev =>
+        prev.map(item => item.id === reportId ? { ...item, status: newStatus } : item)
+      );
+    } finally {
+      setDispatchLoading(null);
+    }
+  };
 
   // Auto-sync authority session if needed
   React.useEffect(() => {
@@ -454,6 +517,144 @@ export const AuthorityView: React.FC = () => {
 
           {/* Regional Demand Diffusion Matrix (Origin-Destination Movement Patterns) */}
           <DemandDiffusionFlow destinations={corridorFilteredSpots} />
+
+          {/* ── Municipal Zero-Waste Clean-Up Dispatch Queue (Pillar 3) ── */}
+          <div className="bg-white rounded-2xl border-2 border-slate-300 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-black text-slate-900">
+                      Municipal Zero-Waste Clean-Up Dispatch Queue
+                    </h2>
+                    <span className="text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full uppercase">
+                      Citizen Geo-Reports
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Live crowd-sourced litter hotspots along Western Ghats trails and lookouts.
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold self-start sm:self-auto">
+                {(['all', 'pending', 'dispatched', 'resolved'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setWasteFilter(tab)}
+                    className={`px-3 py-1 rounded-lg capitalize transition ${
+                      wasteFilter === tab
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Incidents List */}
+            <div className="space-y-3">
+              {wasteIncidents
+                .filter(inc => wasteFilter === 'all' || inc.status === wasteFilter)
+                .map(incident => {
+                  const severityBadge = {
+                    high: 'bg-rose-100 text-rose-800 border-rose-300',
+                    medium: 'bg-amber-100 text-amber-800 border-amber-300',
+                    low: 'bg-slate-100 text-slate-700 border-slate-200'
+                  }[incident.severity as 'high' | 'medium' | 'low'] || 'bg-slate-100 text-slate-700 border-slate-200';
+
+                  const statusBadge = {
+                    pending: { text: 'Awaiting Dispatch', cls: 'bg-amber-100 text-amber-900 border-amber-300' },
+                    dispatched: { text: 'Van Dispatched', cls: 'bg-sky-100 text-sky-900 border-sky-300' },
+                    resolved: { text: 'Cleared & Restored', cls: 'bg-emerald-100 text-emerald-900 border-emerald-300' }
+                  }[incident.status as 'pending' | 'dispatched' | 'resolved'] || { text: incident.status, cls: 'bg-slate-100' };
+
+                  return (
+                    <div
+                      key={incident.id}
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        {incident.photo_url && (
+                          <img
+                            src={incident.photo_url}
+                            alt="Waste Hotspot Evidence"
+                            className="w-16 h-16 rounded-xl object-cover border border-slate-300 shrink-0"
+                          />
+                        )}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                              {incident.id}
+                            </span>
+                            <strong className="text-slate-900 text-sm font-black">{incident.destination_name}</strong>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${severityBadge}`}>
+                              {incident.severity.toUpperCase()} PRIORITY
+                            </span>
+                            <span className="text-slate-400 font-mono text-[10px]">
+                              Category: {incident.category}
+                            </span>
+                          </div>
+
+                          <p className="text-slate-700 leading-relaxed">
+                            {incident.description}
+                          </p>
+
+                          <div className="text-[11px] text-slate-400 flex items-center gap-3 pt-0.5">
+                            <span>Reporter: <strong>{incident.reporter_name}</strong></span>
+                            <span>•</span>
+                            <span>Awarded: <strong>+{incident.karma_awarded || 100} Eco-Karma</strong></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wider ${statusBadge.cls}`}>
+                          {statusBadge.text}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          {incident.status === 'pending' && (
+                            <button
+                              onClick={() => handleUpdateIncidentStatus(incident.id, 'dispatched')}
+                              disabled={dispatchLoading === incident.id}
+                              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-xs transition"
+                            >
+                              <Truck className="w-3.5 h-3.5" />
+                              <span>{dispatchLoading === incident.id ? 'Dispatching...' : 'Dispatch Clean-Up'}</span>
+                            </button>
+                          )}
+
+                          {incident.status === 'dispatched' && (
+                            <button
+                              onClick={() => handleUpdateIncidentStatus(incident.id, 'resolved')}
+                              disabled={dispatchLoading === incident.id}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-xs transition"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>{dispatchLoading === incident.id ? 'Updating...' : 'Mark Resolved'}</span>
+                            </button>
+                          )}
+
+                          {incident.status === 'resolved' && (
+                            <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Verified Cleaned</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
         </div>
       )}
 

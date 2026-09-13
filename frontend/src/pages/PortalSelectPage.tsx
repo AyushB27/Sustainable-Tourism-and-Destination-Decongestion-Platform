@@ -12,57 +12,24 @@ import {
   Sparkles,
   Lock
 } from 'lucide-react';
-import { useCorridorStore, DEFAULT_CITIZEN_USER } from '../store/useCorridorStore';
-import { sessionManager, DEMO_ACCOUNTS } from '../lib/sessionManager';
 
 export const PortalSelectPage: React.FC = () => {
   const navigate = useNavigate();
-  const { 
-    currentUser, 
-    loginUser
-  } = useCorridorStore();
 
   const handleSelectTourist = () => {
-    const session = sessionManager.getSession('tourist');
-    if (session) {
-      loginUser(session.user);
-    } else if (currentUser.role !== 'tourist') {
-      loginUser(DEFAULT_CITIZEN_USER);
-    }
-    navigate('/tourist');
+    navigate('/auth?role=tourist');
   };
 
   const handleSelectAuthority = () => {
-    const session = sessionManager.getSession('authority');
-    if (session) {
-      loginUser(session.user);
-    } else {
-      const demo = DEMO_ACCOUNTS.find(d => d.role === 'authority');
-      if (demo) loginUser(demo.user);
-    }
-    navigate('/authority');
+    navigate('/auth?role=authority');
   };
 
   const handleSelectProvider = () => {
-    const session = sessionManager.getSession('provider');
-    if (session) {
-      loginUser(session.user);
-    } else {
-      const demo = DEMO_ACCOUNTS.find(d => d.role === 'provider');
-      if (demo) loginUser(demo.user);
-    }
-    navigate('/provider');
+    navigate('/auth?role=provider');
   };
 
   const handleSelectDeveloper = () => {
-    const session = sessionManager.getSession('developer');
-    if (session) {
-      loginUser(session.user);
-    } else {
-      const demo = DEMO_ACCOUNTS.find(d => d.role === 'developer');
-      if (demo) loginUser(demo.user);
-    }
-    navigate('/dev');
+    navigate('/auth?role=developer');
   };
 
   return (

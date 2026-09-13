@@ -19,8 +19,9 @@ import {
   ChevronUp,
   Zap,
   Users,
-  MapPin,
+  MapPin
 } from 'lucide-react';
+import { apiGet } from '../../lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -272,27 +273,27 @@ export const DevPortal: React.FC = () => {
     setRefreshing(true);
     try {
       const [statusRes, logsRes, besttimeRes] = await Promise.allSettled([
-        fetch('http://127.0.0.1:8000/api/dev/status', { signal: AbortSignal.timeout(6000) }),
-        fetch('http://127.0.0.1:8000/api/destinations/live', { signal: AbortSignal.timeout(6000) }),
-        fetch(`http://127.0.0.1:8000/api/dev/besttime?dest_id=${selectedDestId}`, { signal: AbortSignal.timeout(6000) }),
+        apiGet('/api/dev/status', { timeoutMs: 6000 }),
+        apiGet('/api/destinations/live', { timeoutMs: 6000 }),
+        apiGet(`/api/dev/besttime?dest_id=${selectedDestId}`, { timeoutMs: 6000 }),
       ]);
 
       let isOnline = false;
 
-      if (statusRes.status === 'fulfilled' && statusRes.value.ok) {
-        const data: DevStatus = await statusRes.value.json();
+      if (statusRes.status === 'fulfilled' && statusRes.value) {
+        const data: DevStatus = statusRes.value;
         setStatus(data);
         isOnline = true;
       }
 
-      if (besttimeRes.status === 'fulfilled' && besttimeRes.value.ok) {
-        const btJson: BestTimeTelemetry = await besttimeRes.value.json();
+      if (besttimeRes.status === 'fulfilled' && besttimeRes.value) {
+        const btJson: BestTimeTelemetry = besttimeRes.value;
         setBesttimeData(btJson);
       }
 
       // Build a mock sensor log from live destinations for the log viewer
-      if (logsRes.status === 'fulfilled' && logsRes.value.ok) {
-        const liveData = await logsRes.value.json();
+      if (logsRes.status === 'fulfilled' && logsRes.value) {
+        const liveData = logsRes.value;
         const rows: SensorLogRow[] = (liveData.destinations ?? []).map(
           (d: {
             id: string;
@@ -334,9 +335,8 @@ export const DevPortal: React.FC = () => {
   const handleRefreshBestTime = async () => {
     setRefreshingBestTime(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/dev/besttime?dest_id=${selectedDestId}`);
-      if (res.ok) {
-        const data: BestTimeTelemetry = await res.json();
+      const data: BestTimeTelemetry = await apiGet(`/api/dev/besttime?dest_id=${selectedDestId}`);
+      if (data) {
         setBesttimeData(data);
       }
     } catch {
@@ -350,9 +350,8 @@ export const DevPortal: React.FC = () => {
     setSelectedVenueHour(null);
     setRefreshingBestTime(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/dev/besttime?dest_id=${destId}`);
-      if (res.ok) {
-        const data: BestTimeTelemetry = await res.json();
+      const data: BestTimeTelemetry = await apiGet(`/api/dev/besttime?dest_id=${destId}`);
+      if (data) {
         setBesttimeData(data);
       }
     } catch {

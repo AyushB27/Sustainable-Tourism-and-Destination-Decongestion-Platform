@@ -1,0 +1,14 @@
+{
+  "cache_key": "traffic:MCH",
+  "destination_id": "MCH",
+  "api_source": "traffic",
+  "fetched_at": "2026-09-13T00:03:23.710387",
+  "expires_at": "2026-09-13T00:23:23.710387",
+  "payload": {
+    "delay_factor": 1.0,
+    "current_speed_kmh": 50.0,
+    "free_flow_speed_kmh": 50.0,
+    "source": "TomTom Live Traffic API",
+    "status": "connected"
+  }
+}

@@ -8,6 +8,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
+import { apiPost } from '../../lib/api';
 
 export const AdvisoryManager: React.FC = () => {
   const {
@@ -93,24 +94,19 @@ export const AdvisoryManager: React.FC = () => {
     const destName = newDestId === 'ALL' ? 'All Corridor Hubs' : targetDest?.name || newDestId;
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/advisories/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destination_id: newDestId,
-          destination_name: destName,
-          severity: newSeverity,
-          title: newTitle.trim(),
-          message: newMessage.trim(),
-          author: currentUser.designation || 'District Administration',
-          expires_at: newExpiry,
-          user: currentUser
-        })
+      const data = await apiPost('/api/advisories/broadcast', {
+        destination_id: newDestId,
+        destination_name: destName,
+        severity: newSeverity,
+        title: newTitle.trim(),
+        message: newMessage.trim(),
+        author: currentUser.designation || 'District Administration',
+        expires_at: newExpiry,
+        user: currentUser
       });
-      const data = await res.json();
       setActionLoading(false);
 
-      if (res.ok) {
+      if (data) {
         setActionNotice({ type: 'success', text: 'New emergency advisory published to official gazette and tourist spot pages.' });
         broadcastAdvisory({
           destinationId: newDestId,

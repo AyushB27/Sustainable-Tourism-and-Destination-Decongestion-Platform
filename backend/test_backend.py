@@ -80,12 +80,59 @@ class TestEcoRouteBackend(unittest.TestCase):
         self.assertNotEqual(twins[0]["destination"]["id"], "LON", "Should not recommend target itself")
 
     def test_future_itinerary_engine(self):
-        """Test future trip multi-day decongestion plan generator."""
-        itinerary = generate_future_itinerary("2026-09-12", "2-day", "scenic")
+        """Test future trip multi-day decongestion plan generator with sustainability metrics."""
+        itinerary = generate_future_itinerary("2026-09-12", "2-day", "scenic", "green_transit", "homestay")
         self.assertEqual(itinerary["duration"], "2-day")
         self.assertEqual(len(itinerary["itinerary_days"]), 2)
         self.assertGreater(itinerary["estimated_time_saved_minutes"], 60)
         self.assertGreater(itinerary["estimated_co2_offset_kg"], 10.0)
+        self.assertGreaterEqual(itinerary["sustainability_score"], 80)
+        self.assertIn("component_breakdown", itinerary)
+        self.assertIn("carbon_calculator", itinerary)
+        self.assertGreater(itinerary["carbon_calculator"]["carbon_saved_kg"], 0.0)
+        self.assertIn("trees_equivalent_annual", itinerary["carbon_calculator"])
+        self.assertIn("fuel_saved_liters", itinerary["carbon_calculator"])
+        self.assertIn("ai_narrative", itinerary)
+        self.assertIn("curator_summary", itinerary["ai_narrative"])
+        self.assertIn("carbon_reduction_strategy", itinerary["ai_narrative"])
+
+    def test_ai_chat_and_spot_dossier(self):
+        """Test 24x7 AI Chatbot free engine and Spot Eco-Guide dossier."""
+        from app.engine.ai_chat_engine import generate_chat_response, get_spot_deep_dossier
+
+        # Test English prompt
+        res_en = generate_chat_response("Is Lonavala crowded right now?", destination_id="LON", language="en")
+        self.assertIn("response", res_en)
+        self.assertIn(res_en["source"], ["gemini-3.6-flash", "gemini-flash-free", "ecoroute-autonomous-ai"])
+
+        # Test Marathi prompt
+        res_mr = generate_chat_response("लोणावळ्यात आज गर्दी आहे का?", destination_id="LON", language="mr")
+        self.assertIn("response", res_mr)
+        self.assertEqual(res_mr["language"], "mr")
+
+        # Test Hindi prompt
+        res_hi = generate_chat_response("महाबलेश्वर का मौसम कैसा है?", destination_id="MAH", language="hi")
+        self.assertIn("response", res_hi)
+
+        # Test spot dossier
+        dossier = get_spot_deep_dossier("KAS")
+        self.assertEqual(dossier["name"], "Kaas Plateau Flower Valley")
+        self.assertIn("biodiversity", dossier)
+        self.assertIn("waste_rules", dossier)
+        self.assertIn("altitude_m", dossier)
+        self.assertIn("canopy_density", dossier)
+
+        # Test AI sustainability audit report generator
+        from app.engine.ai_chat_engine import generate_ai_sustainability_report
+        report = generate_ai_sustainability_report({
+            "destination_name": "Kaas Plateau",
+            "carbon_saved_kg": 32.5,
+            "carbon_saved_pct": 62.0,
+            "sustainability_score": 89
+        })
+        self.assertEqual(report["status"], "success")
+        self.assertIn("report_markdown", report)
+        self.assertIn("Carbon", report["report_markdown"])
 
     def test_pipelines_live_fetch(self):
         """Test live pipelines (Open-Meteo, TomTom, BestTime, OSM, OGD India)."""

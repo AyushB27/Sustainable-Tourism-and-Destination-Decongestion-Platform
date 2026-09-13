@@ -7,11 +7,14 @@ import {
   AlertTriangle, 
   AlertOctagon, 
   ArrowRight, 
-  Car 
+  Car,
+  LayoutGrid,
+  Map as MapIcon
 } from 'lucide-react';
 import { useCorridorStore } from '../store/useCorridorStore';
 import { calculateDCCMetrics, calculateCosineSimilarity } from '../lib/engine';
 import type { DestinationCategory } from '../types';
+import { TouristCorridorMap } from '../components/tourist/TouristCorridorMap';
 
 export const DiscoverPage: React.FC = () => {
 
@@ -22,6 +25,7 @@ export const DiscoverPage: React.FC = () => {
     currentUser
   } = useCorridorStore();
 
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | DestinationCategory>('ALL');
   const [distanceFilter, setDistanceFilter] = useState<'ALL' | 'DAY_TRIP' | 'WEEKEND'>('ALL');
   const [boostUnderVisitedOnly, setBoostUnderVisitedOnly] = useState(false);
@@ -192,16 +196,54 @@ export const DiscoverPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── RANKED FEED GRID ── */}
+      {/* ── RANKED FEED / GIS MAP ── */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 font-semibold">
-          <span>Found {rankedDestinations.length} destinations matching your travel vibe</span>
-          <span className="text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-            ✨ Ranked by calmest crowds & best experience
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-semibold bg-white p-3 rounded-2xl border border-slate-200">
+          <div className="flex items-center gap-3">
+            <span>Found <strong className="text-slate-900">{rankedDestinations.length}</strong> destinations matching your travel vibe</span>
+            <span className="hidden sm:inline-block text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+              ✨ Ranked by calmest crowds & lowest impact
+            </span>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Grid View</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('map')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                viewMode === 'map' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              <span>Corridor GIS Map</span>
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {viewMode === 'map' ? (
+          <TouristCorridorMap destinations={destinations} />
+        ) : rankedDestinations.length === 0 ? (
+          <div className="p-12 bg-slate-50 rounded-3xl border-2 border-slate-200 text-center space-y-3">
+            <span className="text-4xl block">🔍</span>
+            <h3 className="text-lg font-bold text-slate-900">No matching escapes found</h3>
+            <p className="text-slate-500 text-sm">
+              We couldn't find any destinations matching your exact filter combination. 
+              Try adjusting your category or distance preferences.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rankedDestinations.map(({ spot, metrics, sim }) => {
             const statusConfig = {
               OPTIMAL: {
@@ -316,6 +358,7 @@ export const DiscoverPage: React.FC = () => {
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

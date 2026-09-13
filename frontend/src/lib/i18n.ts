@@ -52,6 +52,27 @@ export interface TranslationDict {
   publishDeal: string;
   demandDiffusionTitle: string;
   timeSlotTitle: string;
+  navExplore: string;
+  navDiscover: string;
+  navTripPlanner: string;
+  navMyTrips: string;
+  tripSustainabilityScore: string;
+  carbonFootprint: string;
+  carbonSaved: string;
+  greenTrips: string;
+  transportation: string;
+  accommodation: string;
+  activities: string;
+  wasteManagement: string;
+  localEconomy: string;
+  environmentalImpact: string;
+  aiEcoGuide: string;
+  biodiversity: string;
+  heritageCulture: string;
+  zeroWaste: string;
+  localLivelihoods: string;
+  lowImpactHours: string;
+  askAiGuide: string;
 }
 
 export const TRANSLATIONS: Record<Language, TranslationDict> = {
@@ -106,7 +127,28 @@ export const TRANSLATIONS: Record<Language, TranslationDict> = {
     inflowPredictorTitle: '3-Day Footfall Velocity & Inflow Predictor',
     publishDeal: 'Publish Incentive Deal',
     demandDiffusionTitle: 'Corridor Origin-Destination Tourist Diffusion & Movement Analysis',
-    timeSlotTitle: 'Smart Hourly Time-Slot Recommendation & Entry Flow'
+    timeSlotTitle: 'Smart Hourly Time-Slot Recommendation & Entry Flow',
+    navExplore: 'Explore',
+    navDiscover: 'Discover',
+    navTripPlanner: 'Trip Planner',
+    navMyTrips: 'My Green Passes',
+    tripSustainabilityScore: 'Trip Sustainability Score',
+    carbonFootprint: 'Carbon Footprint',
+    carbonSaved: 'Carbon Saved vs Solo Car',
+    greenTrips: 'Green Trip Mobility',
+    transportation: 'Transportation (30%)',
+    accommodation: 'Accommodation (20%)',
+    activities: 'Activities (15%)',
+    wasteManagement: 'Waste Management (15%)',
+    localEconomy: 'Local Economy (10%)',
+    environmentalImpact: 'Resource Impact (10%)',
+    aiEcoGuide: 'AI Eco-Guide & Dossier',
+    biodiversity: 'Biodiversity & Ecology',
+    heritageCulture: 'Heritage & Culture',
+    zeroWaste: 'Zero-Waste Rules',
+    localLivelihoods: 'Local Livelihoods',
+    lowImpactHours: 'Low-Impact Visiting Hours',
+    askAiGuide: 'Ask AI Eco-Guide about this destination'
   },
   hi: {
     appName: 'ईकोरूट भारत (EcoRoute Bharat)',
@@ -159,7 +201,28 @@ export const TRANSLATIONS: Record<Language, TranslationDict> = {
     inflowPredictorTitle: '3-दिवसीय पर्यटक प्रवाह पूर्वानुमान',
     publishDeal: 'छूट प्रोत्साहन प्रकाशित करें',
     demandDiffusionTitle: 'कॉरिडोर पर्यटक प्रवाह और मांग प्रसार विश्लेषण',
-    timeSlotTitle: 'स्मार्ट समय-स्लॉट सिफारिश एवं प्रवेश प्रवाह'
+    timeSlotTitle: 'स्मार्ट समय-स्लॉट सिफारिश एवं प्रवेश प्रवाह',
+    navExplore: 'अन्वेषण करें',
+    navDiscover: 'खोजें',
+    navTripPlanner: 'यात्रा योजनाकार',
+    navMyTrips: 'मेरे ग्रीन पास',
+    tripSustainabilityScore: 'यात्रा संधारणीयता (सस्टेनेबिलिटी) स्कोर',
+    carbonFootprint: 'कार्बन पदचिह्न (फुटप्रिंट)',
+    carbonSaved: 'बचाया गया कार्बन उत्सर्जन',
+    greenTrips: 'हरित यात्रा गतिशीलता',
+    transportation: 'परिवहन (30%)',
+    accommodation: 'ठहरने की व्यवस्था (20%)',
+    activities: 'गतिविधियां (15%)',
+    wasteManagement: 'कचरा प्रबंधन (15%)',
+    localEconomy: 'स्थानीय अर्थव्यवस्था (10%)',
+    environmentalImpact: 'पर्यावरणीय प्रभाव (10%)',
+    aiEcoGuide: 'एआई इको-गाइड और विस्तृत जानकारी',
+    biodiversity: 'जैव विविधता एवं पारिस्थितिकी',
+    heritageCulture: 'विरासत एवं संस्कृति',
+    zeroWaste: 'शून्य-कचरा नियम व दिशानिर्देश',
+    localLivelihoods: 'स्थानीय आजीविका एवं गाइड',
+    lowImpactHours: 'सर्वोत्तम निम्न-प्रभाव समय',
+    askAiGuide: 'इस स्थल के बारे में एआई इको-गाइड से पूछें'
   },
   mr: {
     appName: 'इकोरूट भारत (EcoRoute Bharat)',
@@ -212,6 +275,27 @@ export const TRANSLATIONS: Record<Language, TranslationDict> = {
     inflowPredictorTitle: '३ दिवसांचा पर्यटक आवक अंदाज',
     publishDeal: 'सवलत योजना जाहीर करा',
     demandDiffusionTitle: 'कॉरिडोर पर्यटक हालचाल व मागणी वितरण विश्लेषण',
-    timeSlotTitle: 'स्मार्ट वेळ स्लॉट शिफारस व प्रवेश व्यवस्थापन'
+    timeSlotTitle: 'स्मार्ट वेळ स्लॉट शिफारस व प्रवेश व्यवस्थापन',
+    navExplore: 'पर्यटन स्थळे',
+    navDiscover: 'शोध घ्या',
+    navTripPlanner: 'सहल नियोजन',
+    navMyTrips: 'माझे ग्रीन पास',
+    tripSustainabilityScore: 'सहल शाश्वतता (सस्टेनेबिलिटी) गुण',
+    carbonFootprint: 'कार्बन फूटप्रिंट',
+    carbonSaved: 'वाचवलेले कार्बन उत्सर्जन',
+    greenTrips: 'हरित सहल गतिशीलता',
+    transportation: 'वाहतूक व प्रवास (३०%)',
+    accommodation: 'निवास व्यवस्था (२०%)',
+    activities: 'पर्यटन उपक्रम (१५%)',
+    wasteManagement: 'कचरा व्यवस्थापन (१५%)',
+    localEconomy: 'स्थानिक अर्थव्यवस्था (१०%)',
+    environmentalImpact: 'पर्यावरण संवर्धन (१०%)',
+    aiEcoGuide: 'एआई इको-मार्गदर्शक माहिती',
+    biodiversity: 'जैवविविधता व निसर्ग संवर्धन',
+    heritageCulture: 'ऐतिहासिक वारसा व संस्कृती',
+    zeroWaste: 'शून्य-कचरा नियम व शिस्त',
+    localLivelihoods: 'स्थानिक रोजगार व चालक',
+    lowImpactHours: 'कमी गर्दीची सर्वोत्तम वेळ',
+    askAiGuide: 'या पर्यटन स्थळाबाबत एआई मार्गदर्शकाला विचारा'
   }
 };

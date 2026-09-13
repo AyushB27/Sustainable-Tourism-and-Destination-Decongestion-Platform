@@ -1,4 +1,20 @@
-export type DestinationCategory = 'Hill Station' | 'Coastal' | 'Heritage' | 'Pilgrimage';
+export type DestinationCategory =
+  | 'Hill Station'
+  | 'Coastal'
+  | 'Heritage'
+  | 'Pilgrimage'
+  | 'Lake & Valley'
+  | 'Botanical Sanctuary'
+  | 'Adventure'
+  | 'Biodiversity Hotspot'
+  | 'Cloud Forest'
+  | 'Heritage & Trekking'
+  | 'Wildlife Conservation'
+  | 'Coastal & Marine'
+  | 'Agro-Tourism'
+  | 'Tribal Heritage'
+  | 'Sacred Grove'
+  | 'Pilgrimage & Heritage';
 
 export type DCCStatus = 'OPTIMAL' | 'MODERATE' | 'CRITICAL';
 
@@ -213,13 +229,13 @@ export interface Promotion {
 export interface HourlyForecastPoint {
   hour: string;
   timeLabel: string;
+  time_label?: string;
   inflow: number;
   capacity: number;
   dccScore: number;
+  dcc_score?: number;
   weatherRisk: number;
   isBestTime?: boolean;
-  dcc_score?: number;
-  time_label?: string;
   status?: string;
   waitMinutes?: number;
   wait_minutes?: number;
@@ -335,11 +351,29 @@ export interface TripPlan {
     start: string;
     end: string;
   };
-  budget_band: '₹' | '₹₹' | '₹₹₹';
-  group_type: 'solo' | 'couple' | 'family' | 'friends';
-  itinerary: TripDayPlan[];
-  totalCo2SavedKg: number;
-  created_at: string;
+  budget_band?: '₹' | '₹₹' | '₹₹₹';
+  group_type?: 'solo' | 'couple' | 'family' | 'friends';
+  itinerary?: TripDayPlan[];
+  totalCo2SavedKg?: number;
+  created_at?: string;
+  destinationId?: string;
+  destinationName?: string;
+  startDate?: string;
+  durationDays?: number;
+  days?: any[];
+  transportMode?: string;
+  accommodationType?: string;
+  carbonFootprintKg?: number;
+  carbonAvoidedKg?: number;
+  environmentalScore?: number;
+  environmental_score?: number;
+  socialScore?: number;
+  social_score?: number;
+  economicScore?: number;
+  economic_score?: number;
+  sustainabilityScore?: number;
+  overall_sustainability_score?: number;
+  status?: string;
 }
 
 export interface GreenPass {

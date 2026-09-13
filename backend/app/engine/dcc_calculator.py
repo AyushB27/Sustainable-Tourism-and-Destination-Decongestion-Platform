@@ -54,24 +54,24 @@ def generate_12hr_forecast(
     Generates a 12-hour hourly predictive demand curve for a destination.
     Applies Gaussian peak surges around 11:00 AM - 03:00 PM.
     """
+    from datetime import datetime
+    current_hour = datetime.now().hour
+    hours = [(current_hour + i) % 24 for i in range(13)]
+    
     curve = []
-    hours = [
-        ("06:00", "06:00 AM", 0.35),
-        ("07:00", "07:00 AM", 0.48),
-        ("08:00", "08:00 AM", 0.65),
-        ("09:00", "09:00 AM", 0.82),
-        ("10:00", "10:00 AM", 1.05),
-        ("11:00", "11:00 AM", 1.25),
-        ("12:00", "12:00 PM", 1.35),
-        ("13:00", "01:00 PM", 1.30),
-        ("14:00", "02:00 PM", 1.20),
-        ("15:00", "03:00 PM", 1.10),
-        ("16:00", "04:00 PM", 0.95),
-        ("17:00", "05:00 PM", 0.75),
-        ("18:00", "06:00 PM", 0.50),
-    ]
+    
+    multiplier_map = {
+        6: 0.35, 7: 0.48, 8: 0.65, 9: 0.82, 10: 1.05,
+        11: 1.25, 12: 1.35, 13: 1.30, 14: 1.20, 15: 1.10,
+        16: 0.95, 17: 0.75, 18: 0.50
+    }
 
-    for h_code, h_label, multiplier in hours:
+    for h in hours:
+        h_code = f"{h:02d}:00"
+        ampm = "AM" if h < 12 else "PM"
+        display_h = h if 1 <= h <= 12 else (h - 12 if h > 12 else 12)
+        h_label = f"{display_h:02d}:00 {ampm}"
+        multiplier = multiplier_map.get(h, 0.30)
         hourly_inflow = int(base_inflow * multiplier)
         metrics = calculate_dcc_metrics(hourly_inflow, physical_capacity, weather_hazard, dwell_hrs)
         curve.append({

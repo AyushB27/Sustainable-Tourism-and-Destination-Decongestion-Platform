@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { Destination, Advisory } from '../../types';
 import { useCorridorStore } from '../../store/useCorridorStore';
+import { apiPost } from '../../lib/api';
 
 interface DigitalAdvisoryDispatcherProps {
   destinations: Destination[];
@@ -69,19 +70,14 @@ export const DigitalAdvisoryDispatcher: React.FC<DigitalAdvisoryDispatcherProps>
     const destName = selectedDestId === 'ALL' ? 'Entire Corridor' : targetDest?.name || 'Corridor';
 
     // Fire-and-forget backend POST — UI updates immediately regardless of backend status
-    fetch('http://127.0.0.1:8000/api/advisories/broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        destination_id: selectedDestId,
-        destination_name: destName,
-        severity,
-        title: title.trim(),
-        message: message.trim(),
-        author: 'Corridor Command Disaster Unit'
-      }),
-      signal: AbortSignal.timeout(3000)
-    }).catch(() => { /* backend offline — Zustand state still updated below */ });
+    apiPost('/api/advisories/broadcast', {
+      destination_id: selectedDestId,
+      destination_name: destName,
+      severity,
+      title: title.trim(),
+      message: message.trim(),
+      author: 'Corridor Command Disaster Unit'
+    }, { timeoutMs: 3000 }).catch(() => { /* backend offline — Zustand state still updated below */ });
 
     broadcastAdvisory({
       destinationId: selectedDestId,

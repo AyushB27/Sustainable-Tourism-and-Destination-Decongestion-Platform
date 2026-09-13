@@ -2,12 +2,12 @@
   "cache_key": "weather:ALB",
   "destination_id": "ALB",
   "api_source": "weather",
-  "fetched_at": "2026-09-06T20:03:43.263894",
-  "expires_at": "2026-09-06T20:33:43.263894",
+  "fetched_at": "2026-09-13T00:03:23.636364",
+  "expires_at": "2026-09-13T00:33:23.636364",
   "payload": {
-    "temperature_c": 25.4,
+    "temperature_c": 26.6,
     "rain_mm": 0.1,
-    "wind_kmh": 3.8,
+    "wind_kmh": 6.1,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"

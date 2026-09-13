@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import type { Destination } from '../../types';
 import { useCorridorStore } from '../../store/useCorridorStore';
+import { apiPut } from '../../lib/api';
 
 interface LiveInventoryCardProps {
   destination: Destination;
@@ -64,12 +65,10 @@ export const LiveInventoryCard: React.FC<LiveInventoryCardProps> = ({ destinatio
           onChange={(e) => {
             const val = Number(e.target.value);
             updateDestinationHotelOccupancy(destination.id, val);
-            // Fire-and-forget sync to backend PUT /api/destinations/{id}/occupancy
-            fetch(`http://127.0.0.1:8000/api/destinations/${destination.id}/occupancy`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ occupancy_pct: val, available_rooms: Math.max(0, Math.round(100 - val)) }),
-              signal: AbortSignal.timeout(2000)
+            // Sync to backend PUT /api/destinations/{id}/occupancy
+            apiPut(`/api/destinations/${destination.id}/occupancy`, {
+              occupancy_pct: val,
+              available_rooms: Math.max(0, Math.round(100 - val))
             }).catch(() => { /* silent fallback */ });
           }}
           aria-label={`Reported Hotel and Resort Occupancy percentage for ${destination.name}`}

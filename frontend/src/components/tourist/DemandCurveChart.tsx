@@ -13,6 +13,7 @@ import { TrendingUp, Clock, Sparkles } from 'lucide-react';
 import type { Destination, HourlyForecastPoint } from '../../types';
 import { generate12HourForecast } from '../../lib/engine';
 import { useCorridorStore } from '../../store/useCorridorStore';
+import { apiGet } from '../../lib/api';
 
 interface DemandCurveChartProps {
   destination: Destination;
@@ -33,10 +34,9 @@ export const DemandCurveChart: React.FC<DemandCurveChartProps> = ({ destination 
     setForecastData(generate12HourForecast(destination));
 
     // Fetch from backend endpoint with timeout
-    fetch(`http://127.0.0.1:8000/api/destinations/${destination.id}/forecast`, {
-      signal: AbortSignal.timeout(3000)
+    apiGet(`/api/destinations/${destination.id}/forecast`, {
+      timeoutMs: 3000
     })
-      .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         if (data && data.forecast_points && Array.isArray(data.forecast_points)) {
           setForecastData(data.forecast_points);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Markdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bot, 
@@ -9,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import { calculateDCCMetrics } from '../../lib/engine';
+import { apiPost } from '../../lib/api';
+import { useParams } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -18,7 +21,8 @@ interface Message {
 }
 
 export const AiHelplineBot: React.FC = () => {
-  const { destinations } = useCorridorStore();
+  const { spotId } = useParams<{ spotId: string }>();
+  const { destinations, language } = useCorridorStore();
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -28,7 +32,7 @@ export const AiHelplineBot: React.FC = () => {
     {
       id: 'welcome',
       sender: 'bot',
-      text: "Hello! 🙏 I am 'Sahyadri Guide', your 24x7 AI Tourism Assistant for the Western Ghats corridor. Ask me about live crowds, traffic bottlenecks, weather hazards, or scenic twin destinations!",
+      text: "Hello! 🙏 I am 'Sahyadri Guide', your 24x7 AI Tourism Assistant for the Western Ghats corridor. Ask me about live crowds, traffic bottlenecks, weather hazards, zero-waste rules, or scenic twin destinations!",
       timestamp: 'Just now'
     }
   ]);
@@ -37,11 +41,21 @@ export const AiHelplineBot: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const quickPrompts = [
+  const quickPrompts = language === 'mr' ? [
+    { label: '🔥 लोणावळ्यात आज गर्दी आहे का?', query: 'लोणावळ्यात आज गर्दी आहे का?' },
+    { label: '🏖️ अलिबागसाठी शांत जुळे ठिकाण?', query: 'अलिबागसाठी शांत जुळे ठिकाण कोणते?' },
+    { label: '⛈️ थेट हवामान व पाऊस अंदाज', query: 'पश्चिम घाटात आज हवामान कसे आहे?' },
+    { label: '♻️ कास पठाराचे कचरा नियम काय?', query: 'कास पठाराचे कचरा नियम काय आहेत?' }
+  ] : language === 'hi' ? [
+    { label: '🔥 क्या लोनावला में भीड़ है?', query: 'क्या आज लोनावला में भीड़ है?' },
+    { label: '🏖️ अलीबाग का शांत विकल्प क्या है?', query: 'अलीबाग का शांत विकल्प क्या है?' },
+    { label: '⛈️ लाइव मौसम एवं बारिश अलर्ट', query: 'पश्चिमी घाट का मौसम कैसा है?' },
+    { label: '♻️ कचरा नियम एवं प्लास्टिक प्रतिबंध', query: 'कचरा नियम एवं प्लास्टिक प्रतिबंध क्या हैं?' }
+  ] : [
     { label: '🔥 Is Lonavala crowded right now?', query: 'Is Lonavala crowded right now?' },
     { label: '🏖️ Alternative to Alibaug beaches?', query: 'What is a good less crowded alternative to Alibaug?' },
     { label: '⛈️ Live Weather & Rain Alert', query: 'What is the live weather and hazard risk today?' },
-    { label: '🌿 How does the Green Pass work?', query: 'How does the Green Yatra Pass work?' }
+    { label: '♻️ Plastic Rules & Waste Fines', query: 'What are the waste management rules and plastic fines?' }
   ];
 
   const generateClientFallback = (text: string): string => {
@@ -92,18 +106,8 @@ export const AiHelplineBot: React.FC = () => {
 
     let botResponse = '';
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, destination_id: 'LON' }),
-        signal: AbortSignal.timeout(3500)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        botResponse = data.response || generateClientFallback(text);
-      } else {
-        botResponse = generateClientFallback(text);
-      }
+      const data = await apiPost('/api/ai/chat', { message: text, destination_id: spotId || 'LON', language });
+      botResponse = data?.response || generateClientFallback(text);
     } catch {
       botResponse = generateClientFallback(text);
     }
@@ -148,7 +152,7 @@ export const AiHelplineBot: React.FC = () => {
             initial={{ opacity: 0, y: 30, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.92 }}
-            className="fixed bottom-24 lg:bottom-20 right-3 sm:right-6 z-50 w-full max-w-sm sm:max-w-md bg-white rounded-2xl border-2 border-slate-300 shadow-2xl overflow-hidden flex flex-col h-[520px] max-h-[80vh]"
+            className="fixed bottom-24 right-3 sm:right-6 z-50 w-full max-w-sm sm:max-w-md bg-white rounded-2xl border-2 border-slate-300 shadow-2xl overflow-hidden flex flex-col h-[400px] max-h-[70vh]"
           >
             {/* Chatbot Header */}
             <div className="bg-slate-900 text-white p-3.5 sm:p-4 flex items-center justify-between border-b border-slate-800">
@@ -199,8 +203,12 @@ export const AiHelplineBot: React.FC = () => {
                         : 'bg-white text-slate-900 border border-slate-200 rounded-tl-none'
                     }`}
                   >
-                    <div className="whitespace-pre-line text-xs font-medium">
-                      {msg.text}
+                    <div className="whitespace-pre-line text-xs font-medium prose prose-xs prose-slate max-w-none">
+                      {msg.sender === 'bot' ? (
+                        <Markdown>{msg.text}</Markdown>
+                      ) : (
+                        msg.text
+                      )}
                     </div>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-1 px-1">{msg.timestamp}</span>

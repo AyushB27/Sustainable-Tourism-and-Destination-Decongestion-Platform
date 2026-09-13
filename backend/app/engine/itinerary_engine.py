@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
+from app.engine.ai_chat_engine import generate_ai_trip_narrative
 
 def parse_duration_days(duration: Any) -> int:
     try:
@@ -25,12 +26,15 @@ def parse_duration_days(duration: Any) -> int:
 def generate_future_itinerary(
     travel_date_str: str,
     duration: str = "2-day",
-    travel_style: str = "scenic"
+    travel_style: str = "scenic",
+    transport_mode: str = "green_transit",
+    accommodation_type: str = "homestay",
+    destination_id: str = "LON"
 ) -> Dict[str, Any]:
     """
     Generates an AI-optimized, decongested multi-day itinerary that sequences
     visits to avoid peak bottleneck hours and diverts to under-visited twin spots.
-    Supports 1-day to 7-day flexible planning.
+    Calculates the 6-component Trip Sustainability Score (0-100) and round-trip carbon footprint.
     """
     try:
         travel_dt = datetime.strptime(travel_date_str, "%Y-%m-%d")
@@ -267,15 +271,128 @@ def generate_future_itinerary(
             "slots": bp["slots"]
         })
 
+    # ── Mentor-Specified Trip Sustainability Score (0-100) ──
+    # Weights: Transport 30%, Accommodation 20%, Activities 15%, Waste 15%, Local Economy 10%, Impact 10%
+    if transport_mode == "ultra_green":
+        score_transport = 96
+        carbon_factor = 0.035
+        transport_label = "Electric Rail + Bicycle / E-Shuttle"
+    elif transport_mode == "green_transit":
+        score_transport = 88
+        carbon_factor = 0.068
+        transport_label = "Intercity Bus / Rail + Verified Local Driver"
+    else: # personal_car
+        score_transport = 36
+        carbon_factor = 0.192
+        transport_label = "Personal Petrol / Diesel Car"
+
+    if accommodation_type == "homestay":
+        score_stay = 94
+        stay_label = "Accredited MTDC Rural Homestay"
+        daily_stay_economy = 950
+    else: # hotel
+        score_stay = 54
+        stay_label = "Commercial Resort / Chain Hotel"
+        daily_stay_economy = 250
+
+    score_activities = 88
+    score_waste = 92
+    score_economy = 92 if accommodation_type == "homestay" and transport_mode != "personal_car" else 48
+    score_impact = 86
+
+    total_sustainability_score = round(
+        0.30 * score_transport +
+        0.20 * score_stay +
+        0.15 * score_activities +
+        0.15 * score_waste +
+        0.10 * score_economy +
+        0.10 * score_impact
+    )
+
+    # ── Complete Round-Trip Carbon Footprint Calculation ──
+    # Mumbai/Pune Hub -> Destination Corridor -> Local Sightseeing Circuit -> Return
+    base_roundtrip_km = 320
+    local_circuit_km = (num_days - 1) * 45
+    total_km = base_roundtrip_km + local_circuit_km
+
+    solo_car_carbon_kg = round(total_km * 0.192, 1)
+    selected_mode_carbon_kg = round(total_km * carbon_factor, 1)
+    carbon_saved_kg = max(0.0, round(solo_car_carbon_kg - selected_mode_carbon_kg, 1))
+    carbon_saved_pct = round((carbon_saved_kg / max(1.0, solo_car_carbon_kg)) * 100, 1) if solo_car_carbon_kg > 0 else 0.0
+
+    # Environmental impact equivalents
+    trees_annual = round(carbon_saved_kg / 21.77, 1) # 1 mature tree absorbs ~21.77 kg CO2/year
+    fuel_saved_liters = round(carbon_saved_kg / 2.31, 1) # 1 liter petrol generates ~2.31 kg CO2
+    idling_avoided_hrs = round(num_days * 1.5, 1) # avoiding ghat weekend idling
+
+    # Assign day-wise carbon savings to each day plan
+    day_solo_kg = round(solo_car_carbon_kg / max(1, num_days), 1)
+    day_trip_kg = round(selected_mode_carbon_kg / max(1, num_days), 1)
+    day_saved_kg = max(0.0, round(day_solo_kg - day_trip_kg, 1))
+
+    for day in selected_days:
+        day["carbon_saved_today_kg"] = day_saved_kg
+        day["daily_emissions_kg"] = day_trip_kg
+        day["solo_baseline_day_kg"] = day_solo_kg
+
+    daily_driver_economy = 650 if transport_mode != "personal_car" else 0
+    total_local_contribution_inr = (daily_stay_economy + daily_driver_economy + 350) * num_days
+
+    # Generate Gemini-powered AI trip narrative (with guaranteed autonomous fallback)
+    ai_narrative = generate_ai_trip_narrative({
+        "travel_date": travel_date_str,
+        "duration": f"{num_days}-day",
+        "num_days": num_days,
+        "travel_style": travel_style,
+        "transport_mode": transport_mode,
+        "accommodation_type": accommodation_type,
+        "destination_id": destination_id,
+        "carbon_saved_kg": carbon_saved_kg,
+        "carbon_saved_pct": carbon_saved_pct,
+        "trees_equivalent_annual": trees_annual,
+        "fuel_saved_liters": fuel_saved_liters,
+        "local_economy_inr": total_local_contribution_inr
+    })
+
     return {
         "travel_date": travel_date_str,
         "duration": f"{num_days}-day",
         "num_days": num_days,
         "travel_style": travel_style,
+        "transport_mode": transport_mode,
+        "accommodation_type": accommodation_type,
         "is_weekend_trip": is_weekend,
         "predicted_hotspot_load_pct": hotspot_load,
         "predicted_twin_load_pct": twin_load,
         "estimated_time_saved_minutes": 65 * num_days,
-        "estimated_co2_offset_kg": round(10.5 * num_days, 1),
+        "estimated_co2_offset_kg": carbon_saved_kg,
+        "sustainability_score": total_sustainability_score,
+        "sustainability_grade": "Certified Green Journey (A+)" if total_sustainability_score >= 85 else "Moderate Impact (B)" if total_sustainability_score >= 65 else "High Environmental Footprint (C)",
+        "component_breakdown": {
+            "transportation": {"score": score_transport, "weight": "30%", "label": transport_label},
+            "accommodation": {"score": score_stay, "weight": "20%", "label": stay_label},
+            "activities": {"score": score_activities, "weight": "15%", "label": "Eco-Twin Trails & Fort Heritage"},
+            "waste_management": {"score": score_waste, "weight": "15%", "label": "Zero-Waste & Carry-In Compliance"},
+            "local_economy": {"score": score_economy, "weight": "10%", "label": f"₹{total_local_contribution_inr:,} to Local Livelihoods"},
+            "environmental_impact": {"score": score_impact, "weight": "10%", "label": "Off-Peak Corridor Timing"}
+        },
+        "carbon_calculator": {
+            "round_trip_km": total_km,
+            "solo_car_emissions_kg": solo_car_carbon_kg,
+            "trip_emissions_kg": selected_mode_carbon_kg,
+            "carbon_saved_kg": carbon_saved_kg,
+            "carbon_saved_pct": carbon_saved_pct,
+            "trees_equivalent_annual": trees_annual,
+            "fuel_saved_liters": fuel_saved_liters,
+            "ghat_idling_hours_avoided": idling_avoided_hrs,
+            "local_economy_contribution_inr": total_local_contribution_inr
+        },
+        "ai_narrative": ai_narrative,
+        "green_trip_perks": [
+            "Perimeter Hub Parking: Park personal car at bypass lot to bypass ghat jams",
+            "Verified Local Drivers: Direct income to rural transport operators",
+            "Zero Single-Use Plastic: Carry-in carry-out protocols active across Western Ghats trails",
+            "Fast-Track GreenPass Toll: Pre-validated entry window reduces idle queuing emissions"
+        ],
         "itinerary_days": selected_days
     }

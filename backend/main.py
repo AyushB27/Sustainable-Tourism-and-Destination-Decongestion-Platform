@@ -15,6 +15,12 @@ if hasattr(sys.stderr, "reconfigure"):
 # Track server start time for uptime reporting
 _SERVER_START_TIME = time.time()
 
+import os
+import bcrypt
+import jwt
+JWT_SECRET = os.environ.get("JWT_SECRET", "ecoroute-dev-secret-change-in-production")
+JWT_ALGORITHM = "HS256"
+
 if sys.platform == "win32":
     try:
         if hasattr(sys.stdout, 'reconfigure'):
@@ -46,7 +52,19 @@ from app.background_worker import (
 from app.engine.dcc_calculator import generate_12hr_forecast, calculate_dcc_metrics
 from app.engine.twin_matcher import find_twin_recommendations
 from app.engine.itinerary_engine import generate_future_itinerary
+from app.engine.ai_chat_engine import generate_chat_response, get_spot_deep_dossier, generate_ai_sustainability_report
 from app.pipelines.footfall_pipeline import get_besttime_full_telemetry
+from app.services.destination_service import get_destination_registry, get_destination_by_id, find_twin_destinations as find_dynamic_twins
+from app.services.itinerary_service import generate_destination_aware_itinerary
+from app.services.sustainability_service import calculate_3d_sustainability
+from app.services.carbon_service import calculate_trip_carbon
+from app.services.trip_service import save_trip, get_user_trips, get_trip_by_id as get_saved_trip, delete_trip, generate_post_trip_report
+from app.services.waste_service import create_waste_report, get_waste_incidents, update_incident_status
+from app.services.rewards_service import get_user_rewards_profile, award_karma_points
+from app.services.provider_service import update_destination_occupancy
+from app.services.advisory_service import broadcast_advisory as secure_broadcast_advisory, get_active_advisories
+from app.services.event_service import log_event, get_recent_events
+
 
 # ==============================================================================
 # AUTHENTICATION DIRECTORY & CREDENTIALS
@@ -59,7 +77,17 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "District Magistrate & Disaster Management Officer",
         "department": "Pune District Administration & MSRDC Corridor Cell",
         "badgeNumber": "IAS-MH-2018-9412",
-        "password": "officer@pune",
+        "password": "$2b$12$7ahaWL.rIMgu9LGzIJ/x3OnsL13PTNTVX9ag2MlMdi80iF60OdFpq",  # officer@pune
+        "jurisdiction": {"type": "district", "value": "Pune"}
+    },
+    "patil.dm@ecoroute.ops": {
+        "id": "AUTH-PUNE-01",
+        "name": "Dr. Rajeshwar Patil, IAS",
+        "role": "authority",
+        "designation": "District Operations Chief",
+        "department": "Disaster Management & Corridor Cell",
+        "badgeNumber": "OPS-MH-2026-94",
+        "password": "$2b$12$grWT2LxtGWsTOJpR6U59L.bJrvQHfwiPjs1vsrywbxhmTu7JhX0pe",  # officer2026
         "jurisdiction": {"type": "district", "value": "Pune"}
     },
     "raigad.sp@gov.in": {
@@ -69,7 +97,7 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Superintendent of Police & Highway Traffic Command",
         "department": "Raigad District Police & Coastal Tourism Security",
         "badgeNumber": "IPS-MH-2019-3201",
-        "password": "officer@raigad",
+        "password": "$2b$12$MV6zT1x7BAQSKbqOJlfLO.l5T8NWaLZVPZ464fW8lDwv7E7G5lT9u",  # officer@raigad
         "jurisdiction": {"type": "district", "value": "Raigad"}
     },
     "director.tourism@maharashtra.gov.in": {
@@ -79,7 +107,7 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Director of Tourism, Govt of Maharashtra",
         "department": "Directorate of Tourism, Maharashtra",
         "badgeNumber": "IAS-MH-2012-1102",
-        "password": "director@maha",
+        "password": "$2b$12$TH5aT6uPhN8Nexfd5GLycOyA8JLGmIqZNXBuLu6wpwulY2QVdRBl.",  # director@maha
         "jurisdiction": {"type": "state", "value": "Maharashtra"}
     },
     "MTDC/2026/HOTEL-99": {
@@ -89,7 +117,17 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Authorized MTDC Homestay Operator",
         "department": "Maharashtra Tourism Development Corporation (MTDC)",
         "badgeNumber": "MTDC-ACC-2026-883",
-        "password": "provider@matheran",
+        "password": "$2b$12$TMwKnFuj9R/iQdgPe1KBWehI5A2fmkmE21WlToA/UsB9BMPhaE77y",  # provider@matheran
+        "jurisdiction": None
+    },
+    "contact@matheran-homestays.com": {
+        "id": "PROV-MATHERAN-01",
+        "name": "Matheran Eco-Resort & Homestays",
+        "role": "provider",
+        "designation": "Verified Hospitality Operator",
+        "department": "Eco-Tourism Hospitality Network",
+        "badgeNumber": "ACC-2026-883",
+        "password": "$2b$12$33Ied/ZZG2oCi1qIp1wyZ.ux5VxbFjXDM72DiAuNgQcHrU9S6iuFe",  # partner2026
         "jurisdiction": None
     },
     "MTDC/2026/HOTEL-84": {
@@ -99,7 +137,27 @@ STAKEHOLDERS_DIRECTORY = {
         "designation": "Accredited Coastal Resort Partner",
         "department": "Raigad Tourism & MTDC Hospitality Council",
         "badgeNumber": "MTDC-ACC-2026-442",
-        "password": "provider@kashid",
+        "password": "$2b$12$CsUFqf1xnBjz9mVHbqIxwOGBbICmhHfoWfydB1vei1U1xdIy/F4la",  # provider@kashid
+        "jurisdiction": None
+    },
+    "dev@ecoroute.internal": {
+        "id": "DEV-LEAD-01",
+        "name": "Corridor Systems Engineer",
+        "role": "developer",
+        "designation": "Telemetry & Pipeline Architect",
+        "department": "Infrastructure Diagnostics",
+        "badgeNumber": "DEV-ROOT-2026",
+        "password": "$2b$12$A1b.wjkWR/2r42PEP2Wjh.FobGjZKE1e8apk8.eObmFIkUnJDAlzy",  # dev2026
+        "jurisdiction": None
+    },
+    "aarav.traveler@gmail.com": {
+        "id": "USR-TOURIST-01",
+        "name": "Aarav Sharma",
+        "role": "tourist",
+        "designation": "Verified Eco-Tourist",
+        "department": "Sustainable Travel Community",
+        "badgeNumber": "ECO-PASS-2026-77",
+        "password": "$2b$12$En.lH/qFDij1kPk8L3R.E.yomk7zQAkqqZ1RRbDFz8XLbBZUWpDkW",  # traveler2026
         "jurisdiction": None
     }
 }
@@ -151,10 +209,10 @@ def check_authority_jurisdiction(user_dict, spot_id):
 # ==============================================================================
 class EcoRouteAPIHandler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allowed_origin = os.environ.get("CORS_ALLOWED_ORIGIN", "http://localhost:5173")
+        self.send_header("Access-Control-Allow-Origin", allowed_origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("Access-Control-Allow-Private-Network", "true")
 
     def _send_json_response(self, data, status_code=200):
         try:
@@ -167,15 +225,32 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
         except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
             pass
 
-    def _parse_json_body(self):
+    def _validate_auth_token(self):
+        """Validates JWT from Authorization header. Returns decoded payload or None."""
+        auth_header = self.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return None
+        token = auth_header[7:].strip()
         try:
-            content_length = int(self.headers.get("Content-Length", 0))
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            return payload
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None
+
+    def _parse_json_body(self) -> dict:
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
             if content_length > 0:
-                raw_data = self.rfile.read(content_length).decode("utf-8")
-                return json.loads(raw_data)
-        except Exception:
-            pass
-        return {}
+                raw = self.rfile.read(content_length)
+                return json.loads(raw.decode('utf-8'))
+            return {}
+        except (json.JSONDecodeError, ValueError) as e:
+            self._send_json_response({"status": "error", "message": f"Invalid JSON: {e}"}, status_code=400)
+            raise ValueError(f"Malformed JSON body: {e}")
+        except Exception as e:
+            return {}
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -183,6 +258,16 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        try:
+            self._handle_post()
+        except Exception as e:
+            print(f"[ERROR] POST {self.path}: {e}")
+            try:
+                self._send_json_response({"status": "error", "message": "Internal server error"}, status_code=500)
+            except Exception:
+                pass
+
+    def _handle_post(self):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
         body = self._parse_json_body()
@@ -195,22 +280,44 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
 
             user_match = STAKEHOLDERS_DIRECTORY.get(identifier)
 
-            if user_match and (user_match["password"] == password or password in ["demo123", "officer@pune", "officer@raigad", "director@maha", "provider@matheran", ""] or not password):
-                self._send_json_response({
-                    "status": "success",
-                    "message": "Authentication successful",
-                    "user": {
-                        "id": user_match["id"],
-                        "name": user_match["name"],
+            if user_match:
+                stored_pw = user_match["password"]
+                # Support both bcrypt hashed and plain-text passwords (migration period)
+                pw_valid = False
+                if stored_pw.startswith("$2b$") or stored_pw.startswith("$2a$"):
+                    pw_valid = bcrypt.checkpw(password.encode('utf-8'), stored_pw.encode('utf-8'))
+                else:
+                    pw_valid = (stored_pw == password)
+                
+                if pw_valid:
+                    import time as _time
+                    token = jwt.encode({
+                        "sub": user_match["id"],
                         "role": user_match["role"],
-                        "designation": user_match["designation"],
-                        "department": user_match["department"],
-                        "badgeNumber": user_match["badgeNumber"],
+                        "name": user_match.get("name", ""),
                         "jurisdiction": user_match.get("jurisdiction"),
-                        "isAuthenticated": True,
-                        "token": f"token-gov-{int(datetime.now().timestamp())}"
-                    }
-                })
+                        "iat": int(_time.time()),
+                        "exp": int(_time.time()) + 86400 * 7
+                    }, JWT_SECRET, algorithm=JWT_ALGORITHM)
+                    
+                    self._send_json_response({
+                        "status": "success",
+                        "message": "Authentication successful",
+                        "user": {
+                            "id": user_match["id"],
+                            "name": user_match["name"],
+                            "role": user_match["role"],
+                            "designation": user_match["designation"],
+                            "department": user_match["department"],
+                            "badgeNumber": user_match["badgeNumber"],
+                            "jurisdiction": user_match.get("jurisdiction"),
+                            "isAuthenticated": True,
+                            "token": token
+                        }
+                    })
+                else:
+                    self._send_json_response({"status": "error", "message": "Invalid credentials"}, status_code=401)
+                    return
             elif role == "citizen" or identifier.startswith("CITIZEN") or not identifier:
                 self._send_json_response({
                     "status": "success",
@@ -228,10 +335,8 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                     }
                 })
             else:
-                self._send_json_response({
-                    "status": "error",
-                    "message": "Invalid stakeholder credentials."
-                }, status_code=401)
+                self._send_json_response({"status": "error", "message": "User not found"}, status_code=404)
+                return
 
         # 2. 4D Vector Cosine Twin Recommendation Engine
         elif path == "/api/recommendations/twin":
@@ -255,86 +360,123 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "recommendations": recs
             })
 
-        # 3. Future Trip Decongestion Itinerary Generator
+        # 3. Future Trip Decongestion Itinerary Generator (Destination-Aware)
         elif path == "/api/itinerary/plan":
-            travel_date = body.get("travel_date", "2026-09-12")
-            duration = body.get("duration", "2-day")
-            travel_style = body.get("travel_style", "scenic")
+            travel_date = body.get("travel_date", datetime.now().strftime("%Y-%m-%d"))
+            dur_raw = body.get("duration", 2)
+            if isinstance(dur_raw, str):
+                try:
+                    dur_int = int(''.join(filter(str.isdigit, dur_raw)) or 2)
+                except Exception:
+                    dur_int = 2
+            else:
+                dur_int = int(dur_raw or 2)
 
-            plan = generate_future_itinerary(travel_date, duration, travel_style)
+            travel_style = body.get("travel_style", "scenic")
+            transport_mode = body.get("transport_mode", "green_transit")
+            accommodation_type = body.get("accommodation_type", "homestay")
+            destination_id = body.get("destination_id") or (body.get("destinations")[0] if body.get("destinations") else "LON")
+
+            plan = generate_destination_aware_itinerary(
+                destination_id=destination_id,
+                travel_date_str=travel_date,
+                duration=dur_int,
+                travel_style=travel_style,
+                transport_mode=transport_mode,
+                accommodation_type=accommodation_type
+            )
             self._send_json_response({
                 "status": "success",
                 "plan": plan
             })
 
+        # 3b. Save Trip Plan to Persistent SQLite
+        elif path == "/api/trips/save" or (path == "/api/trips" and self.command == "POST"):
+            user_id = body.get("user_id") or "CITIZEN-GUEST-01"
+            save_res = save_trip(body, user_id=user_id)
+            self._send_json_response(save_res)
+
+        # 3c. 3-Dimensional Sustainability Score Calculation
+        elif path == "/api/sustainability/calculate":
+            sust_res = calculate_3d_sustainability(
+                transport_mode=body.get("transport_mode", "green_transit"),
+                accommodation_type=body.get("accommodation_type", "homestay"),
+                waste_pledge=body.get("waste_pledge", True),
+                off_peak_transit=body.get("off_peak_transit", True)
+            )
+            self._send_json_response(sust_res)
+
+        # 3d. Carbon Footprint Calculation API
+        elif path == "/api/carbon/calculate":
+            carbon_res = calculate_trip_carbon(
+                transport_mode=body.get("transport_mode", "green_transit"),
+                duration_days=int(body.get("duration_days", 2)),
+                accommodation_type=body.get("accommodation_type", "homestay"),
+                base_roundtrip_km=float(body.get("base_roundtrip_km", 320.0))
+            )
+            self._send_json_response(carbon_res)
+
         # 4. 24x7 AI Tourism Helpline Assistant
         elif path == "/api/ai/chat":
-            prompt = body.get("message", "").strip().lower()
+            message = body.get("message", "").strip()
+            destination_id = body.get("destination_id")
+            language = body.get("language", "en")
             telemetry = get_latest_telemetry()
-            dests = telemetry.get("destinations", [])
 
-            lonavala = next((d for d in dests if d["id"] == "LON"), {})
-            matheran = next((d for d in dests if d["id"] == "MAT"), {})
-            alibaug = next((d for d in dests if d["id"] == "ALB"), {})
-            kashid = next((d for d in dests if d["id"] == "KAS"), {})
-
-            if "lonavala" in prompt or "khandala" in prompt or "लोणावळा" in prompt:
-                reply = f"📍 Lonavala & Khandala is currently at {lonavala.get('dcc_score', 0.88)} DCC with an estimated {lonavala.get('estimated_wait_minutes', 45)} mins queue delay. We recommend diverting to Matheran Eco-Zone or Bhandardara to save ~65 mins."
-            elif "alibaug" in prompt or "beach" in prompt or "अलिबाग" in prompt:
-                reply = f"🏖️ Alibaug beaches have peak weekend congestion. Certified twin: Kashid & Murud Waters (DCC {kashid.get('dcc_score', 0.22)}) offers clean white sands with 75% fewer tourists."
-            elif "weather" in prompt or "rain" in prompt or "landslide" in prompt or "मौसम" in prompt:
-                reply = "⛈️ Live Open-Meteo telemetry indicates mild to moderate showers across the Sahyadris with safe landslide indices. Drive with caution along NH-48 curves."
-            else:
-                reply = "🏛️ National Tourism AI Helpline 1363: Live signals connected across 7 Western Ghats destinations. Ask about live crowd pressure, weather alerts, or twin destinations!"
-
+            chat_result = generate_chat_response(
+                message=message,
+                destination_id=destination_id,
+                language=language,
+                telemetry_data=telemetry
+            )
             self._send_json_response({
                 "status": "success",
-                "response": reply,
-                "timestamp": datetime.now().isoformat()
+                "response": chat_result["response"],
+                "source": chat_result["source"],
+                "language": chat_result["language"],
+                "timestamp": chat_result["timestamp"]
             })
 
-        # 5. Broadcast Emergency Gazette Advisory (with server-side jurisdiction validation)
+        # 4b. Spot Deep AI Eco-Guide Dossier
+        elif path == "/api/ai/spot-guide":
+            spot_id = body.get("destination_id", "LON")
+            dossier = get_spot_deep_dossier(spot_id)
+            self._send_json_response({
+                "status": "success",
+                "spot_id": spot_id,
+                "dossier": dossier
+            })
+
+        # 4c. Generate AI Sustainability & Carbon Audit Report
+        elif path == "/api/ai/generate-report":
+            report_res = generate_ai_sustainability_report(body)
+            self._send_json_response(report_res)
+
+        # 5. Broadcast Emergency Gazette Advisory (with strict authorization enforcement)
         elif path == "/api/advisories/broadcast":
-            destination_id = body.get("destination_id", "ALL")
-            destination_name = body.get("destination_name", "All Destinations")
-            severity = body.get("severity", "high")
-            title = body.get("title", "Official Advisory")
-            message = body.get("message", "")
-            author = body.get("author", "District Administration")
-            expires_at = body.get("expires_at", "2026-10-31T23:59:59")
-            user = body.get("user")
+            auth_payload = self._validate_auth_token()
+            if auth_payload:
+                user_role = auth_payload.get("role", "")
+                user = {"id": auth_payload.get("sub"), "role": user_role, "jurisdiction": auth_payload.get("jurisdiction")}
+            else:
+                user = body.get("user", {})
+            adv_res = secure_broadcast_advisory(body, user=user)
+            if adv_res.get("status") == "error":
+                self._send_json_response(adv_res, status_code=403)
+            else:
+                self._send_json_response(adv_res)
 
-            # Enforce jurisdiction server-side
-            if user:
-                authorized, err_msg = check_authority_jurisdiction(user, destination_id)
-                if not authorized:
-                    self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
-                    return
-
-            adv_id = f"ADV-{int(datetime.now().timestamp())}"
-            now_iso = datetime.now().isoformat()
-
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-            INSERT INTO gazette_advisories (id, destination_id, destination_name, severity, title, message, author, active, created_at, expires_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-            """, (adv_id, destination_id, destination_name, severity, title, message, author, now_iso, expires_at))
-            conn.commit()
-            conn.close()
-
-            self._send_json_response({
-                "status": "success",
-                "message": "Advisory broadcast successfully logged into Gazette",
-                "advisory_id": adv_id,
-                "expires_at": expires_at
-            })
 
         # 5b. Revoke Gazette Advisory (Server-side jurisdiction checked)
         elif path.startswith("/api/advisories/") and path.endswith("/revoke"):
             parts = path.strip("/").split("/")
             adv_id = parts[2]
-            user = body.get("user")
+            auth_payload = self._validate_auth_token()
+            if auth_payload:
+                user_role = auth_payload.get("role", "")
+                user = {"id": auth_payload.get("sub"), "role": user_role, "jurisdiction": auth_payload.get("jurisdiction")}
+            else:
+                user = body.get("user")
 
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -345,7 +487,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 self._send_json_response({"status": "error", "message": "Advisory not found"}, status_code=404)
                 return
 
-            if user:
+            if True:  # Always check authorization
                 authorized, err_msg = check_authority_jurisdiction(user, adv["destination_id"])
                 if not authorized:
                     conn.close()
@@ -369,7 +511,12 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             parts = path.strip("/").split("/")
             adv_id = parts[2]
             new_expires_at = body.get("new_expires_at", "2026-10-31T23:59:59")
-            user = body.get("user")
+            auth_payload = self._validate_auth_token()
+            if auth_payload:
+                user_role = auth_payload.get("role", "")
+                user = {"id": auth_payload.get("sub"), "role": user_role, "jurisdiction": auth_payload.get("jurisdiction")}
+            else:
+                user = body.get("user")
 
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -380,7 +527,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 self._send_json_response({"status": "error", "message": "Advisory not found"}, status_code=404)
                 return
 
-            if user:
+            if True:  # Always check authorization
                 authorized, err_msg = check_authority_jurisdiction(user, adv["destination_id"])
                 if not authorized:
                     conn.close()
@@ -402,7 +549,12 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
         elif path == "/api/policy-simulator/simulate":
             target_id = body.get("target_spot_id", "LON")
             proposed_cap = int(body.get("proposed_cap", 3500))
-            user = body.get("user")
+            auth_payload = self._validate_auth_token()
+            if auth_payload:
+                user_role = auth_payload.get("role", "")
+                user = {"id": auth_payload.get("sub"), "role": user_role, "jurisdiction": auth_payload.get("jurisdiction")}
+            else:
+                user = body.get("user")
 
             if user:
                 authorized, err_msg = check_authority_jurisdiction(user, target_id)
@@ -520,44 +672,109 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "carbon_saved_kg": carbon_saved,
                 "issued_at": now_iso
             })
+
+        # 7. Citizen Zero-Waste Hotspot Reporting (Pillar 3)
+        elif path == "/api/waste/report":
+            from app.services.waste_service import create_waste_report
+            result = create_waste_report(body, user_id=body.get("user_id", "CITIZEN-GUEST-01"))
+            self._send_json_response(result)
+
+        elif path == "/api/waste/dispatch":
+            report_id = body.get("report_id") or body.get("incident_id")
+            new_status = body.get("status", "dispatched")
+            notes = body.get("notes", "")
+
+            if not report_id:
+                self._send_json_response({"status": "error", "message": "report_id is required"}, status_code=400)
+                return
+
+            from app.services.waste_service import update_incident_status
+            result = update_incident_status(report_id, new_status, notes)
+            self._send_json_response(result)
+
+        # 8. Community Experiences Registration (Pillar 2 & Rural Livelihood)
+        elif path == "/api/community/experiences":
+            title = body.get("title", "").strip()
+            location = body.get("location", "").strip()
+            coordinator = body.get("coordinator", "").strip()
+            price = body.get("price", "").strip()
+            retained_revenue = body.get("retained_revenue", "90% retained in local village").strip()
+            category = body.get("category", "Agro-Tourism")
+
+            if not title or not location:
+                self._send_json_response({"status": "error", "message": "title and location are required"}, status_code=400)
+                return
+
+            exp_id = f"EXP-{int(time.time())}"
+            now_iso = datetime.now().isoformat()
+            from app.database import get_db
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                INSERT INTO community_experiences (id, title, location, coordinator, price, retained_revenue, category, verified, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                """, (exp_id, title, location, coordinator, price, retained_revenue, category, now_iso))
+                conn.commit()
+
+            self._send_json_response({
+                "status": "success",
+                "message": "Community experience registered successfully.",
+                "experience": {
+                    "id": exp_id,
+                    "title": title,
+                    "location": location,
+                    "coordinator": coordinator,
+                    "price": price,
+                    "retained_revenue": retained_revenue,
+                    "retainedRevenue": retained_revenue,
+                    "category": category,
+                    "verified": True,
+                    "created_at": now_iso
+                }
+            })
         else:
             self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
 
     def do_PUT(self):
+        try:
+            self._handle_put()
+        except Exception as e:
+            print(f"[ERROR] PUT {self.path}: {e}")
+            try:
+                self._send_json_response({"status": "error", "message": "Internal server error"}, status_code=500)
+            except Exception:
+                pass
+
+    def _handle_put(self):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
         body = self._parse_json_body()
 
-        # Provider Room Occupancy Update
+        # Provider Room Occupancy Update (Persisted into SQLite)
         if path.startswith("/api/destinations/") and path.endswith("/occupancy"):
             parts = path.strip("/").split("/")
             dest_id = parts[2].upper()
             new_occupancy_pct = float(body.get("occupancy_pct", 50))
             available_rooms = int(body.get("available_rooms", 50))
+            provider_id = body.get("provider_id", "MTDC-HOMESTAY-01")
 
-            # Update the in-memory telemetry cache
-            from app.background_worker import _telemetry_cache
-            for dest in _telemetry_cache.get("destinations", []):
-                if dest["id"] == dest_id:
-                    dest["hotel_occupancy_pct"] = new_occupancy_pct
-                    dest["available_rooms"] = available_rooms
-                    break
+            res = update_destination_occupancy(dest_id, new_occupancy_pct, available_rooms, provider_id)
+            self._send_json_response(res)
+            return
 
-            self._send_json_response({
-                "status": "success",
-                "message": f"Occupancy updated for {dest_id}",
-                "destination_id": dest_id,
-                "new_occupancy_pct": new_occupancy_pct,
-                "available_rooms": available_rooms
-            })
 
         # Emergency Capacity Override by Authority (Server-side jurisdiction checked)
         elif path.startswith("/api/destinations/") and path.endswith("/capacity-override"):
             parts = path.strip("/").split("/")
             dest_id = parts[2].upper()
-            user = body.get("user")
+            auth_payload = self._validate_auth_token()
+            if auth_payload:
+                user_role = auth_payload.get("role", "")
+                user = {"id": auth_payload.get("sub"), "role": user_role, "jurisdiction": auth_payload.get("jurisdiction")}
+            else:
+                user = body.get("user")
 
-            if user:
+            if True:  # Always check authorization
                 authorized, err_msg = check_authority_jurisdiction(user, dest_id)
                 if not authorized:
                     self._send_json_response({"status": "error", "message": err_msg}, status_code=403)
@@ -624,15 +841,95 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
         else:
             self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
 
-    def do_GET(self):
+    def do_DELETE(self):
+        try:
+            self._handle_delete()
+        except Exception as e:
+            print(f"[ERROR] DELETE {self.path}: {e}")
+            try:
+                self._send_json_response({"status": "error", "message": "Internal server error"}, status_code=500)
+            except Exception:
+                pass
+
+    def _handle_delete(self):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
+        query_params = urllib.parse.parse_qs(parsed_path.query)
+        user_id = query_params.get("user_id", ["CITIZEN-GUEST-01"])[0]
+
+        if path.startswith("/api/trips/"):
+            trip_id = path.strip("/").split("/")[2]
+            success = delete_trip(trip_id, user_id=user_id)
+            if success:
+                self._send_json_response({"status": "success", "message": f"Trip {trip_id} deleted."})
+            else:
+                self._send_json_response({"status": "error", "message": "Trip not found"}, status_code=404)
+            return
+
+        self._send_json_response({"status": "error", "message": "Endpoint not found"}, status_code=404)
+
+    def do_GET(self):
+        try:
+            self._handle_get()
+        except Exception as e:
+            print(f"[ERROR] GET {self.path}: {e}")
+            try:
+                self._send_json_response({"status": "error", "message": "Internal server error"}, status_code=500)
+            except Exception:
+                pass
+
+    def _handle_get(self):
+        parsed_path = urllib.parse.urlparse(self.path)
+        path = parsed_path.path
+
+        # 0A-1. Persistent User Trips
+        if path == "/api/trips":
+            query_params = urllib.parse.parse_qs(parsed_path.query)
+            user_id = query_params.get("user_id", ["CITIZEN-GUEST-01"])[0]
+            trips = get_user_trips(user_id=user_id)
+            self._send_json_response({"status": "success", "user_id": user_id, "trips": trips})
+            return
+
+        # 0A-2. Single Trip Detail
+        if path.startswith("/api/trips/") and not path.endswith("/report"):
+            trip_id = path.strip("/").split("/")[2]
+            t = get_saved_trip(trip_id)
+            if t:
+                self._send_json_response({"status": "success", "trip": t})
+            else:
+                self._send_json_response({"status": "error", "message": "Trip not found"}, status_code=404)
+            return
+
+        # 0A-3. Official Post-Trip Sustainability Report
+        if path.startswith("/api/reports/tourist/") or (path.startswith("/api/trips/") and path.endswith("/report")):
+            parts = path.strip("/").split("/")
+            if path.startswith("/api/reports/tourist/"):
+                trip_id = parts[3] if len(parts) >= 4 else ""
+            else:
+                trip_id = parts[2] if len(parts) >= 3 else ""
+            rep = generate_post_trip_report(trip_id)
+            self._send_json_response(rep)
+            return
+
+        # 0A-4. Destination Dynamic Twin Recommendations
+        if path.startswith("/api/destinations/") and path.endswith("/twins"):
+            dest_id = path.strip("/").split("/")[2].upper()
+            twins = find_dynamic_twins(dest_id)
+            self._send_json_response({"status": "success", "destination_id": dest_id, "twins": twins})
+            return
+
+        # 0A-5. Decoupled Domain Events Queue (Authority & NGO Analytics)
+        if path == "/api/events":
+            evs = get_recent_events()
+            self._send_json_response({"status": "success", "events": evs})
+            return
 
         # 0A. Telemetry Cache Status & Token Savings Metrics
         if path == "/api/cache/status":
             from app.cache_manager import get_cache_status
             self._send_json_response(get_cache_status())
             return
+
 
         # 0B. ML Model Benchmark Comparison Report
         if path == "/api/ml/benchmark":
@@ -666,6 +963,21 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             self._send_json_response(forecast_res)
             return
 
+        # 0D. Spot Deep AI Eco-Guide Dossier
+        if path.startswith("/api/ai/spot-guide"):
+            query_params = urllib.parse.parse_qs(parsed_path.query)
+            dest_id = query_params.get("destination_id", [None])[0]
+            if not dest_id:
+                parts = path.strip("/").split("/")
+                dest_id = parts[3].upper() if len(parts) >= 4 else "LON"
+            dossier = get_spot_deep_dossier(dest_id)
+            self._send_json_response({
+                "status": "success",
+                "spot_id": dest_id,
+                "dossier": dossier
+            })
+            return
+
         # 0. Developer Production Status & Transparency Portal
         if path == "/api/dev/status":
             global _SERVER_START_TIME
@@ -693,8 +1005,8 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
             # API key statuses
             tomtom_configured = bool(TOMTOM_API_KEY and TOMTOM_API_KEY not in ["", "your_tomtom_api_key_here"])
             besttime_configured = bool(BESTTIME_API_KEY and BESTTIME_API_KEY not in ["", "your_besttime_api_key_here"])
-            besttime_masked = f"{BESTTIME_API_KEY[:7]}...{BESTTIME_API_KEY[-4:]}" if len(BESTTIME_API_KEY) >= 12 else BESTTIME_API_KEY
-            besttime_type = "Public Read Key" if BESTTIME_API_KEY.startswith("pub_") else "Private Key"
+            besttime_masked = "[REDACTED]"
+            besttime_type = "Private Key"
             datagov_configured = bool(DATA_GOV_IN_API_KEY and DATA_GOV_IN_API_KEY not in ["", "your_data_gov_in_api_key_here"])
 
             # Build per-destination pipeline transparency entries
@@ -756,7 +1068,7 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                     "OPEN_METEO": "NO_KEY_REQUIRED — Free Public API (Always Live)"
                 },
                 "database": {
-                    "path": "backend/data/ecoroute.db",
+                    "path": "[internal]",
                     "journal_mode": "WAL",
                     "sensor_readings_count": sensor_count,
                     "green_passes_issued": passes_count,
@@ -938,6 +1250,44 @@ class EcoRouteAPIHandler(BaseHTTPRequestHandler):
                 "demand_flows": flows
             })
 
+        # 4d. Citizen Waste Reports & Hotspot Incidents
+        elif path == "/api/waste/incidents":
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM waste_reports ORDER BY created_at DESC")
+            rows = cursor.fetchall()
+            incidents = [dict(row) for row in rows]
+            conn.close()
+            self._send_json_response({
+                "status": "success",
+                "total_incidents": len(incidents),
+                "incidents": incidents
+            })
+
+        # 4e. Eco-Karma Rewards & Activity Ledger
+        elif path in ["/api/rewards/profile", "/api/rewards/ledger"]:
+            query_params = urllib.parse.parse_qs(parsed_path.query)
+            user_id = query_params.get("user_id", ["CITIZEN-GUEST-01"])[0]
+
+            from app.services.rewards_service import get_user_rewards_profile
+            result = get_user_rewards_profile(user_id)
+            self._send_json_response(result)
+
+        # 4f. Community Experiences & Livelihood Projects
+        elif path == "/api/community/experiences":
+            from app.database import get_db
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM community_experiences ORDER BY id ASC")
+                rows = cursor.fetchall()
+                exps = []
+                for r in rows:
+                    d = dict(r)
+                    d["retainedRevenue"] = d.get("retained_revenue", "")
+                    exps.append(d)
+                self._send_json_response({"status": "success", "experiences": exps})
+            return
+
         # 4c. Authority Spot Detail Redirect -> Canonical Spot Page (/spot/:spotId)
         elif path.startswith("/authority/spot/"):
             parts = path.strip("/").split("/")
@@ -1069,6 +1419,8 @@ def run_server():
         httpd.server_close()
 
 if __name__ == "__main__":
+    from app.database import ensure_initialized
+    ensure_initialized()
     if len(sys.argv) > 1 and sys.argv[1] == "--cli":
         sync_telemetry_once()
         telemetry = get_latest_telemetry()

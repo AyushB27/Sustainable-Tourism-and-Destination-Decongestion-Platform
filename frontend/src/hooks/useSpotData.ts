@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useCorridorStore } from '../store/useCorridorStore';
 import { calculateDCCMetrics, getTwinRecommendations, generate12HourForecast } from '../lib/engine';
 import { generateSpotTelemetry } from '../lib/telemetry';
+import { apiGet } from '../lib/api';
 import type {
   Destination,
   DCCMetrics,
@@ -131,10 +132,9 @@ export function useSpotData(spotId?: string): UseSpotDataResult {
   useEffect(() => {
     if (!spot) return;
     setLoadingForecast(true);
-    fetch(`http://127.0.0.1:8000/api/destinations/${spot.id}/forecast`, {
-      signal: AbortSignal.timeout(3000)
+    apiGet(`/api/destinations/${spot.id}/forecast`, {
+      timeoutMs: 3000
     })
-      .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         if (data && Array.isArray(data.forecast_points) && data.forecast_points.length > 0) {
           const normalized: HourlyForecastPoint[] = data.forecast_points.map((pt: any) => {

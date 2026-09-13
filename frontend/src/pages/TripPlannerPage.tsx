@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, Leaf } from 'lucide-react';
 import { useCorridorStore } from '../store/useCorridorStore';
 import { calculateDCCMetrics } from '../lib/engine';
+import { FutureTripPlanner } from '../components/tourist/FutureTripPlanner';
 import type { TripPlan, TripDayPlan, GreenPass } from '../types';
 
 export const TripPlannerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const prefillSpotId = searchParams.get('spotId');
+  const prefillSpotId = searchParams.get('spotId') || searchParams.get('spot');
 
   const {
     destinations,
-    addTripPlan,
+    saveTripPlan,
     addGreenPass,
     currentUser,
     updateUserProfile
   } = useCorridorStore();
+
+  // Mode: AI Sustainable Itinerary & Carbon Reducer vs. Custom Step Wizard
+  const [plannerMode, setPlannerMode] = useState<'ai_carbon_planner' | 'custom_wizard'>('ai_carbon_planner');
 
   // Wizard Steps (§4.4)
   // Step 1: Destination Mode & Selection (Single vs Multi-Destination)
@@ -78,7 +82,7 @@ export const TripPlannerPage: React.FC = () => {
     return d.toISOString().split('T')[0];
   };
 
-  const handleGeneratePlan = (skipAuthCheck = false) => {
+  const handleGeneratePlan = async (skipAuthCheck = false) => {
     if (!currentUser.isAuthenticated && !skipAuthCheck) {
       setShowSignupPrompt(true);
       return;
@@ -165,7 +169,7 @@ export const TripPlannerPage: React.FC = () => {
       created_at: new Date().toISOString()
     };
 
-    addTripPlan(newTrip);
+    await saveTripPlan(newTrip);
 
     // Automatically issue a GreenPass certificate (§7)
     const twinTarget = destinationMode === 'multi' ? secondarySpot : primarySpot;
@@ -240,10 +244,48 @@ export const TripPlannerPage: React.FC = () => {
         </p>
       </div>
 
-      {/* ── WIZARD STEPS FORM ── */}
-      <div className="bg-white rounded-3xl border-2 border-slate-300 p-6 sm:p-8 space-y-8 shadow-sm">
-        {/* Step 1: Destination Selection & Style Mode */}
-        <div className="space-y-4">
+      {/* ── PLANNER MODE SELECTOR TABS ── */}
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-slate-100 p-2 rounded-2xl border border-slate-200 shadow-inner">
+        <button
+          type="button"
+          onClick={() => setPlannerMode('ai_carbon_planner')}
+          className={`flex-1 min-w-[280px] py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-2 ${
+            plannerMode === 'ai_carbon_planner'
+              ? 'bg-gradient-to-r from-gov-navy to-slate-900 text-white shadow-md'
+              : 'text-slate-600 hover:text-slate-900 bg-transparent'
+          }`}
+        >
+          <Leaf className="w-4 h-4 text-emerald-400" />
+          <span>AI Sustainable Itinerary & Carbon Reducer (Gemini 3.6 Flash)</span>
+          <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full uppercase border border-emerald-400/30">
+            Live AI
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPlannerMode('custom_wizard')}
+          className={`py-3 px-5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 ${
+            plannerMode === 'custom_wizard'
+              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+              : 'text-slate-600 hover:text-slate-900 bg-transparent'
+          }`}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          <span>Custom Multi-Step Form</span>
+        </button>
+      </div>
+
+      {/* ── VIEW 1: AI SUSTAINABLE ITINERARY & CARBON REDUCTION ENGINE ── */}
+      {plannerMode === 'ai_carbon_planner' && (
+        <FutureTripPlanner destinations={destinations} prefillSpotId={prefillSpotId || undefined} />
+      )}
+
+      {/* ── VIEW 2: CUSTOM MANUAL WIZARD FORM ── */}
+      {plannerMode === 'custom_wizard' && (
+        <div className="bg-white rounded-3xl border-2 border-slate-300 p-6 sm:p-8 space-y-8 shadow-sm">
+          {/* Step 1: Destination Selection & Style Mode */}
+          <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-gov-navy text-amber-300 text-xs font-black flex items-center justify-center">
@@ -482,6 +524,7 @@ export const TripPlannerPage: React.FC = () => {
           </button>
         </div>
       </div>
+      )}
 
       {/* ── PROGRESSIVE PROFILING SIGNUP MODAL (§4.3, §9) ── */}
       {showSignupPrompt && (

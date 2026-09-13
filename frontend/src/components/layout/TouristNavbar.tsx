@@ -10,9 +10,12 @@ import {
   MapPin,
   Calendar,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Languages
 } from 'lucide-react';
 import { useCorridorStore } from '../../store/useCorridorStore';
+import { TRANSLATIONS } from '../../lib/i18n';
+import type { Language } from '../../lib/i18n';
 import { GlobalSearchBox } from '../common/GlobalSearchBox';
 
 export const TouristNavbar: React.FC = () => {
@@ -21,8 +24,12 @@ export const TouristNavbar: React.FC = () => {
   const {
     currentUser,
     logoutUser,
-    advisories
+    advisories,
+    language,
+    setLanguage
   } = useCorridorStore();
+
+  const t = TRANSLATIONS[language] || TRANSLATIONS.en;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -30,10 +37,10 @@ export const TouristNavbar: React.FC = () => {
   const criticalAdvisories = advisories.filter(a => a.active && (a.severity === 'critical' || a.severity === 'high'));
 
   const navLinks = [
-    { to: '/tourist', label: 'Explore', icon: <MapPin className="w-4 h-4" /> },
-    { to: '/discover', label: 'Discover', icon: <Compass className="w-4 h-4" /> },
-    { to: '/plan/new', label: 'Trip Planner', icon: <Calendar className="w-4 h-4" /> },
-    { to: '/trips', label: 'My Trips', icon: <Sparkles className="w-4 h-4" /> },
+    { to: '/', label: t.navExplore || 'Explore', icon: <MapPin className="w-4 h-4" /> },
+    { to: '/discover', label: t.navDiscover || 'Destinations', icon: <Compass className="w-4 h-4" /> },
+    { to: '/plan', label: t.navTripPlanner || 'Trip Planner', icon: <Calendar className="w-4 h-4" /> },
+    { to: '/trips', label: t.navMyTrips || 'My Trips', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   const handleSignOut = () => {
@@ -95,6 +102,24 @@ export const TouristNavbar: React.FC = () => {
 
           {/* Right Action Area: User Session & Switcher */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Tri-Lingual Language Switcher */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
+              <Languages className="w-3.5 h-3.5 text-slate-500 ml-1 mr-1 hidden sm:inline" />
+              {(['en', 'mr', 'hi'] as Language[]).map((langKey) => (
+                <button
+                  key={langKey}
+                  onClick={() => setLanguage(langKey)}
+                  className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all ${
+                    language === langKey
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                  title={langKey === 'en' ? 'English' : langKey === 'mr' ? 'मराठी (Marathi)' : 'हिंदी (Hindi)'}
+                >
+                  {langKey === 'en' ? 'EN' : langKey === 'mr' ? 'मराठी' : 'हिंदी'}
+                </button>
+              ))}
+            </div>
 
             {/* Profile Dropdown / Sign In */}
             {isGuest ? (
@@ -215,7 +240,23 @@ export const TouristNavbar: React.FC = () => {
             ))}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {(['en', 'mr', 'hi'] as Language[]).map((langKey) => (
+                <button
+                  key={langKey}
+                  onClick={() => setLanguage(langKey)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    language === langKey
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {langKey === 'en' ? 'English' : langKey === 'mr' ? 'मराठी' : 'हिंदी'}
+                </button>
+              ))}
+            </div>
+
             {isGuest ? (
               <Link
                 to="/login?role=tourist"

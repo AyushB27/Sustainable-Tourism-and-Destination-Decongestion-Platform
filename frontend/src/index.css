@@ -103,3 +103,25 @@ html.font-scale-lg {
     opacity: 0;
   }
 }
+
+/* Print styles for certificates, itineraries, and official gazette notices */
+@media print {
+  nav,
+  header,
+  footer,
+  aside,
+  button:not(.print-include),
+  .no-print,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .print-page-break {
+    page-break-before: always;
+  }
+}

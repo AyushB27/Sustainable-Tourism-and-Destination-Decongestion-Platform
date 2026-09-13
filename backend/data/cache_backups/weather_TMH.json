@@ -1,0 +1,15 @@
+{
+  "cache_key": "weather:TMH",
+  "destination_id": "TMH",
+  "api_source": "weather",
+  "fetched_at": "2026-09-13T00:13:27.596294",
+  "expires_at": "2026-09-13T00:43:27.596294",
+  "payload": {
+    "temperature_c": 21.6,
+    "rain_mm": 0.1,
+    "wind_kmh": 5.1,
+    "hazard_score": 0.05,
+    "source": "Open-Meteo Live API",
+    "status": "connected"
+  }
+}

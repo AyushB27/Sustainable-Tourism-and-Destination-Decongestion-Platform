@@ -1,0 +1,11 @@
+{
+  "cache_key": "osm:TMH",
+  "destination_id": "TMH",
+  "api_source": "osm",
+  "fetched_at": "2026-09-12T14:03:09.503856",
+  "expires_at": "2026-09-13T14:03:09.503856",
+  "payload": {
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
+  }
+}

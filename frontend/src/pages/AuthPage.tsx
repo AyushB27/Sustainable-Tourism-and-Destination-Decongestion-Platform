@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { useCorridorStore } from '../store/useCorridorStore';
 import { DEMO_ACCOUNTS } from '../lib/sessionManager';
-import type { UserRole, AuthUser } from '../types';
+import type { UserRole } from '../types';
+import { apiPost } from '../lib/api';
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
@@ -97,48 +98,22 @@ export const AuthPage: React.FC = () => {
 
     try {
       // 1. Attempt real backend login if API is reachable
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email, password, role: activeRole }),
-        signal: AbortSignal.timeout(2500)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === 'success' && data.user) {
-          loginUser(data.user, rememberMe);
-          routeAfterLogin(activeRole);
-          setLoading(false);
-          return;
-        }
+      const data = await apiPost('/api/auth/login', { identifier: email, password, role: activeRole });
+      if (data && data.status === 'success' && data.user) {
+        loginUser(data.user, rememberMe);
+        routeAfterLogin(activeRole);
+        setLoading(false);
+        return;
       }
-    } catch {
-      // Backend offline fallback - continue with mock session verification
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Unable to connect to server. Please ensure the backend is running and try again.');
+      setLoading(false);
+      return;
     }
 
-    // 2. Client-side verified demo authentication
-    const matchingDemo = DEMO_ACCOUNTS.find(
-      d => d.role === activeRole && (d.email.toLowerCase() === email.toLowerCase() || email.includes('@'))
-    );
-
-    const userProfile: AuthUser = matchingDemo
-      ? matchingDemo.user
-      : {
-          id: `USR-${activeRole.toUpperCase()}-${Date.now().toString().slice(-4)}`,
-          name: fullName || email.split('@')[0],
-          role: activeRole,
-          designation: activeRole === 'authority' ? 'Operations Officer' : activeRole === 'provider' ? 'Hospitality Host' : 'Eco-Traveler',
-          department: activeRole === 'authority' ? 'District Cell' : activeRole === 'provider' ? 'Partner Host' : 'Traveler Community',
-          badgeNumber: `ECO-${activeRole.toUpperCase()}-2026`,
-          isAuthenticated: true
-        };
-
-    setTimeout(() => {
-      loginUser(userProfile, rememberMe);
-      routeAfterLogin(activeRole);
-      setLoading(false);
-    }, 400);
+    // Backend returned but login was not successful
+    setErrorMessage('Invalid email or password. Please try again.');
+    setLoading(false);
   };
 
   const roleMeta = {
@@ -300,6 +275,105 @@ export const AuthPage: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* ── FAST 1-CLICK DECOUPLED PERSONA SIMULATOR ── */}
+              <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Instant 1-Click Stakeholder Persona Switcher</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">Zero typing required</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Persona 1: Tourist */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const demo = DEMO_ACCOUNTS.find(d => d.role === 'tourist');
+                      if (demo) handleSelectDemo(demo);
+                    }}
+                    className="p-3 rounded-xl border border-emerald-600/30 hover:border-emerald-500 bg-emerald-950/20 hover:bg-emerald-950/40 text-left transition space-y-1 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Compass className="w-4 h-4 text-emerald-400" />
+                      <span className="text-[9px] font-mono uppercase font-bold text-emerald-400 bg-emerald-900/50 px-1.5 py-0.2 rounded">
+                        Flow 1
+                      </span>
+                    </div>
+                    <div className="font-extrabold text-xs text-white group-hover:text-emerald-300">
+                      Citizen Tourist
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Green planner, dossiers & waste reporting
+                    </p>
+                    <div className="text-[10px] font-bold text-emerald-400 pt-1">
+                      1-Click Enter →
+                    </div>
+                  </button>
+
+                  {/* Persona 2: Authority */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const demo = DEMO_ACCOUNTS.find(d => d.role === 'authority');
+                      if (demo) handleSelectDemo(demo);
+                    }}
+                    className="p-3 rounded-xl border border-amber-600/30 hover:border-amber-500 bg-amber-950/20 hover:bg-amber-950/40 text-left transition space-y-1 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Shield className="w-4 h-4 text-amber-400" />
+                      <span className="text-[9px] font-mono uppercase font-bold text-amber-400 bg-amber-900/50 px-1.5 py-0.2 rounded">
+                        Flow 2
+                      </span>
+                    </div>
+                    <div className="font-extrabold text-xs text-white group-hover:text-amber-300">
+                      District Collector
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      DCC throttles, gazette & waste dispatch
+                    </p>
+                    <div className="text-[10px] font-bold text-amber-400 pt-1">
+                      1-Click Enter →
+                    </div>
+                  </button>
+
+                  {/* Persona 3: Provider */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const demo = DEMO_ACCOUNTS.find(d => d.role === 'provider');
+                      if (demo) handleSelectDemo(demo);
+                    }}
+                    className="p-3 rounded-xl border border-sky-600/30 hover:border-sky-500 bg-sky-950/20 hover:bg-sky-950/40 text-left transition space-y-1 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Building2 className="w-4 h-4 text-sky-400" />
+                      <span className="text-[9px] font-mono uppercase font-bold text-sky-400 bg-sky-900/50 px-1.5 py-0.2 rounded">
+                        Flow 3
+                      </span>
+                    </div>
+                    <div className="font-extrabold text-xs text-white group-hover:text-sky-300">
+                      MTDC Homestay
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Live vacancy sliders & promo codes
+                    </p>
+                    <div className="text-[10px] font-bold text-sky-400 pt-1">
+                      1-Click Enter →
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-slate-800" />
+                <span className="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Or sign in with custom credentials
+                </span>
+                <div className="flex-grow border-t border-slate-800" />
+              </div>
 
               {/* Interactive Form */}
               <form onSubmit={handleSubmit} className="space-y-4">

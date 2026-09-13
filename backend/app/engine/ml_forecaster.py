@@ -11,6 +11,27 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
 
+def _get_historical_lag(destination_id: str, hours_ago: int, fallback: float) -> int:
+    """Query sensor_readings for a visitor count N hours ago. Falls back to estimate if no data."""
+    try:
+        from app.database import get_db_connection
+        from datetime import datetime, timedelta
+        target_time = (datetime.now() - timedelta(hours=hours_ago)).isoformat()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT calculated_inflow FROM sensor_readings
+            WHERE destination_id = ? AND timestamp <= ?
+            ORDER BY timestamp DESC LIMIT 1
+        """, (destination_id, target_time))
+        row = cursor.fetchone()
+        conn.close()
+        if row and row[0] is not None:
+            return int(row[0])
+    except Exception:
+        pass
+    return int(fallback)
+
 ENGINE_DIR = Path(__file__).resolve().parent
 APP_DIR = ENGINE_DIR.parent
 BACKEND_DIR = APP_DIR.parent
@@ -143,11 +164,11 @@ def predict_12hr_crowd_ml(
                 "parking_occupancy_pct": min(100, int((rolling_visitors / base_capacity) * 110)),
                 "active_visitors": int(rolling_visitors),
                 "dcc_load_ratio": round(rolling_visitors / max(dcc_effective_capacity, 1), 3),
-                "visitor_lag_1h": int(rolling_visitors),
-                "visitor_lag_2h": int(rolling_visitors * 0.95),
-                "visitor_lag_24h": int(rolling_visitors * 0.90),
-                "visitor_lag_168h": int(rolling_visitors * (1.1 if step_weekend else 0.85)),
-                "visitor_roll_mean_6h": float(rolling_visitors),
+                "visitor_lag_1h": _get_historical_lag(destination_id, 1, rolling_visitors),
+                "visitor_lag_2h": _get_historical_lag(destination_id, 2, rolling_visitors * 0.95),
+                "visitor_lag_24h": _get_historical_lag(destination_id, 24, rolling_visitors * 0.90),
+                "visitor_lag_168h": _get_historical_lag(destination_id, 168, rolling_visitors * (1.1 if step_weekend else 0.85)),
+                "visitor_roll_mean_6h": float(_get_historical_lag(destination_id, 3, rolling_visitors)),
                 "visitor_roll_std_6h": float(rolling_visitors * 0.12),
                 "rain_x_traffic": rain_mm * traffic_delay,
                 "crowd_pressure": rolling_visitors / base_capacity

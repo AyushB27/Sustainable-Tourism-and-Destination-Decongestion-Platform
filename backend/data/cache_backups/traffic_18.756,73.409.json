@@ -2,11 +2,11 @@
   "cache_key": "traffic:18.756,73.409",
   "destination_id": "",
   "api_source": "traffic",
-  "fetched_at": "2026-09-06T18:28:15.706536",
-  "expires_at": "2026-09-06T18:48:15.706536",
+  "fetched_at": "2026-09-11T19:40:47.887220",
+  "expires_at": "2026-09-11T20:00:47.887220",
   "payload": {
-    "delay_factor": 1.32,
-    "current_speed_kmh": 31.0,
+    "delay_factor": 1.21,
+    "current_speed_kmh": 34.0,
     "free_flow_speed_kmh": 41.0,
     "source": "TomTom Live Traffic API",
     "status": "connected"

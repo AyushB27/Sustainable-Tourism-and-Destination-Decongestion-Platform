@@ -5,9 +5,14 @@ import {
   ShieldCheck, 
   Save, 
   Lock,
-  LogOut
+  LogOut,
+  Coins,
+  Leaf,
+  Ticket,
+  CheckCircle2
 } from 'lucide-react';
 import { useCorridorStore } from '../store/useCorridorStore';
+import { apiGet } from '../lib/api';
 
 export const AccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +33,38 @@ export const AccountPage: React.FC = () => {
   );
   const [newTag, setNewTag] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Eco-Karma Rewards & Ledger States
+  const [rewardsProfile, setRewardsProfile] = useState<{
+    total_points: number;
+    tier: string;
+    ledger: any[];
+    vouchers: any[];
+  }>({
+    total_points: 350,
+    tier: 'Eco Pioneer',
+    ledger: [
+      { id: 1, points_change: 150, activity_type: 'green_transit', description: 'Electric Rail Journey to Matheran Eco-Zone', created_at: '2026-09-11' },
+      { id: 2, points_change: 100, activity_type: 'homestay_booking', description: 'Accredited MTDC Village Homestay Stay', created_at: '2026-09-10' },
+      { id: 3, points_change: 100, activity_type: 'waste_report', description: '100% Dry Waste Repatriation at Valvan Hub', created_at: '2026-09-09' }
+    ],
+    vouchers: [
+      { id: 'VOUCH-01', title: 'MTDC Heritage Homestay ₹500 Discount', points_required: 300, code: 'MTDC-ECO500', category: 'Stay' },
+      { id: 'VOUCH-02', title: 'Matheran Electric Shuttle Free Day Pass', points_required: 200, code: 'MATHERAN-ESHUTTLE', category: 'Transit' },
+      { id: 'VOUCH-03', title: 'GI Mahabaleshwar Organic Strawberry Basket', points_required: 250, code: 'STRAWBERRY-FARM', category: 'Local Food' }
+    ]
+  });
+  const [redeemedCode, setRedeemedCode] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    apiGet(`/api/rewards/profile?user_id=${currentUser.id || 'CITIZEN-GUEST-01'}`)
+      .then(data => {
+        if (data && data.total_points !== undefined) {
+          setRewardsProfile(data);
+        }
+      })
+      .catch(() => {});
+  }, [currentUser.id]);
 
   const styleItems = [
     { key: 'scenic' as const, label: 'Scenic Vistas & Clouds', icon: '🏔️', idx: 0 },
@@ -238,6 +275,122 @@ export const AccountPage: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* ── Eco-Karma Points & MTDC Rewards Ledger (Pillars 2 & 3) ── */}
+      <div className="bg-white rounded-3xl border-2 border-emerald-500/30 p-6 sm:p-8 space-y-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <Coins className="w-6 h-6 text-emerald-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black text-slate-900">Citizen Eco-Karma Balance</h2>
+                <span className="text-xs font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  {rewardsProfile.tier}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Earn points by choosing electric public transit, staying in verified village homestays, and reporting trail waste hotspots.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3 text-center sm:text-right self-start sm:self-auto">
+            <div className="text-2xl font-black text-emerald-800 font-mono">
+              {rewardsProfile.total_points} <span className="text-xs font-sans font-bold">Points</span>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+              Available to Redeem
+            </span>
+          </div>
+        </div>
+
+        {/* Activity Transaction History */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Recent Stewardship Activities</span>
+          </h3>
+          <div className="space-y-2">
+            {rewardsProfile.ledger.map((item, idx) => (
+              <div
+                key={idx}
+                className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-0.5">
+                  <div className="font-bold text-slate-800">{item.description}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    Activity: {item.activity_type} • {item.created_at?.slice(0, 10)}
+                  </div>
+                </div>
+                <div className="font-mono font-black text-sm text-emerald-700 shrink-0">
+                  +{item.points_change} Pts
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Redeemable MTDC Partner Vouchers */}
+        <div className="space-y-3 pt-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Ticket className="w-3.5 h-3.5 text-amber-500" />
+            <span>Redeemable MTDC Partner Vouchers</span>
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {rewardsProfile.vouchers.map((vouch) => {
+              const canAfford = rewardsProfile.total_points >= vouch.points_required;
+              const isRedeemed = redeemedCode === vouch.code;
+
+              return (
+                <div
+                  key={vouch.id}
+                  className="p-4 bg-gradient-to-b from-slate-50 to-white border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3 shadow-2xs hover:border-emerald-400 transition"
+                >
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      {vouch.category}
+                    </span>
+                    <h4 className="font-black text-xs text-slate-900 leading-tight pt-1">
+                      {vouch.title}
+                    </h4>
+                    <div className="text-xs font-mono font-bold text-emerald-700">
+                      {vouch.points_required} Points required
+                    </div>
+                  </div>
+
+                  <div>
+                    {isRedeemed ? (
+                      <div className="p-2 bg-emerald-100 border border-emerald-300 rounded-xl text-center">
+                        <span className="text-[10px] font-mono font-black text-emerald-900 block">
+                          CODE: {vouch.code}
+                        </span>
+                        <span className="text-[9px] text-emerald-700 font-bold flex items-center justify-center gap-1 mt-0.5">
+                          <CheckCircle2 className="w-3 h-3" /> Ready to Use
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!canAfford}
+                        onClick={() => setRedeemedCode(vouch.code)}
+                        className={`w-full py-2 px-3 rounded-xl font-bold text-xs transition ${
+                          canAfford
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                        }`}
+                      >
+                        {canAfford ? 'Redeem Voucher' : 'Need More Points'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* Role Access Gateway */}
       <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 space-y-3">

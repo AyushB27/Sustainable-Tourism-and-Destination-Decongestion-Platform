@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { Destination, TwinRecommendation, DCCMetrics } from '../../types';
 import { useCorridorStore } from '../../store/useCorridorStore';
+import { apiPost } from '../../lib/api';
 
 interface TwinAlternativeCardsProps {
   targetDestination?: Destination;
@@ -40,17 +41,12 @@ export const TwinAlternativeCards: React.FC<TwinAlternativeCardsProps> = ({
     }
 
     // Issue Green Yatra Pass in the backend (fire-and-forget)
-    fetch('http://127.0.0.1:8000/api/passes/issue', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        destination_id: destination.id,
-        destination_name: destination.name,
-        citizen_name: 'Citizen Tourist',
-        carbon_saved_kg: 18.5
-      }),
-      signal: AbortSignal.timeout(3000)
-    }).catch(() => { /* offline — pass still shown in EcoPassCard via Zustand */ });
+    apiPost('/api/passes/issue', {
+      destination_id: destination.id,
+      destination_name: destination.name,
+      citizen_name: 'Citizen Tourist',
+      carbon_saved_kg: 18.5
+    }, { timeoutMs: 3000 }).catch(() => { /* offline — pass still shown in EcoPassCard via Zustand */ });
 
     rerouteToDestination(destination.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });

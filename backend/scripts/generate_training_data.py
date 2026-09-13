@@ -206,17 +206,20 @@ def generate_telemetry_dataset(start_date: datetime, total_days: int = 548):
                 current_visitors = max(50.0, current_visitors + (noisy_inflow - outflow))
                 active_visitors = int(current_visitors)
                 
-                # Traffic delay factor (TomTom correlation)
-                # Traffic surges when visitors surge + rain hazard narrows ghat roads
-                surge_ratio = min(2.5, active_visitors / (base_cap * 0.6))
+                # Traffic delay factor (TomTom correlation with realistic observation noise)
+                # Traffic surges when visitors surge + rain hazard narrows ghat roads + non-tourist variance
+                traffic_noise = np.random.normal(1.0, 0.12)
+                surge_ratio = min(2.5, (active_visitors / (base_cap * 0.6)) * traffic_noise)
                 traffic_delay = round(max(1.0, 1.0 + (surge_ratio - 0.7) * 0.9 + hazard_score * 0.4), 2)
                 traffic_delay = max(1.0, min(3.5, traffic_delay))
                 
-                # Highway vehicle inflow rate (vph)
-                highway_vph = int(min(3200, 350 + (active_visitors / 3.2) * (1.2 if is_weekend else 0.8)))
+                # Highway vehicle inflow rate (vph with sensor detection noise)
+                vph_noise = np.random.normal(1.0, 0.14)
+                highway_vph = int(min(3200, max(80, (350 + (active_visitors / 3.2) * (1.2 if is_weekend else 0.8)) * vph_noise)))
                 
-                # Parking occupancy pct
-                parking_pct = min(100, int((active_visitors / base_cap) * 110))
+                # Parking occupancy pct with turnover and search variance
+                parking_noise = np.random.normal(1.0, 0.10)
+                parking_pct = min(100, max(5, int(((active_visitors / base_cap) * 110) * parking_noise)))
                 
                 # Dynamic Carrying Capacity (DCC) Threshold
                 # DCC shrinks with weather hazard and traffic bottlenecks
@@ -266,16 +269,21 @@ def generate_telemetry_dataset(start_date: datetime, total_days: int = 548):
     df["target_dcc_ratio_1h"] = df.groupby("destination_id")["dcc_load_ratio"].shift(-1)
     df["target_dcc_ratio_12h"] = df.groupby("destination_id")["dcc_load_ratio"].shift(-12)
     
-    # 4-hour forward lookahead for critical breach alert (any breach in [t+1..t+4])
+    # 4-hour forward lookahead for critical breach alert (any breach and onset transition)
     def compute_forward_breach(sub_df):
         is_crit = sub_df["is_critical_breach"].values
         n = len(is_crit)
         forward_any = np.zeros(n, dtype=int)
+        forward_onset = np.zeros(n, dtype=int)
         for i in range(n):
             window = is_crit[i+1 : min(i+5, n)]
             if len(window) > 0 and np.any(window == 1):
                 forward_any[i] = 1
+                # Onset: currently calm/moderate (0), transitioning to breach (1) in next 4 hours
+                if is_crit[i] == 0:
+                    forward_onset[i] = 1
         sub_df["target_breach_next_4h"] = forward_any
+        sub_df["target_breach_onset_4h"] = forward_onset
         return sub_df
 
     df = df.groupby("destination_id", group_keys=False).apply(compute_forward_breach)

@@ -2,8 +2,8 @@
   "cache_key": "traffic:ALB",
   "destination_id": "ALB",
   "api_source": "traffic",
-  "fetched_at": "2026-09-06T20:03:43.976493",
-  "expires_at": "2026-09-06T20:23:43.976493",
+  "fetched_at": "2026-09-13T00:03:24.175563",
+  "expires_at": "2026-09-13T00:23:24.175563",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 27.0,

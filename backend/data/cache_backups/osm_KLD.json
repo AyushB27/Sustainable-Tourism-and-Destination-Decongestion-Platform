@@ -1,0 +1,11 @@
+{
+  "cache_key": "osm:KLD",
+  "destination_id": "KLD",
+  "api_source": "osm",
+  "fetched_at": "2026-09-12T14:03:10.832684",
+  "expires_at": "2026-09-13T14:03:10.832684",
+  "payload": {
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
+  }
+}

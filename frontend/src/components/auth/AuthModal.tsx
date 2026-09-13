@@ -15,6 +15,7 @@ import {
 import { useCorridorStore } from '../../store/useCorridorStore';
 import type { UserRole, AuthUser } from '../../types';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiPost } from '../../lib/api';
 
 export const AuthModal: React.FC = () => {
   const navigate = useNavigate();
@@ -83,6 +84,18 @@ export const AuthModal: React.FC = () => {
     }
   ];
 
+  // Accessibility: close on Escape key
+  useEffect(() => {
+    if (!authModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setAuthModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [authModalOpen, setAuthModalOpen]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -105,43 +118,20 @@ export const AuthModal: React.FC = () => {
 
     try {
       // 1. Try backend authentication
-      const res = await fetch('http://127.0.0.1:8000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, role: selectedTab }),
-        signal: AbortSignal.timeout(3000)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === 'success' && data.user) {
-          onLoginSuccess(data.user);
-          setLoading(false);
-          return;
-        }
+      const data = await apiPost('/api/auth/login', { identifier, password, role: selectedTab });
+      if (data && data.status === 'success' && data.user) {
+        onLoginSuccess(data.user);
+        setLoading(false);
+        return;
       }
-    } catch {
-      // Backend offline fallback
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Login failed. Please check your credentials and try again.');
+      setLoading(false);
+      return;
     }
 
-    // 2. Local Demo Verification
-    if (selectedTab === 'authority') {
-      const match = demoAuthorityProfiles[0];
-      onLoginSuccess(match);
-    } else if (selectedTab === 'provider') {
-      const match = demoProviderProfiles[0];
-      onLoginSuccess(match);
-    } else {
-      onLoginSuccess({
-        id: 'CITIZEN-GUEST-01',
-        name: 'Citizen Tourist',
-        role: 'tourist',
-        designation: 'Green Yatra Pass Holder',
-        department: 'National Tourism Citizen Gateway',
-        badgeNumber: 'IND-YATRA-2026',
-        isAuthenticated: true
-      });
-    }
+    // If backend returned non-success without throwing
+    setErrorMessage('Invalid credentials. Please try again.');
     setLoading(false);
   };
 
@@ -162,8 +152,14 @@ export const AuthModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm">
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm"
+        onClick={(e) => { if (e.target === e.currentTarget) setAuthModalOpen(false); }}
+      >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-modal-title"
           initial={{ opacity: 0, scale: 0.94, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
@@ -176,7 +172,7 @@ export const AuthModal: React.FC = () => {
                 <Compass className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
+                <h3 id="auth-modal-title" className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
                   <span>Sign in to EcoRoute</span>
                 </h3>
                 <p className="text-xs text-slate-400">

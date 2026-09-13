@@ -1,0 +1,11 @@
+{
+  "cache_key": "osm:HAR",
+  "destination_id": "HAR",
+  "api_source": "osm",
+  "fetched_at": "2026-09-12T14:03:10.303886",
+  "expires_at": "2026-09-13T14:03:10.303886",
+  "payload": {
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
+  }
+}

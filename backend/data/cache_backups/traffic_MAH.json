@@ -2,8 +2,8 @@
   "cache_key": "traffic:MAH",
   "destination_id": "MAH",
   "api_source": "traffic",
-  "fetched_at": "2026-09-06T20:03:43.973015",
-  "expires_at": "2026-09-06T20:23:43.973015",
+  "fetched_at": "2026-09-13T00:03:23.546944",
+  "expires_at": "2026-09-13T00:23:23.546944",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 7.0,

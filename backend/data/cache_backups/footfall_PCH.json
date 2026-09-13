@@ -1,0 +1,20 @@
+{
+  "cache_key": "footfall:PCH",
+  "destination_id": "PCH",
+  "api_source": "footfall",
+  "fetched_at": "2026-09-12T19:03:03.794188",
+  "expires_at": "2026-09-13T01:03:03.794188",
+  "payload": {
+    "footfall_factor": 2.0,
+    "live_busyness_pct": 100,
+    "raw_busyness_pct": 95,
+    "calibration_factor": 1.05,
+    "source": "BestTime Live API",
+    "status": "connected",
+    "destination_id": "PCH",
+    "destination_name": "Lonavala & Khandala Corridor",
+    "profile_name": "Peak Landmark Corridor",
+    "venue_id": "ven_454e4e686e4a7046453659526b6f775a6c3673525158614a496843",
+    "day_name": "Saturday"
+  }
+}
