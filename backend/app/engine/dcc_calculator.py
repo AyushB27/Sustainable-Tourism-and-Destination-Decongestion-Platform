@@ -48,14 +48,15 @@ def generate_12hr_forecast(
     base_inflow: int,
     physical_capacity: int,
     weather_hazard: float,
-    dwell_hrs: float
+    dwell_hrs: float,
+    start_hour: int = None
 ) -> List[Dict[str, Any]]:
     """
     Generates a 12-hour hourly predictive demand curve for a destination.
     Applies Gaussian peak surges around 11:00 AM - 03:00 PM.
     """
     from datetime import datetime
-    current_hour = datetime.now().hour
+    current_hour = start_hour if start_hour is not None else datetime.now().hour
     hours = [(current_hour + i) % 24 for i in range(13)]
     
     curve = []

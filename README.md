@@ -74,17 +74,51 @@ All comprehensive project documentation is organized in the [`docs/`](./docs) di
 
 ## Quick Start
 
-### 1. Python Backend Server
+### 1. Python Backend Server (Virtual Environment)
+
+#### Step 1: Initialize Virtual Environment & Install Dependencies
 ```bash
 cd backend
-python test_backend.py   # Run automated unit tests
-python main.py           # Starts REST server at http://127.0.0.1:8000
+
+# Create virtual environment
+python -m venv .venv
+
+# Activate the virtual environment
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# On Windows (Command Prompt):
+.venv\Scripts\activate.bat
+# On macOS/Linux:
+source .venv/bin/activate
+
+# Install all required dependencies
+pip install -r requirements.txt
 ```
-Interactive Swagger API documentation is available at `http://127.0.0.1:8000/docs`.
+
+> **Note**: Both `main.py` and `test_backend.py` are equipped with automatic `.venv` detection. If a local `.venv` exists in `backend/`, running `python main.py` or `python test_backend.py` from any terminal will automatically switch to the virtual environment interpreter!
+> On Windows, you can also simply run `.\run.bat` or `.\run.ps1` from the `backend/` directory or `run_backend.bat` from the root.
+
+#### Step 2: Run Unit Tests & Launch Server
+```bash
+# Run automated unit test suite (12 tests)
+python test_backend.py
+
+# Start the REST API server (runs at http://127.0.0.1:8000)
+python main.py
+```
+Interactive Swagger API documentation and OpenAPI schemas are available at `http://127.0.0.1:8000/docs`.
+
+---
 
 ### 2. React Frontend Portal
 ```bash
 cd frontend
-npm install              # Install dependencies
-npm run dev              # Starts development server at http://localhost:5173
+
+# Install Node.js dependencies
+npm install
+
+# Start the Vite development server
+npm run dev
 ```
+The frontend application will be live at `http://localhost:5173`.
+

@@ -1,7 +1,15 @@
-# Optional high-performance web framework dependencies
-# The backend runs natively with 0 dependencies using standard Python libraries,
-# but installing these enables asynchronous speed and the interactive Swagger /docs UI.
+# Backend Core & API Dependencies
+requests>=2.31.0
 fastapi>=0.110.0
 uvicorn>=0.28.0
 pydantic>=2.6.0
-requests>=2.31.0
+
+# Authentication & Security
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+
+# Machine Learning & Data Processing
+numpy>=1.26.0
+pandas>=2.0.0
+scikit-learn>=1.4.0
+xgboost>=2.0.0

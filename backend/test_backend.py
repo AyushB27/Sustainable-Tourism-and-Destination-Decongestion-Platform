@@ -3,6 +3,17 @@ import json
 import sys
 from pathlib import Path
 
+# Auto-switch to local .venv interpreter if launched from system Python
+_backend_dir = Path(__file__).resolve().parent
+_venv_python = _backend_dir / ".venv" / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+if _venv_python.exists():
+    try:
+        if Path(sys.executable).resolve() != _venv_python.resolve():
+            import subprocess
+            sys.exit(subprocess.call([str(_venv_python)] + sys.argv))
+    except Exception:
+        pass
+
 # Add backend directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -53,7 +64,7 @@ class TestEcoRouteBackend(unittest.TestCase):
 
     def test_12hr_forecast_generation(self):
         """Verify 12-hour hourly predictive demand curve structure."""
-        forecast = generate_12hr_forecast(5000, 8000, 0.20, 3.0)
+        forecast = generate_12hr_forecast(5000, 8000, 0.20, 3.0, start_hour=6)
         self.assertEqual(len(forecast), 13, "Should generate 13 forecast intervals from 06:00 to 18:00")
         self.assertTrue(any(pt["hour"] == "12:00" for pt in forecast))
         # Peak at midday

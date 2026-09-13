@@ -80,17 +80,32 @@ git clone <repository_url>
 cd "SIH Prototype/Travel & Tourism/Prototype"
 ```
 
-### Step 2: Set Up Backend
-The backend can run natively using Python's standard library with **zero external package installations**:
+### Step 2: Set Up Backend (Virtual Environment)
+It is recommended to run the backend inside a dedicated Python virtual environment (`.venv`):
 ```bash
 cd backend
-python test_backend.py
-```
 
-To enable high-performance asynchronous execution and Swagger OpenAPI exploration:
-```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate virtual environment
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# Windows (Command Prompt):
+.venv\Scripts\activate.bat
+# Linux/macOS:
+source .venv/bin/activate
+
+# Install all backend requirements
 pip install -r requirements.txt
+
+# Run automated tests
+python test_backend.py
+
+# Start the server
+python main.py
 ```
+> **Tip**: `main.py` and `test_backend.py` include automatic `.venv` detection and will forward execution to `.venv\Scripts\python.exe` even if launched with system Python. Windows helper scripts `run.bat` and `run.ps1` are also provided.
 
 ### Step 3: Set Up Frontend
 Install frontend npm packages:

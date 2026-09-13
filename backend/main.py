@@ -6,6 +6,17 @@ from datetime import datetime
 from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
+# Auto-switch to local .venv interpreter if launched from system Python
+_backend_dir = Path(__file__).resolve().parent
+_venv_python = _backend_dir / ".venv" / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+if _venv_python.exists():
+    try:
+        if Path(sys.executable).resolve() != _venv_python.resolve():
+            import subprocess
+            sys.exit(subprocess.call([str(_venv_python)] + sys.argv))
+    except Exception:
+        pass
+
 # Ensure UTF-8 output encoding across Windows shells to avoid charmap UnicodeEncodeErrors
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
