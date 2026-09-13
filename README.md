@@ -96,7 +96,6 @@ pip install -r requirements.txt
 ```
 
 > **Note**: Both `main.py` and `test_backend.py` are equipped with automatic `.venv` detection. If a local `.venv` exists in `backend/`, running `python main.py` or `python test_backend.py` from any terminal will automatically switch to the virtual environment interpreter!
-> On Windows, you can also simply run `.\run.bat` or `.\run.ps1` from the `backend/` directory or `run_backend.bat` from the root.
 
 #### Step 2: Run Unit Tests & Launch Server
 ```bash

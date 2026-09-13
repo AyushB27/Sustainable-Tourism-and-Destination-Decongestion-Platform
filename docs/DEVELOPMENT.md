@@ -105,7 +105,7 @@ python test_backend.py
 # Start the server
 python main.py
 ```
-> **Tip**: `main.py` and `test_backend.py` include automatic `.venv` detection and will forward execution to `.venv\Scripts\python.exe` even if launched with system Python. Windows helper scripts `run.bat` and `run.ps1` are also provided.
+> **Tip**: `main.py` and `test_backend.py` include automatic `.venv` detection and will forward execution to `.venv\Scripts\python.exe` even if launched with system Python.
 
 ### Step 3: Set Up Frontend
 Install frontend npm packages:
