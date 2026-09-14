@@ -2,8 +2,8 @@
   "cache_key": "osm:SHI",
   "destination_id": "SHI",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T14:03:09.506198",
-  "expires_at": "2026-09-13T14:03:09.506198",
+  "fetched_at": "2026-09-13T18:47:11.914589",
+  "expires_at": "2026-09-14T18:47:11.914589",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

@@ -15,6 +15,7 @@ import { useCorridorStore } from '../store/useCorridorStore';
 import { calculateDCCMetrics, calculateCosineSimilarity } from '../lib/engine';
 import type { DestinationCategory } from '../types';
 import { TouristCorridorMap } from '../components/tourist/TouristCorridorMap';
+import { TRANSLATIONS } from '../lib/i18n';
 
 export const DiscoverPage: React.FC = () => {
 
@@ -22,8 +23,10 @@ export const DiscoverPage: React.FC = () => {
     destinations,
     userPreferences,
     togglePreferenceTag,
-    currentUser
+    currentUser,
+    language
   } = useCorridorStore();
+  const t = TRANSLATIONS[language] || TRANSLATIONS.en;
 
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | DestinationCategory>('ALL');
@@ -32,10 +35,10 @@ export const DiscoverPage: React.FC = () => {
 
   // Style tags corresponding to vector indices [scenic, budget, adventure, family]
   const styleTags: Array<{ key: 'scenic' | 'budget' | 'adventure' | 'family'; label: string; icon: string; index: number }> = [
-    { key: 'scenic', label: 'Scenic Vistas', icon: '🏔️', index: 0 },
-    { key: 'budget', label: 'Budget-Friendly', icon: '💰', index: 1 },
-    { key: 'adventure', label: 'Adventure & Treks', icon: '🥾', index: 2 },
-    { key: 'family', label: 'Family Comfort', icon: '👨‍👩‍👧‍👦', index: 3 }
+    { key: 'scenic', label: t.dpStyleScenic, icon: '🏔️', index: 0 },
+    { key: 'budget', label: t.dpStyleBudget, icon: '💰', index: 1 },
+    { key: 'adventure', label: t.dpStyleAdventure, icon: '🥾', index: 2 },
+    { key: 'family', label: t.dpStyleFamily, icon: '👨‍👩‍👧‍👦', index: 3 }
   ];
 
   // Algorithmic Feed Ranking (§4.5)
@@ -91,13 +94,13 @@ export const DiscoverPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-extrabold text-gov-navy uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Curated Just For You</span>
+            <span>{t.dpEyebrow}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Personalized & Hidden Gem Escapes
+            {t.dpTitle}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-            Discover breathtaking, peaceful getaways matched to your travel vibe. Skip the highway gridlock and enjoy queue-free holidays across Maharashtra.
+            {t.dpSubtitle}
           </p>
         </div>
 
@@ -107,7 +110,7 @@ export const DiscoverPage: React.FC = () => {
             🧭
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">Personalizing From</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">{t.dpPersonalizingFrom}</span>
             <strong className="text-slate-900">{currentUser.homeCity || 'Mumbai/Pune Hub'}, {currentUser.homeState || 'MH'}</strong>
           </div>
         </div>
@@ -118,7 +121,7 @@ export const DiscoverPage: React.FC = () => {
         {/* Style Vector Tap-Cards (§4.3, §4.5) */}
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700 block">
-            What kind of holiday are you looking for? (Tap to select):
+            {t.dpStyleQuestion}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {styleTags.map(tag => {
@@ -139,7 +142,7 @@ export const DiscoverPage: React.FC = () => {
                     <div>
                       <span className="font-bold text-xs block">{tag.label}</span>
                       <span className={`text-[10px] ${active ? 'text-amber-300' : 'text-slate-400'}`}>
-                        {active ? 'Priority (High)' : 'Standard'}
+                        {active ? t.dpPriorityHigh : t.dpStandard}
                       </span>
                     </div>
                   </div>
@@ -154,7 +157,7 @@ export const DiscoverPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 text-xs">
           {/* Category Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 font-bold">
-            <span className="text-slate-400 text-[11px] mr-1 shrink-0">Category:</span>
+            <span className="text-slate-400 text-[11px] mr-1 shrink-0">{t.dpCategoryLabel}</span>
             {categories.map(cat => (
               <button
                 key={cat}
@@ -166,7 +169,7 @@ export const DiscoverPage: React.FC = () => {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {cat === 'ALL' ? 'All Categories' : cat}
+                {cat === 'ALL' ? t.dpAllCategories : cat}
               </button>
             ))}
           </div>
@@ -178,7 +181,7 @@ export const DiscoverPage: React.FC = () => {
               onClick={() => setDistanceFilter(distanceFilter === 'ALL' ? 'DAY_TRIP' : distanceFilter === 'DAY_TRIP' ? 'WEEKEND' : 'ALL')}
               className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold"
             >
-              Distance: <strong>{distanceFilter === 'ALL' ? 'Any' : distanceFilter === 'DAY_TRIP' ? 'Day-Trip (<110km)' : 'Weekend (>110km)'}</strong>
+              {t.dpDistanceLabel} <strong>{distanceFilter === 'ALL' ? t.dpDistanceAny : distanceFilter === 'DAY_TRIP' ? t.dpDistanceDayTrip : t.dpDistanceWeekend}</strong>
             </button>
 
             <button
@@ -190,7 +193,7 @@ export const DiscoverPage: React.FC = () => {
                   : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
               }`}
             >
-              <span>🌿 Under-Visited Only</span>
+              <span>{t.dpUnderVisitedOnly}</span>
             </button>
           </div>
         </div>
@@ -200,9 +203,9 @@ export const DiscoverPage: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-semibold bg-white p-3 rounded-2xl border border-slate-200">
           <div className="flex items-center gap-3">
-            <span>Found <strong className="text-slate-900">{rankedDestinations.length}</strong> destinations matching your travel vibe</span>
+            <span>{t.dpFoundPrefix} <strong className="text-slate-900">{rankedDestinations.length}</strong> {t.dpFoundSuffix}</span>
             <span className="hidden sm:inline-block text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-              ✨ Ranked by calmest crowds & lowest impact
+              {t.dpRankedBadge}
             </span>
           </div>
 
@@ -216,7 +219,7 @@ export const DiscoverPage: React.FC = () => {
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Grid View</span>
+              <span>{t.dpGridView}</span>
             </button>
             <button
               type="button"
@@ -226,7 +229,7 @@ export const DiscoverPage: React.FC = () => {
               }`}
             >
               <MapIcon className="w-3.5 h-3.5" />
-              <span>Corridor GIS Map</span>
+              <span>{t.dpMapView}</span>
             </button>
           </div>
         </div>
@@ -236,10 +239,9 @@ export const DiscoverPage: React.FC = () => {
         ) : rankedDestinations.length === 0 ? (
           <div className="p-12 bg-slate-50 rounded-3xl border-2 border-slate-200 text-center space-y-3">
             <span className="text-4xl block">🔍</span>
-            <h3 className="text-lg font-bold text-slate-900">No matching escapes found</h3>
+            <h3 className="text-lg font-bold text-slate-900">{t.dpNoResultsTitle}</h3>
             <p className="text-slate-500 text-sm">
-              We couldn't find any destinations matching your exact filter combination. 
-              Try adjusting your category or distance preferences.
+              {t.dpNoResultsDesc}
             </p>
           </div>
         ) : (
@@ -249,17 +251,17 @@ export const DiscoverPage: React.FC = () => {
               OPTIMAL: {
                 badge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
                 icon: <ShieldCheck className="w-3.5 h-3.5 text-gov-green" />,
-                text: 'Optimal Headroom'
+                text: t.dpStatusOptimal
               },
               MODERATE: {
                 badge: 'bg-amber-100 text-amber-900 border-amber-300',
                 icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />,
-                text: 'Moderate Crowd'
+                text: t.dpStatusModerate
               },
               CRITICAL: {
                 badge: 'bg-rose-100 text-rose-900 border-rose-300 animate-pulse',
                 icon: <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />,
-                text: 'Heavily Crowded'
+                text: t.dpStatusCritical
               }
             }[metrics.status];
 
@@ -283,7 +285,7 @@ export const DiscoverPage: React.FC = () => {
                     {/* Hidden Gem Badge */}
                     {spot.isUnderVisited ? (
                       <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shadow flex items-center gap-1">
-                        🌿 Hidden Gem • Peaceful
+                        {t.dpHiddenGemBadge}
                       </span>
                     ) : (
                       <span className="absolute top-3 left-3 bg-white/95 text-slate-900 text-[10px] font-black px-2.5 py-1 rounded-xl shadow">
@@ -292,7 +294,7 @@ export const DiscoverPage: React.FC = () => {
                     )}
 
                     <span className="absolute top-3 right-3 bg-gov-navy/90 backdrop-blur-sm text-amber-300 text-[10px] font-black px-2.5 py-1 rounded-xl border border-amber-300/30">
-                      {matchPct}% Match
+                      {matchPct}% {t.dpMatchSuffix}
                     </span>
 
                     <div className="absolute bottom-3 left-3 right-3 text-white">
@@ -313,7 +315,7 @@ export const DiscoverPage: React.FC = () => {
                         <span>{statusConfig.text}</span>
                       </div>
                       <span className="font-mono text-[11px]">
-                        {metrics.waitTimeMinutes}m wait
+                        {metrics.waitTimeMinutes}{t.dpWaitSuffix}
                       </span>
                     </div>
 
@@ -326,7 +328,7 @@ export const DiscoverPage: React.FC = () => {
                         <Car className="w-3.5 h-3.5 text-slate-400" />
                         {spot.travelTimeFromHub}
                       </span>
-                      <span>{spot.distanceKmFromHub} km from hub</span>
+                      <span>{spot.distanceKmFromHub} {t.dpKmFromHub}</span>
                     </div>
 
                     {/* Best for tags */}
@@ -344,13 +346,13 @@ export const DiscoverPage: React.FC = () => {
                 <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{metrics.status === 'OPTIMAL' ? 'Queue-Free Entry' : metrics.status === 'MODERATE' ? 'Moderate Inflow' : 'Peak Waiting Times'}</span>
+                    <span>{metrics.status === 'OPTIMAL' ? t.dpQueueFree : metrics.status === 'MODERATE' ? t.dpModerateInflow : t.dpPeakWaiting}</span>
                   </span>
                   <Link
                     to={`/spot/${spot.id}`}
                     className="inline-flex items-center gap-1 bg-gov-navy hover:bg-gov-navy-light text-amber-300 font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm"
                   >
-                    <span>View Spot Page</span>
+                    <span>{t.dpViewSpotPage}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useCorridorStore } from './store/useCorridorStore';
 import { AuthModal } from './components/auth/AuthModal';
 import { RoleGuard } from './components/auth/RoleGuard';
@@ -33,6 +33,18 @@ import { DevPortal } from './components/developer/DevPortal';
 import { NgoDashboardPage } from './pages/NgoDashboardPage';
 import { CommunityDashboardPage } from './pages/CommunityDashboardPage';
 
+// React Router doesn't reset scroll position on client-side navigation by
+// default, so a click on a link deep down a long page (e.g. "Plan a Trip"
+// on the Spot page) lands on the new page still scrolled to the same
+// offset, which looks like the navigation silently failed.
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export function App() {
   const { fetchLiveBackendFeed } = useCorridorStore();
 
@@ -49,6 +61,8 @@ export function App() {
     <>
       {/* Global Stakeholder Authentication Modal */}
       <AuthModal />
+
+      <ScrollToTop />
 
       {/* Role-Isolated Routing Hierarchy */}
       <Routes>
@@ -68,6 +82,7 @@ export function App() {
           <Route path="/region/:type/:value" element={<RegionPage />} />
           <Route path="/spot/:spotId" element={<SpotPage />} />
           <Route path="/plan" element={<TripPlannerPage />} />
+          <Route path="/plan/new" element={<TripPlannerPage />} />
           <Route path="/itinerary" element={<Navigate to="/plan" replace />} />
           <Route path="/plan/:tripId" element={<SavedTripDetailPage />} />
           <Route path="/trips" element={<MyTripsPage />} />

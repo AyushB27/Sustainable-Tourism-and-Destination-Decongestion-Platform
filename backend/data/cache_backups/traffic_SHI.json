@@ -2,8 +2,8 @@
   "cache_key": "traffic:SHI",
   "destination_id": "SHI",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:03:23.710846",
-  "expires_at": "2026-09-13T00:23:23.710846",
+  "fetched_at": "2026-09-13T20:38:51.880357",
+  "expires_at": "2026-09-13T20:58:51.880357",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 48.0,

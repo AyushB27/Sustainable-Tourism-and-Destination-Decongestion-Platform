@@ -2,8 +2,8 @@
   "cache_key": "traffic:HAR",
   "destination_id": "HAR",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:13:28.005258",
-  "expires_at": "2026-09-13T00:18:28.005258",
+  "fetched_at": "2026-09-13T20:38:51.649042",
+  "expires_at": "2026-09-13T20:43:51.649042",
   "payload": {
     "delay_factor": 1.15,
     "current_speed_kmh": 52.0,

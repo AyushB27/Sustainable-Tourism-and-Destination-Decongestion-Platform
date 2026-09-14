@@ -2,10 +2,10 @@
   "cache_key": "osm:VEL",
   "destination_id": "VEL",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T14:03:08.699957",
-  "expires_at": "2026-09-13T14:03:08.699957",
+  "fetched_at": "2026-09-13T18:47:13.311848",
+  "expires_at": "2026-09-14T18:47:13.311848",
   "payload": {
-    "osm_poi_nodes": 12,
-    "osm_status": "live_verified"
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
   }
 }

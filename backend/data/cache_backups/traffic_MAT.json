@@ -2,11 +2,11 @@
   "cache_key": "traffic:MAT",
   "destination_id": "MAT",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:03:24.408179",
-  "expires_at": "2026-09-13T00:23:24.408179",
+  "fetched_at": "2026-09-13T20:38:52.086702",
+  "expires_at": "2026-09-13T20:58:52.086702",
   "payload": {
-    "delay_factor": 1.0,
-    "current_speed_kmh": 43.0,
+    "delay_factor": 1.19,
+    "current_speed_kmh": 36.0,
     "free_flow_speed_kmh": 43.0,
     "source": "TomTom Live Traffic API",
     "status": "connected"

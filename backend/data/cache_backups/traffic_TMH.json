@@ -2,8 +2,8 @@
   "cache_key": "traffic:TMH",
   "destination_id": "TMH",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:03:23.832604",
-  "expires_at": "2026-09-13T00:23:23.832604",
+  "fetched_at": "2026-09-13T20:38:52.076953",
+  "expires_at": "2026-09-13T20:58:52.076953",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 38.0,

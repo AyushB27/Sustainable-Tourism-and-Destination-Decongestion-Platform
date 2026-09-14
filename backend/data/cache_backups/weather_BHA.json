@@ -2,12 +2,12 @@
   "cache_key": "weather:BHA",
   "destination_id": "BHA",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T00:13:27.380420",
-  "expires_at": "2026-09-13T00:43:27.380420",
+  "fetched_at": "2026-09-13T20:18:37.744840",
+  "expires_at": "2026-09-13T20:48:37.744840",
   "payload": {
-    "temperature_c": 20.6,
-    "rain_mm": 0.2,
-    "wind_kmh": 7.8,
+    "temperature_c": 20.3,
+    "rain_mm": 0.3,
+    "wind_kmh": 8.0,
     "hazard_score": 0.06,
     "source": "Open-Meteo Live API",
     "status": "connected"

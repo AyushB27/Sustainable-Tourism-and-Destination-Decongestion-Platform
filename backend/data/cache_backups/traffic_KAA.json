@@ -2,8 +2,8 @@
   "cache_key": "traffic:KAA",
   "destination_id": "KAA",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:03:23.854506",
-  "expires_at": "2026-09-13T00:23:23.854506",
+  "fetched_at": "2026-09-13T20:23:44.633331",
+  "expires_at": "2026-09-13T20:43:44.633331",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 42.0,

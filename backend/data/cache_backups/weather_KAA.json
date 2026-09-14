@@ -2,13 +2,13 @@
   "cache_key": "weather:KAA",
   "destination_id": "KAA",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T00:13:27.350222",
-  "expires_at": "2026-09-13T00:43:27.350222",
+  "fetched_at": "2026-09-13T20:18:37.570178",
+  "expires_at": "2026-09-13T20:48:37.570178",
   "payload": {
-    "temperature_c": 18.1,
-    "rain_mm": 0.0,
-    "wind_kmh": 9.2,
-    "hazard_score": 0.06,
+    "temperature_c": 18.3,
+    "rain_mm": 0.1,
+    "wind_kmh": 13.8,
+    "hazard_score": 0.09,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

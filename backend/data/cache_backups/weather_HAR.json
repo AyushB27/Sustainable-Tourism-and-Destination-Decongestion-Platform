@@ -2,12 +2,12 @@
   "cache_key": "weather:HAR",
   "destination_id": "HAR",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T00:13:27.250096",
-  "expires_at": "2026-09-13T00:43:27.250096",
+  "fetched_at": "2026-09-13T20:18:37.753026",
+  "expires_at": "2026-09-13T20:48:37.753026",
   "payload": {
     "temperature_c": 16.5,
-    "rain_mm": 0.0,
-    "wind_kmh": 8.7,
+    "rain_mm": 0.1,
+    "wind_kmh": 7.6,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"

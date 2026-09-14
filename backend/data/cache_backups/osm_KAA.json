@@ -2,8 +2,8 @@
   "cache_key": "osm:KAA",
   "destination_id": "KAA",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T14:03:09.507129",
-  "expires_at": "2026-09-13T14:03:09.507129",
+  "fetched_at": "2026-09-13T18:47:11.909416",
+  "expires_at": "2026-09-14T18:47:11.909416",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

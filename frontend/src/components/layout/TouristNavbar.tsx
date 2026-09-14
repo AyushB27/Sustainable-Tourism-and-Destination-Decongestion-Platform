@@ -9,7 +9,6 @@ import {
   Sparkles,
   MapPin,
   Calendar,
-  AlertTriangle,
   ChevronDown,
   Languages
 } from 'lucide-react';
@@ -24,7 +23,6 @@ export const TouristNavbar: React.FC = () => {
   const {
     currentUser,
     logoutUser,
-    advisories,
     language,
     setLanguage
   } = useCorridorStore();
@@ -33,8 +31,6 @@ export const TouristNavbar: React.FC = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-  const criticalAdvisories = advisories.filter(a => a.active && (a.severity === 'critical' || a.severity === 'high'));
 
   const navLinks = [
     { to: '/', label: t.navExplore || 'Explore', icon: <MapPin className="w-4 h-4" /> },
@@ -202,27 +198,6 @@ export const TouristNavbar: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Contextual Advisory Banner (Only shown when active danger exists) */}
-      {criticalAdvisories.length > 0 && (
-        <div className="bg-amber-500/10 border-t border-b border-amber-500/30 px-4 py-2 text-xs text-amber-900 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 max-w-4xl overflow-hidden truncate">
-            <span className="bg-amber-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase shrink-0 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Alert
-            </span>
-            <span className="font-medium truncate">
-              {criticalAdvisories[0].title}: {criticalAdvisories[0].message}
-            </span>
-          </div>
-          <Link
-            to={`/spot/${criticalAdvisories[0].destinationId === 'ALL' ? 'LON' : criticalAdvisories[0].destinationId}`}
-            className="text-amber-800 font-bold hover:underline shrink-0 text-xs"
-          >
-            Check status →
-          </Link>
-        </div>
-      )}
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (

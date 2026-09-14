@@ -2,8 +2,8 @@
   "cache_key": "traffic:BHA",
   "destination_id": "BHA",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:03:23.833856",
-  "expires_at": "2026-09-13T00:23:23.833856",
+  "fetched_at": "2026-09-13T20:23:44.657126",
+  "expires_at": "2026-09-13T20:43:44.657126",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 37.0,

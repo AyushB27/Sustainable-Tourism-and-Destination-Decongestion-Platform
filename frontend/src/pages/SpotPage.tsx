@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useSpotData } from '../hooks/useSpotData';
 import { useCorridorStore } from '../store/useCorridorStore';
+import { TRANSLATIONS } from '../lib/i18n';
 
 export const SpotPage: React.FC = () => {
   const { spotId } = useParams<{ spotId: string }>();
@@ -38,8 +39,10 @@ export const SpotPage: React.FC = () => {
   const {
     currentUser,
     updateDestinationHotelOccupancy,
-    addPromotion
+    addPromotion,
+    language
   } = useCorridorStore();
+  const t = TRANSLATIONS[language] || TRANSLATIONS.en;
 
   const {
     spot,
@@ -47,7 +50,6 @@ export const SpotPage: React.FC = () => {
     telemetry,
     forecast,
     twins,
-    advisories,
     checkIns,
     addCheckIn,
     notFound
@@ -103,22 +105,22 @@ export const SpotPage: React.FC = () => {
     return (
       <div className="min-h-[70vh] max-w-4xl mx-auto px-4 py-16 text-center space-y-4">
         <Compass className="w-12 h-12 mx-auto text-slate-400 animate-spin" />
-        <h1 className="text-2xl font-bold text-slate-800">Destination Not Found</h1>
+        <h1 className="text-2xl font-bold text-slate-800">{t.spNotFoundTitle}</h1>
         <p className="text-sm text-slate-600">
-          The requested destination &ldquo;{spotId}&rdquo; is not part of the active Western Ghats & Maharashtra Corridor registry.
+          {t.spNotFoundDesc}
         </p>
         <div className="pt-4 flex justify-center gap-3">
           <button
             onClick={() => navigate('/discover')}
             className="px-5 py-2.5 bg-gov-navy text-amber-300 font-bold text-xs rounded-xl shadow"
           >
-            Explore Discover Feed
+            {t.spExploreDiscoverBtn}
           </button>
           <button
             onClick={() => navigate('/region/state/Maharashtra')}
             className="px-5 py-2.5 bg-slate-200 text-slate-800 font-bold text-xs rounded-xl hover:bg-slate-300"
           >
-            View All Maharashtra Destinations
+            {t.spViewAllMhBtn}
           </button>
         </div>
       </div>
@@ -127,28 +129,28 @@ export const SpotPage: React.FC = () => {
 
   const statusConfig = {
     OPTIMAL: {
-      headline: 'Low Crowds • Prime Time to Visit',
+      headline: t.spStatusOptimalHeadline,
       badge: 'bg-emerald-100 text-emerald-900 border-emerald-400',
       badgeText: 'text-emerald-800',
       barColor: 'bg-emerald-500',
       icon: <ShieldCheck className="w-5 h-5 text-gov-green shrink-0" />,
-      subtext: 'Carrying capacity is completely unhurried. Ample parking & zero highway bottleneck.'
+      subtext: t.spStatusOptimalSub
     },
     MODERATE: {
-      headline: 'Moderate Influx • Steady Movement',
+      headline: t.spStatusModerateHeadline,
       badge: 'bg-amber-100 text-amber-950 border-amber-400',
       badgeText: 'text-amber-800',
       barColor: 'bg-amber-500',
       icon: <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />,
-      subtext: 'Approaching peak weekend limits. Visit before 10 AM or after 4 PM for ideal comfort.'
+      subtext: t.spStatusModerateSub
     },
     CRITICAL: {
-      headline: 'Heavily Overcrowded • Severe Chokepoints',
+      headline: t.spStatusCriticalHeadline,
       badge: 'bg-rose-100 text-rose-950 border-rose-500 animate-pulse',
       badgeText: 'text-rose-800',
       barColor: 'bg-rose-500',
       icon: <AlertOctagon className="w-5 h-5 text-rose-600 shrink-0" />,
-      subtext: 'Checkpoints saturated. Long parking queues. We strongly suggest taking a twin destination below.'
+      subtext: t.spStatusCriticalSub
     }
   }[metrics.status];
 
@@ -189,37 +191,6 @@ export const SpotPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-      {/* ── 6. ACTIVE ADVISORIES (Displayed prominently above the fold) ── */}
-      {advisories.length > 0 && (
-        <div className="space-y-2">
-          {advisories.map(adv => (
-            <div
-              key={adv.id}
-              className={`p-4 rounded-2xl border-2 flex items-start justify-between gap-3 shadow-sm ${
-                adv.severity === 'critical' || adv.severity === 'high'
-                  ? 'bg-rose-50 border-rose-400 text-rose-950'
-                  : 'bg-amber-50 border-amber-400 text-amber-950'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <AlertOctagon className="w-5 h-5 text-rose-600 mt-0.5 shrink-0 animate-pulse" />
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap font-black text-sm">
-                    <span>{adv.title}</span>
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-white/80 border border-current">
-                      Official Gazette • {adv.severity}
-                    </span>
-                    <span className="text-[11px] font-normal opacity-75">{adv.timestamp}</span>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed opacity-90">{adv.message}</p>
-                  <p className="text-[10px] opacity-70 mt-1">Dispatched by: {adv.author}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* ── 1. HEADER (Hero image, category, district, state, compact Leaflet map preview) ── */}
       <section className="bg-white rounded-3xl border-2 border-slate-300 overflow-hidden shadow-sm">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
@@ -252,7 +223,7 @@ export const SpotPage: React.FC = () => {
                 </Link>
                 {spot.isUnderVisited && (
                   <span className="bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow flex items-center gap-1">
-                    🌿 Under-visited Eco-Gem
+                    {t.spUnderVisitedBadge}
                   </span>
                 )}
               </div>
@@ -266,11 +237,11 @@ export const SpotPage: React.FC = () => {
               </p>
 
               <div className="pt-2 flex items-center gap-4 text-xs text-slate-300 flex-wrap">
-                <span>Travel Time: <strong className="text-white">{spot.travelTimeFromHub}</strong></span>
+                <span>{t.spTravelTime} <strong className="text-white">{spot.travelTimeFromHub}</strong></span>
                 <span>•</span>
-                <span>Distance: <strong className="text-white">{spot.distanceKmFromHub} km</strong></span>
+                <span>{t.spDistance} <strong className="text-white">{spot.distanceKmFromHub} km</strong></span>
                 <span>•</span>
-                <span>Statutory Capacity: <strong className="text-white">{spot.physicalCapacity.toLocaleString()} visitors</strong></span>
+                <span>{t.spStatutoryCapacity} <strong className="text-white">{spot.physicalCapacity.toLocaleString()} visitors</strong></span>
               </div>
             </div>
           </div>
@@ -280,7 +251,7 @@ export const SpotPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5 text-gov-navy" />
-                Live Location GIS
+                {t.spLiveLocationGis}
               </span>
               <span className="text-[10px] font-mono text-slate-500">
                 {spot.coordinates[0].toFixed(3)}°N, {spot.coordinates[1].toFixed(3)}°E
@@ -325,7 +296,7 @@ export const SpotPage: React.FC = () => {
                   className="bg-gov-navy hover:bg-gov-navy-light text-amber-300 text-xs font-bold py-2.5 px-3 rounded-xl text-center transition shadow flex items-center justify-center gap-1"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Plan a Trip</span>
+                  <span>{t.spPlanTripBtn}</span>
                 </Link>
 
                 <button
@@ -334,7 +305,7 @@ export const SpotPage: React.FC = () => {
                   className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1"
                 >
                   <Share2 className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Share Status</span>
+                  <span>{t.spShareStatusBtn}</span>
                 </button>
               </div>
 
@@ -343,7 +314,7 @@ export const SpotPage: React.FC = () => {
                   to="/authority"
                   className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-slate-500 hover:text-gov-navy hover:underline text-center py-1"
                 >
-                  <span>Open full regional GIS corridor command map</span>
+                  <span>{t.spAuthorityGisLink}</span>
                   <ExternalLink className="w-3 h-3" />
                 </Link>
               ) : (
@@ -351,7 +322,7 @@ export const SpotPage: React.FC = () => {
                   to="/discover"
                   className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-slate-500 hover:text-gov-navy hover:underline text-center py-1"
                 >
-                  <span>Explore more quiet spots on Discover Feed</span>
+                  <span>{t.spDiscoverFeedLink}</span>
                   <ExternalLink className="w-3 h-3" />
                 </Link>
               )}
@@ -366,7 +337,7 @@ export const SpotPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-extrabold text-gov-navy uppercase tracking-wider">
-                Carrying Capacity & Footfall Model
+                {t.spCarryingCapacityEyebrow}
               </span>
               <span>•</span>
               <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
@@ -375,7 +346,7 @@ export const SpotPage: React.FC = () => {
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Dynamic Crowd Pressure Status
+              {t.spCrowdPressureTitle}
             </h2>
           </div>
 
@@ -397,14 +368,14 @@ export const SpotPage: React.FC = () => {
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs sm:text-sm font-black text-blue-950">
-                  Already have a Hotel or Activity Booking?
+                  {t.spBookingBannerTitle}
                 </span>
                 <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-300">
-                  ✓ 100% Guaranteed Access
+                  {t.spBookingBannerBadge}
                 </span>
               </div>
               <p className="text-[11px] text-blue-800 leading-relaxed">
-                You will <strong>not</strong> be redirected or turned away at checkpoints. Highway redirection advisories are voluntary recommendations strictly aimed at spontaneous day-trippers. Keep your stay, and check our <strong>12-Hour Forecast</strong> below to bypass local attraction lines!
+                {t.spBookingBannerDesc}
               </p>
             </div>
           </div>
@@ -414,7 +385,7 @@ export const SpotPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
-              <span>Estimated Inflow vs Capacity</span>
+              <span>{t.spInflowVsCapacity}</span>
               <Users className="w-4 h-4 text-slate-400" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900">
@@ -428,13 +399,13 @@ export const SpotPage: React.FC = () => {
               />
             </div>
             <p className="text-[11px] text-slate-500 pt-1">
-              Operating at <strong>{crowdPercentage}%</strong> carrying capacity limit
+              {t.spOperatingAtPrefix} <strong>{crowdPercentage}%</strong> {t.spOperatingAtSuffix}
             </p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
-              <span>Estimated Wait & Queue</span>
+              <span>{t.spEstWaitQueue}</span>
               <Clock className="w-4 h-4 text-slate-400" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900">
@@ -443,18 +414,18 @@ export const SpotPage: React.FC = () => {
             </div>
             <p className="text-[11px] text-slate-500 pt-3">
               {metrics.waitTimeMinutes === 0
-                ? 'Free-flowing access road with zero checkpoint choke.'
+                ? t.spFreeFlowing
                 : `Delay at toll/parking approach due to ${spot.currentInflow - spot.physicalCapacity} excess vehicles.`}
             </p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
-              <span>Weather & Ghat Hazard</span>
+              <span>{t.spWeatherHazard}</span>
               <Info className="w-4 h-4 text-slate-400" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900">
-              {spot.weatherHazardScore > 0.25 ? 'Caution (Fog / Rain)' : 'Safe / Favorable'}
+              {spot.weatherHazardScore > 0.25 ? t.spCaution : t.spSafe}
             </div>
             <p className="text-[11px] text-slate-500 pt-3">
               Open-Meteo GFS Live: Temp {telemetry.weather.temp_c}°C • Rain: {telemetry.weather.rain_mm}mm/hr
@@ -468,10 +439,10 @@ export const SpotPage: React.FC = () => {
             <div>
               <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gov-navy" />
-                <span>12-Hour Predictive Forecast Strip & Demand Graph</span>
+                <span>{t.sp12hForecastTitle}</span>
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Hourly arrival volume calibrated with Open-Meteo GFS weather sensors & road transit delays
+                {t.sp12hForecastDesc}
               </p>
             </div>
 
@@ -687,13 +658,13 @@ export const SpotPage: React.FC = () => {
               <div>
                 <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gov-navy" />
-                  <span>Historical Crowd Analytics (Up to Current Date)</span>
+                  <span>{t.spWeeklyTitle}</span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
                     Recorded Up to Today
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Aggregated turnstile & telemetry logs strictly up to the current date ({new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}).
+                  {t.spWeeklyDesc} ({new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}).
                 </p>
               </div>
 
@@ -924,7 +895,7 @@ export const SpotPage: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-gov-navy" />
-              <span>Transparent Data Tier Provenance & Metric Audit (Click to {provenanceExpanded ? 'collapse' : 'audit'})</span>
+              <span>{t.spProvenanceToggleLabel} {provenanceExpanded ? t.spProvenanceCollapseHint : t.spProvenanceExpandHint})</span>
             </div>
             {provenanceExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -932,7 +903,7 @@ export const SpotPage: React.FC = () => {
           {provenanceExpanded && (
             <div className="mt-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
               <p className="text-slate-600 leading-relaxed">
-                Every metric in EcoRoute Bharat is rigorously tagged with a genuine data tier. We do not claim an uninstalled live sensor network; estimates derive from real weather APIs, gazetted statutory arrivals, and a transparent formula.
+                {t.spProvenanceIntro}
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-[11px] text-slate-700">
@@ -982,25 +953,25 @@ export const SpotPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-800 uppercase tracking-wider">
                 <Sparkles className="w-4 h-4 text-emerald-600" />
-                Peaceful Sister Spots (Queue-Free Alternatives)
+                {t.spTwinsEyebrow}
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Escape the crowd at {spot.name}
+                {t.spTwinsTitlePrefix} {spot.name}
               </h2>
             </div>
             <span className="text-xs font-semibold text-emerald-800 bg-white/90 px-3 py-1 rounded-xl border border-emerald-200 self-start sm:self-auto">
-              ✓ Zero Traffic & Easy Parking
+              {t.spTwinsZeroTraffic}
             </span>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">
-            We match your preferred holiday vibe ({spot.category}) with serene, uncrowded nearby sister destinations where you save hours in traffic, find ample parking, and enjoy tranquil nature.
+            {t.spTwinsIntroPrefix}{spot.category}{t.spTwinsIntroSuffix}
           </p>
 
           <div className="p-3 bg-white/80 border border-emerald-300 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs">
             <span className="text-base shrink-0">💡</span>
             <p className="text-[11px] leading-relaxed">
-              <strong>Tailored for Spontaneous & Pre-Booking Travelers:</strong> Recommended for motorists driving in without lodging or visitors planning upcoming trips. If you already have hotel reservations in <strong>{spot.name}</strong>, keep your stay — your entry is guaranteed!
+              <strong>{t.spTwinsTipLabel}</strong> {t.spTwinsTipBody}
             </p>
           </div>
 
@@ -1046,13 +1017,13 @@ export const SpotPage: React.FC = () => {
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-700">
-                      ~2.5 Hours Highway Delay Avoided
+                      {t.spTwinsHighwayDelay}
                     </span>
                     <Link
                       to={`/spot/${twinDest.id}`}
                       className="bg-gov-navy hover:bg-gov-navy-light text-amber-300 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 shadow"
                     >
-                      <span>Explore {twinDest.name}</span>
+                      <span>{t.spTwinsExploreBtnPrefix} {twinDest.name}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -1069,17 +1040,17 @@ export const SpotPage: React.FC = () => {
         <div className="lg:col-span-7 bg-white rounded-3xl border-2 border-slate-300 p-6 space-y-5 shadow-sm">
           <div>
             <span className="text-xs font-extrabold text-gov-navy uppercase tracking-wider">
-              Local Practical Information
+              {t.spPracticalInfoEyebrow}
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-              Major Attractions & Civic Amenities
+              {t.spPracticalInfoTitle}
             </h2>
           </div>
 
           {/* Attractions */}
           {spot.majorAttractions && spot.majorAttractions.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase text-slate-400">Highlights within {spot.name}</h3>
+              <h3 className="text-xs font-bold uppercase text-slate-400">{t.spHighlightsWithinPrefix} {spot.name}</h3>
               <div className="space-y-2">
                 {spot.majorAttractions.map((att, i) => (
                   <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -1094,7 +1065,7 @@ export const SpotPage: React.FC = () => {
           {/* OSM Amenity Nodes (Food, Water, Restrooms) */}
           {spot.nearbyAmenities && spot.nearbyAmenities.length > 0 && (
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold uppercase text-slate-400">OSM Overpass Verified Civic Points</h3>
+              <h3 className="text-xs font-bold uppercase text-slate-400">{t.spOsmVerified}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 {spot.nearbyAmenities.map((am, i) => {
                   const icon = am.type === 'drinking_water'
@@ -1121,17 +1092,17 @@ export const SpotPage: React.FC = () => {
             <div className="p-4 bg-slate-100 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-slate-800">
                 <Navigation className="w-4 h-4 text-gov-navy" />
-                <span>Getting There & Road Conditions</span>
+                <span>{t.spGettingThere}</span>
               </div>
               <p className="text-slate-600">
-                Primary Route: <strong>{spot.gettingThere.primaryRoute}</strong>
+                {t.spPrimaryRoute} <strong>{spot.gettingThere.primaryRoute}</strong>
               </p>
               <p className="text-slate-600">
-                Live ETA: <strong>{spot.gettingThere.liveEtaText}</strong>
+                {t.spLiveEta} <strong>{spot.gettingThere.liveEtaText}</strong>
               </p>
               {spot.gettingThere.bottleneckActive && spot.gettingThere.bypassSuggestion && (
                 <div className="mt-2 p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-950 font-medium text-[11px]">
-                  ⚠️ <strong>Choke Advisory:</strong> {spot.gettingThere.bypassSuggestion}
+                  ⚠️ <strong>{t.spChokeAdvisoryLabel}</strong> {spot.gettingThere.bypassSuggestion}
                 </div>
               )}
             </div>
@@ -1143,13 +1114,13 @@ export const SpotPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <span className="text-xs font-extrabold text-gov-navy uppercase tracking-wider">
-                Hospitality & Stays
+                {t.spHospitalityEyebrow}
               </span>
               <h2 className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                Verified Stays & Homestays
+                {t.spVerifiedStaysTitle}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                MTDC accredited eco-partners prioritized for sustainability
+                {t.spMtdcPrioritized}
               </p>
             </div>
 
@@ -1171,12 +1142,12 @@ export const SpotPage: React.FC = () => {
                       </div>
                       {hotel.mtdcPartner && (
                         <span className="text-[9px] font-black uppercase tracking-wider bg-gov-navy text-amber-300 px-2 py-0.5 rounded shadow-sm shrink-0">
-                          MTDC Partner
+                          {t.spMtdcPartnerBadge}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center justify-between pt-1 text-xs">
-                      <span className="font-bold text-slate-800">{hotel.pricePerNight} <span className="font-normal text-[10px] text-slate-500">/ night</span></span>
+                      <span className="font-bold text-slate-800">{hotel.pricePerNight} <span className="font-normal text-[10px] text-slate-500">{t.spPerNight}</span></span>
                       <span className="text-xs text-amber-600 font-bold">★ {hotel.rating}</span>
                     </div>
                   </div>
@@ -1190,7 +1161,7 @@ export const SpotPage: React.FC = () => {
               to={`/plan/new?spotId=${spot.id}`}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl text-center block transition"
             >
-              Book Itinerary with Stays in Trip Planner →
+              {t.spBookItineraryBtn}
             </Link>
           </div>
         </div>
@@ -1202,10 +1173,10 @@ export const SpotPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-xs font-extrabold text-gov-navy uppercase tracking-wider">
               <MessageSquare className="w-4 h-4 text-gov-green" />
-              Crowdsourced Ground Telemetry
+              {t.spCheckInsEyebrow}
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-              Recent Visitor Check-Ins & Reports ({checkIns.length})
+              {t.spCheckInsTitlePrefix} ({checkIns.length})
             </h2>
           </div>
 
@@ -1215,13 +1186,13 @@ export const SpotPage: React.FC = () => {
             className="bg-gov-green hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 self-start sm:self-auto"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>Check In Here (Report Crowd)</span>
+            <span>{t.spCheckInBtn}</span>
           </button>
         </div>
 
         {checkIns.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
-            No crowdsourced check-ins yet today. Be the first traveler to check in and verify ground conditions!
+            {t.spNoCheckIns}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1239,9 +1210,9 @@ export const SpotPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1 text-amber-500 font-bold">
-                  <span>Congestion: {chk.rating}/5</span>
+                  <span>{t.spCongestionLabel} {chk.rating}/5</span>
                   <span className="text-[10px] text-slate-400 font-normal">
-                    ({chk.rating <= 2 ? 'Light / Pleasant' : chk.rating === 3 ? 'Moderate' : 'Heavy Gridlock'})
+                    ({chk.rating <= 2 ? t.spLightPleasant : chk.rating === 3 ? t.spModerateLevel : t.spHeavyGridlock})
                   </span>
                 </div>
 
@@ -1253,7 +1224,7 @@ export const SpotPage: React.FC = () => {
 
                 {chk.geofence_verified && (
                   <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-mono">
-                    <ShieldCheck className="w-3 h-3" /> Geofence Verified
+                    <ShieldCheck className="w-3 h-3" /> {t.spGeofenceVerified}
                   </span>
                 )}
               </div>
@@ -1395,7 +1366,7 @@ export const SpotPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-gov-green" />
-                <h3 className="font-extrabold text-base text-slate-900">Community Check-In</h3>
+                <h3 className="font-extrabold text-base text-slate-900">{t.spCheckInModalTitle}</h3>
               </div>
               <button
                 onClick={() => setCheckInModalOpen(false)}
@@ -1406,12 +1377,12 @@ export const SpotPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-600">
-              Reporting from <strong>{spot.name}</strong>? Help fellow travelers by self-reporting current crowd congestion on ground.
+              {t.spCheckInModalDescPrefix} <strong>{spot.name}</strong>{t.spCheckInModalDescSuffix}
             </p>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 block">
-                Observed Congestion (1 = Empty, 5 = Severe Jam):
+                {t.spCongestionScaleLabel}
               </label>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5].map(val => (
@@ -1433,12 +1404,12 @@ export const SpotPage: React.FC = () => {
 
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Optional note (e.g. parking status, road condition):
+                {t.spOptionalNoteLabel}
               </label>
               <textarea
                 value={checkInComment}
                 onChange={e => setCheckInComment(e.target.value)}
-                placeholder="Clear trails, plenty of parking spaces near the lake…"
+                placeholder={t.spNotePlaceholder}
                 rows={3}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-none focus:border-gov-navy"
               />
@@ -1446,7 +1417,7 @@ export const SpotPage: React.FC = () => {
 
             <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-xl text-[11px] text-emerald-800 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-              <span>Geofence verification automatically applied for valid telemetry weighting.</span>
+              <span>{t.spGeofenceNote}</span>
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -1455,7 +1426,7 @@ export const SpotPage: React.FC = () => {
                 onClick={() => setCheckInModalOpen(false)}
                 className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl"
               >
-                Cancel
+                {t.spCancelBtn}
               </button>
               <button
                 type="button"
@@ -1466,7 +1437,7 @@ export const SpotPage: React.FC = () => {
                 }}
                 className="flex-1 py-2.5 bg-gov-green hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow"
               >
-                Submit Check-In
+                {t.spSubmitCheckInBtn}
               </button>
             </div>
           </div>
@@ -1480,7 +1451,7 @@ export const SpotPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-gov-navy" />
-                <h3 className="font-extrabold text-base text-slate-900">Share Live Destination Status</h3>
+                <h3 className="font-extrabold text-base text-slate-900">{t.spShareModalTitle}</h3>
               </div>
               <button
                 onClick={() => setShareModalOpen(false)}
@@ -1499,10 +1470,10 @@ export const SpotPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-slate-600 text-[11px] leading-relaxed">
-                Currently running at <strong>{crowdPercentage}%</strong> carrying capacity with an estimated wait of <strong>{metrics.waitTimeMinutes} mins</strong>.
+                {t.spShareCardDescPrefix} <strong>{crowdPercentage}%</strong> {t.spShareCardDescMid} <strong>{metrics.waitTimeMinutes} mins</strong>.
               </p>
               <span className="text-[10px] text-slate-400 font-mono block">
-                EcoRoute Bharat • Ministry of Tourism
+                {t.spShareFooter}
               </span>
             </div>
 
@@ -1512,7 +1483,7 @@ export const SpotPage: React.FC = () => {
                 onClick={handleWhatsAppShare}
                 className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow"
               >
-                <span>Share via WhatsApp</span>
+                <span>{t.spWhatsAppShareBtn}</span>
               </button>
 
               <button
@@ -1520,7 +1491,7 @@ export const SpotPage: React.FC = () => {
                 onClick={handleShareCopy}
                 className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition"
               >
-                <span>{shareCopied ? '✓ Link & Summary Copied!' : 'Copy Share Text & Link'}</span>
+                <span>{shareCopied ? t.spCopiedBtn : t.spCopyShareBtn}</span>
               </button>
             </div>
           </div>

@@ -2,8 +2,8 @@
   "cache_key": "traffic:TRB",
   "destination_id": "TRB",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T00:03:24.431930",
-  "expires_at": "2026-09-13T00:23:24.431930",
+  "fetched_at": "2026-09-13T20:28:48.061452",
+  "expires_at": "2026-09-13T20:48:48.061452",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 24.0,

@@ -2,12 +2,12 @@
   "cache_key": "footfall:KLD",
   "destination_id": "KLD",
   "api_source": "footfall",
-  "fetched_at": "2026-09-12T19:03:04.139500",
-  "expires_at": "2026-09-13T01:03:04.139500",
+  "fetched_at": "2026-09-13T19:17:55.898246",
+  "expires_at": "2026-09-14T01:17:55.898246",
   "payload": {
-    "footfall_factor": 2.0,
-    "live_busyness_pct": 100,
-    "raw_busyness_pct": 95,
+    "footfall_factor": 1.58,
+    "live_busyness_pct": 79,
+    "raw_busyness_pct": 75,
     "calibration_factor": 1.05,
     "source": "BestTime Live API",
     "status": "connected",
@@ -15,6 +15,6 @@
     "destination_name": "Lonavala & Khandala Corridor",
     "profile_name": "Peak Landmark Corridor",
     "venue_id": "ven_454e4e686e4a7046453659526b6f775a6c3673525158614a496843",
-    "day_name": "Saturday"
+    "day_name": "Sunday"
   }
 }

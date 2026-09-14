@@ -25,6 +25,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useCorridorStore } from '../../store/useCorridorStore';
 import { apiPost } from '../../lib/api';
 import type { Destination } from '../../types';
+import { TRANSLATIONS } from '../../lib/i18n';
 
 interface FutureTripPlannerProps {
   destinations?: Destination[];
@@ -33,7 +34,8 @@ interface FutureTripPlannerProps {
 
 export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinations: propDestinations, prefillSpotId }) => {
   const [searchParams] = useSearchParams();
-  const { destinations: storeDestinations, saveTripPlan, addGreenPass, currentUser } = useCorridorStore();
+  const { destinations: storeDestinations, saveTripPlan, addGreenPass, currentUser, language } = useCorridorStore();
+  const t = TRANSLATIONS[language] || TRANSLATIONS.en;
   const destinations = (propDestinations && propDestinations.length > 0) ? propDestinations : storeDestinations;
 
   const urlSpot = searchParams.get('spot') || searchParams.get('spotId');
@@ -233,23 +235,23 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
           </div>
           <div>
             <h3 className="text-lg sm:text-xl font-black text-gov-navy tracking-tight leading-tight flex items-center gap-2 flex-wrap">
-              <span>Future Trip & Decongested Itinerary Planner</span>
+              <span>{t.ftpTitle}</span>
               <span className="text-xs bg-amber-100 text-amber-950 font-bold px-2 py-0.5 rounded border border-amber-300">
-                AI Smart Scheduler
+                {t.ftpBadgeAiScheduler}
               </span>
               {backendPlanStatus === 'connected' && (
                 <span className="text-xs bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300">
-                  ✅ Backend API
+                  {t.ftpBadgeBackendApi}
                 </span>
               )}
               {backendPlanStatus === 'offline' && (
                 <span className="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded border border-slate-300">
-                  📵 Offline Mode
+                  {t.ftpBadgeOffline}
                 </span>
               )}
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
-              Plan upcoming holidays with AI-predicted congestion curves and balanced multi-day itineraries to bypass 90% of corridor bottlenecks
+              {t.ftpSubtitle}
             </p>
           </div>
         </div>
@@ -261,7 +263,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black transition shadow-sm disabled:opacity-50"
           >
             <Bookmark className="w-3.5 h-3.5 text-slate-950" />
-            <span>{isSaving ? 'Saving...' : '💾 Save to My Passes (+150 Karma)'}</span>
+            <span>{isSaving ? t.ftpSavingBtn : t.ftpSaveBtn}</span>
           </button>
 
           <button
@@ -269,7 +271,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-sm"
           >
             <FileText className="w-3.5 h-3.5 text-emerald-200" />
-            <span>📄 AI Audit Report</span>
+            <span>{t.ftpReportBtn}</span>
           </button>
 
           <button
@@ -277,7 +279,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition shadow-sm"
           >
             <Printer className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Print / Export Plan</span>
+            <span>{t.ftpPrintBtn}</span>
           </button>
         </div>
       </div>
@@ -289,7 +291,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
             <span>{saveStatus}</span>
           </div>
           <Link to="/trips" className="underline hover:text-emerald-800 font-black flex items-center gap-1">
-            <span>View in My Passes</span>
+            <span>{t.ftpViewInPasses}</span>
             <span>→</span>
           </Link>
         </div>
@@ -301,7 +303,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
             <Compass className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Destination Hub / Focus:</span>
+            <span>{t.ftpDestLabel}</span>
           </label>
           <select
             value={selectedSpotId}
@@ -320,7 +322,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Planned Travel Date:</span>
+            <span>{t.ftpDateLabel}</span>
           </label>
           <input
             type="date"
@@ -334,7 +336,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
             <Clock className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Trip Duration:</span>
+            <span>{t.ftpDurationLabel}</span>
           </label>
           <select
             value={duration}
@@ -354,17 +356,17 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
             <Compass className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Travel Preference:</span>
+            <span>{t.ftpStyleLabel}</span>
           </label>
           <select
             value={travelStyle}
             onChange={(e) => setTravelStyle(e.target.value as 'scenic' | 'adventure' | 'family' | 'budget')}
             className="w-full bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-gov-navy shadow-inner cursor-pointer"
           >
-            <option value="scenic">Relaxed & Scenic</option>
-            <option value="adventure">Adventure & Trekking</option>
-            <option value="family">Family Friendly</option>
-            <option value="budget">Budget & Sustainable</option>
+            <option value="scenic">{t.ftpStyleScenic}</option>
+            <option value="adventure">{t.ftpStyleAdventure}</option>
+            <option value="family">{t.ftpStyleFamily}</option>
+            <option value="budget">{t.ftpStyleBudget}</option>
           </select>
         </div>
 
@@ -372,16 +374,16 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
             <Bus className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Mobility Mode (30% Weight):</span>
+            <span>{t.ftpMobilityLabel}</span>
           </label>
           <select
             value={transportMode}
             onChange={(e) => setTransportMode(e.target.value as any)}
             className="w-full bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-gov-navy shadow-inner cursor-pointer"
           >
-            <option value="green_transit">🌿 Green Trip: Bus/Train + Local Driver</option>
-            <option value="ultra_green">⚡ Ultra-Green: Electric Rail + E-Shuttle</option>
-            <option value="personal_car">🚗 Personal Petrol / Diesel Car</option>
+            <option value="green_transit">{t.ftpMobilityGreen}</option>
+            <option value="ultra_green">{t.ftpMobilityUltraGreen}</option>
+            <option value="personal_car">{t.ftpMobilityPersonalCar}</option>
           </select>
         </div>
 
@@ -389,15 +391,15 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
             <Home className="w-3.5 h-3.5 text-gov-navy" />
-            <span>Stay Type (20% Weight):</span>
+            <span>{t.ftpStayLabel}</span>
           </label>
           <select
             value={accommodationType}
             onChange={(e) => setAccommodationType(e.target.value as any)}
             className="w-full bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-gov-navy shadow-inner cursor-pointer"
           >
-            <option value="homestay">🏠 Accredited MTDC Rural Homestay</option>
-            <option value="hotel">🏨 Commercial Resort / Chain Hotel</option>
+            <option value="homestay">{t.ftpStayHomestay}</option>
+            <option value="hotel">{t.ftpStayHotel}</option>
           </select>
         </div>
       </div>
@@ -407,28 +409,28 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between text-xs">
           <div>
             <span className="text-[10px] font-bold uppercase text-rose-800 block">
-              Conventional Hotspots (e.g. Lonavala)
+              {t.ftpConventionalHotspots}
             </span>
             <strong className="text-rose-950 text-sm">
-              Predicted Crowd Load: {predictedHotspotCongestion}% Over Capacity
+              {t.ftpPredictedCrowdLoadPrefix} {predictedHotspotCongestion}% Over Capacity
             </strong>
           </div>
           <span className="bg-rose-200 text-rose-900 font-bold px-2 py-0.5 rounded text-[10px]">
-            {isWeekend ? '🔴 Heavy Traffic Jams' : '🟡 Moderate Crowds'}
+            {isWeekend ? t.ftpHeavyTraffic : t.ftpModerateCrowds}
           </span>
         </div>
 
         <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
           <div>
             <span className="text-[10px] font-bold uppercase text-gov-green block">
-              AI-Decongested Twin Route (e.g. Matheran & Bhandardara)
+              {t.ftpDecongestedTwin}
             </span>
             <strong className="text-emerald-950 text-sm">
-              Predicted Crowd Load: {predictedTwinCongestion}% (Comfortable)
+              {t.ftpPredictedCrowdLoadPrefix} {predictedTwinCongestion}% {t.ftpComfortableSuffix}
             </strong>
           </div>
           <span className="bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded text-[10px]">
-            🟢 Zero Checkpoint Delays
+            {t.ftpZeroDelays}
           </span>
         </div>
       </div>
@@ -443,9 +445,9 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-lg font-black tracking-tight">Trip Sustainability & Carbon Offset</h4>
+                  <h4 className="text-lg font-black tracking-tight">{t.ftpSustainabilityTitle}</h4>
                   <span className="text-[10px] font-bold bg-emerald-400/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wide">
-                    Pillar 1 Environmental Core
+                    {t.ftpPillar1Badge}
                   </span>
                   {fullPlan.ai_narrative?.source === 'gemini-3.6-flash' && (
                     <span className="text-[10px] font-bold bg-indigo-400/20 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30">
@@ -454,7 +456,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                   )}
                 </div>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  Multi-factor sustainability index based on mobility choice, eco-homestays, waste discipline, and rural economic injection.
+                  {t.ftpSustainabilityDesc}
                 </p>
               </div>
             </div>
@@ -475,7 +477,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white/10 rounded-2xl p-3 border border-emerald-400/30">
               <div className="flex items-center justify-between text-xs font-bold text-emerald-300">
-                <span>🌱 Environmental</span>
+                <span>{t.ftpEnvironmental}</span>
                 <span className="font-mono text-base text-white">
                   {fullPlan.sustainability_scores?.environmental || 92}/100
                 </span>
@@ -488,20 +490,20 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
 
             <div className="bg-white/10 rounded-2xl p-3 border border-sky-400/30">
               <div className="flex items-center justify-between text-xs font-bold text-sky-300">
-                <span>👥 Social & Cultural</span>
+                <span>{t.ftpSocialCultural}</span>
                 <span className="font-mono text-base text-white">
                   {fullPlan.sustainability_scores?.social || 88}/100
                 </span>
               </div>
               <div className="text-[10px] text-slate-300 mt-1 flex items-center justify-between">
                 <span>30% Weight</span>
-                <span>Sacred devrais & native guides</span>
+                <span>{t.ftpSocialSubLabel}</span>
               </div>
             </div>
 
             <div className="bg-white/10 rounded-2xl p-3 border border-amber-400/30">
               <div className="flex items-center justify-between text-xs font-bold text-amber-300">
-                <span>💰 Local Economic</span>
+                <span>{t.ftpLocalEconomic}</span>
                 <span className="font-mono text-base text-white">
                   {fullPlan.sustainability_scores?.economic || 94}/100
                 </span>
@@ -523,7 +525,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                   </div>
                   <div>
                     <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider block">
-                      Carbon Footprint Reduction By Following This Plan
+                      {t.ftpCarbonReductionTitle}
                     </span>
                     <strong className="text-xl sm:text-2xl font-black text-white font-mono flex items-baseline gap-2">
                       <span>-{fullPlan.carbon_calculator.carbon_saved_kg} kg CO₂e Avoided</span>
@@ -535,7 +537,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                 </div>
 
                 <div className="bg-white/10 px-3 py-1.5 rounded-xl text-right self-start sm:self-auto border border-white/10">
-                  <span className="text-[10px] text-slate-300 uppercase block font-bold">Round-Trip Distance</span>
+                  <span className="text-[10px] text-slate-300 uppercase block font-bold">{t.ftpRoundTripDistance}</span>
                   <span className="text-sm font-bold text-emerald-300 font-mono">
                     {fullPlan.carbon_calculator.round_trip_km} km Circuit
                   </span>
@@ -545,8 +547,8 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
               {/* Side-by-Side Visual Emissions Comparison */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-200">
-                  <span className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-slate-400 inline" /> Conventional Solo Car Baseline: <strong>{fullPlan.carbon_calculator.solo_car_emissions_kg} kg CO₂e</strong></span>
-                  <span className="text-emerald-300 font-bold">🌿 EcoRoute Planned: <strong>{fullPlan.carbon_calculator.trip_emissions_kg} kg CO₂e</strong></span>
+                  <span className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-slate-400 inline" /> {t.ftpSoloCarBaseline} <strong>{fullPlan.carbon_calculator.solo_car_emissions_kg} kg CO₂e</strong></span>
+                  <span className="text-emerald-300 font-bold">{t.ftpEcoRoutePlanned} <strong>{fullPlan.carbon_calculator.trip_emissions_kg} kg CO₂e</strong></span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden flex border border-white/10">
                   <div 
@@ -557,7 +559,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                   <div 
                     className="bg-emerald-600/30 h-full flex-1 border-l border-emerald-400/50 flex items-center justify-center text-[9px] font-bold text-emerald-200 tracking-wider uppercase"
                   >
-                    -{fullPlan.carbon_calculator.carbon_saved_pct}% Carbon Saved
+                    -{fullPlan.carbon_calculator.carbon_saved_pct}% {t.ftpCarbonSavedSuffix}
                   </div>
                 </div>
               </div>
@@ -567,45 +569,45 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                 <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                   <div className="flex items-center gap-1.5 text-emerald-300 text-xs mb-1">
                     <Trees className="w-3.5 h-3.5" />
-                    <span className="font-bold">Trees Absorption</span>
+                    <span className="font-bold">{t.ftpTreesAbsorption}</span>
                   </div>
                   <strong className="text-lg font-black text-white font-mono block">
                     {fullPlan.carbon_calculator.trees_equivalent_annual || Math.round(fullPlan.carbon_calculator.carbon_saved_kg / 21.77)}
                   </strong>
-                  <span className="text-[10px] text-slate-300 block">Native trees absorbing CO₂ for 1 year</span>
+                  <span className="text-[10px] text-slate-300 block">{t.ftpTreesDesc}</span>
                 </div>
 
                 <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                   <div className="flex items-center gap-1.5 text-amber-300 text-xs mb-1">
                     <Fuel className="w-3.5 h-3.5" />
-                    <span className="font-bold">Fossil Fuel Saved</span>
+                    <span className="font-bold">{t.ftpFuelSaved}</span>
                   </div>
                   <strong className="text-lg font-black text-white font-mono block">
                     {fullPlan.carbon_calculator.fuel_saved_liters || Math.round(fullPlan.carbon_calculator.carbon_saved_kg / 2.31)} L
                   </strong>
-                  <span className="text-[10px] text-slate-300 block">Petrol / Diesel fuel conserved</span>
+                  <span className="text-[10px] text-slate-300 block">{t.ftpFuelDesc}</span>
                 </div>
 
                 <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                   <div className="flex items-center gap-1.5 text-teal-300 text-xs mb-1">
                     <Hourglass className="w-3.5 h-3.5" />
-                    <span className="font-bold">Idling Avoided</span>
+                    <span className="font-bold">{t.ftpIdlingAvoided}</span>
                   </div>
                   <strong className="text-lg font-black text-white font-mono block">
                     {fullPlan.carbon_calculator.ghat_idling_hours_avoided || 3.0} Hrs
                   </strong>
-                  <span className="text-[10px] text-slate-300 block">Ghat bottleneck idling prevented</span>
+                  <span className="text-[10px] text-slate-300 block">{t.ftpIdlingDesc}</span>
                 </div>
 
                 <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
                   <div className="flex items-center gap-1.5 text-emerald-400 text-xs mb-1">
                     <Coins className="w-3.5 h-3.5" />
-                    <span className="font-bold">Local Injection</span>
+                    <span className="font-bold">{t.ftpLocalInjection}</span>
                   </div>
                   <strong className="text-lg font-black text-amber-300 font-mono block">
                     ₹{fullPlan.carbon_calculator.local_economy_contribution_inr?.toLocaleString() || '3,900'}
                   </strong>
-                  <span className="text-[10px] text-slate-300 block">To rural homestays & driver unions</span>
+                  <span className="text-[10px] text-slate-300 block">{t.ftpLocalInjectionDesc}</span>
                 </div>
               </div>
             </div>
@@ -618,7 +620,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-300" />
                   <strong className="text-sm font-bold text-white uppercase tracking-wide">
-                    AI Eco-Curator Insights & Carbon Reduction Strategy
+                    {t.ftpAiInsightsTitle}
                   </strong>
                 </div>
                 <span className="text-[10px] bg-white/10 text-slate-300 px-2 py-0.5 rounded border border-white/10">
@@ -636,7 +638,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                 {fullPlan.ai_narrative.carbon_reduction_strategy && (
                   <div className="bg-emerald-950/40 border border-emerald-500/20 p-3 rounded-xl space-y-1">
                     <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
-                      Why This Plan Reduces Carbon
+                      {t.ftpAiCarbonWhyTitle}
                     </span>
                     <p className="text-slate-300 text-[11px] leading-relaxed">
                       {fullPlan.ai_narrative.carbon_reduction_strategy}
@@ -647,7 +649,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                 {fullPlan.ai_narrative.community_empowerment && (
                   <div className="bg-amber-950/30 border border-amber-500/20 p-3 rounded-xl space-y-1">
                     <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
-                      Community & Livelihood Benefit
+                      {t.ftpAiCommunityTitle}
                     </span>
                     <p className="text-slate-300 text-[11px] leading-relaxed">
                       {fullPlan.ai_narrative.community_empowerment}
@@ -702,11 +704,10 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
             <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
             <div className="text-xs space-y-1">
               <strong className="text-white font-bold block">
-                🌱 Green Trip Mode: Park & Ride Local Mobility Protocol
+                {t.ftpGreenModeTitle}
               </strong>
               <p className="text-emerald-100/90 leading-relaxed">
-                Instead of driving personal vehicles up winding elevation hairpins, park at designated expressway perimeter hubs (Valvan / Dasturi / Wai). 
-                Switch to verified local drivers, e-shuttles, or bicycles. This cuts ghat gridlocks by 40%, protects pristine hill air, and directly feeds income to local driver unions.
+                {t.ftpGreenModeDesc}
               </p>
             </div>
           </div>
@@ -718,11 +719,11 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h4 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-gov-gold" />
-            Optimized Smart Itinerary
+            {t.ftpOptimizedItineraryTitle}
           </h4>
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-gov-green font-bold bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-              🌿 Avoids ~2.5 Hours Traffic Delay • Easy Parking Guaranteed
+              {t.ftpAvoidsDelayBadge}
             </span>
             {fullPlan?.carbon_calculator && (
               <span className="text-[11px] text-teal-800 font-bold bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
@@ -749,7 +750,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-400/30">
                     🌿 -{dayPlan.carbon_saved_today_kg || 17.1} kg CO₂e Saved Today
                   </span>
-                  <span className="text-[10px] text-amber-300 font-medium">Decongested Schedule</span>
+                  <span className="text-[10px] text-amber-300 font-medium">{t.ftpDecongestedSchedule}</span>
                 </div>
               </div>
 
@@ -794,8 +795,8 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-amber-300" />
                 <div>
-                  <h4 className="font-bold text-sm">Official Sustainability & Carbon Audit Report</h4>
-                  <span className="text-[10px] text-slate-300">Certified by EcoRoute Bharat Multi-Stakeholder Intelligence Engine</span>
+                  <h4 className="font-bold text-sm">{t.ftpReportModalTitle}</h4>
+                  <span className="text-[10px] text-slate-300">{t.ftpReportModalSubtitle}</span>
                 </div>
               </div>
               <button 
@@ -811,7 +812,7 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
               {reportLoading ? (
                 <div className="py-12 flex flex-col items-center justify-center space-y-3">
                   <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-slate-600 font-medium">Generating official audit report with Google Gemini 2.0 Flash...</p>
+                  <p className="text-slate-600 font-medium">{t.ftpGeneratingReport}</p>
                 </div>
               ) : (
                 <div className="prose prose-xs max-w-none text-slate-700 font-sans leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -824,20 +825,20 @@ export const FutureTripPlanner: React.FC<FutureTripPlannerProps> = ({ destinatio
             <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
               <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Valid for Green Pass accreditation and MTDC carbon rebates
+                {t.ftpReportValidNote}
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => window.print()}
                   className="px-4 py-1.5 bg-gov-navy hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow-sm transition"
                 >
-                  Print / Save PDF
+                  {t.ftpPrintSaveBtn}
                 </button>
                 <button
                   onClick={() => setReportModalOpen(false)}
                   className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs transition"
                 >
-                  Close
+                  {t.ftpCloseBtn}
                 </button>
               </div>
             </div>

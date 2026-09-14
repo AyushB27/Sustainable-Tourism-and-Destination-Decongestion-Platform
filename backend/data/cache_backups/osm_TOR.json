@@ -2,8 +2,8 @@
   "cache_key": "osm:TOR",
   "destination_id": "TOR",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T14:03:09.707416",
-  "expires_at": "2026-09-13T14:03:09.707416",
+  "fetched_at": "2026-09-13T18:47:13.385905",
+  "expires_at": "2026-09-14T18:47:13.385905",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

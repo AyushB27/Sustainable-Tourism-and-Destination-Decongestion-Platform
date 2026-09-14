@@ -2,12 +2,12 @@
   "cache_key": "weather:JWH",
   "destination_id": "JWH",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T00:03:23.657237",
-  "expires_at": "2026-09-13T00:33:23.657237",
+  "fetched_at": "2026-09-13T20:18:37.693648",
+  "expires_at": "2026-09-13T20:48:37.693648",
   "payload": {
-    "temperature_c": 22.3,
-    "rain_mm": 0.2,
-    "wind_kmh": 9.5,
+    "temperature_c": 22.1,
+    "rain_mm": 0.1,
+    "wind_kmh": 11.1,
     "hazard_score": 0.07,
     "source": "Open-Meteo Live API",
     "status": "connected"

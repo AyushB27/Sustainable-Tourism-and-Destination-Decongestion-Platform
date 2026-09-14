@@ -79,8 +79,11 @@ export function calculateCosineSimilarity(
 
 /**
  * 3. Preference-Preserving "Twin Destination" Recommender
+ * Ranks ALL viable twin candidates (not just the top 2) so callers that need
+ * to allocate distinct twins across several stops (e.g. the trip planner's
+ * eco-friendly route) can walk down the ranked list and skip ones already used.
  */
-export function getTwinRecommendations(
+export function rankTwinCandidates(
   targetDestination: Destination,
   allDestinations: Destination[],
   customPreferences?: [number, number, number, number],
@@ -88,7 +91,7 @@ export function getTwinRecommendations(
 ): TwinRecommendation[] {
   // Vector to match against: user customized preferences or target destination's inherent features
   const sourceVector = customPreferences || targetDestination.features;
-  
+
   // Filter candidates:
   // - Same category
   // - Candidate DCC < 0.75 (unsaturated)
@@ -96,7 +99,7 @@ export function getTwinRecommendations(
   const candidatePool = allDestinations.filter((cand) => {
     if (cand.id === targetDestination.id) return false;
     if (cand.category !== targetDestination.category) return false;
-    
+
     const candMetrics = calculateDCCMetrics(cand);
     return candMetrics.dccScore < 0.75;
   });
@@ -104,11 +107,11 @@ export function getTwinRecommendations(
   const scoredCandidates: TwinRecommendation[] = candidatePool.map((candidate) => {
     const candMetrics = calculateDCCMetrics(candidate);
     const cosineSim = calculateCosineSimilarity(sourceVector, candidate.features);
-    
+
     // Utility = (0.60 * Cosine Sim) + (0.40 * [1.0 - Candidate DCC Score])
     const candidateDcc = candMetrics.dccScore;
     const utility = (0.60 * cosineSim) + (0.40 * Math.max(0, 1.0 - candidateDcc));
-    
+
     // Crowd reduction delta %
     const targetInflow = targetDestination.currentInflow;
     const candInflow = candidate.currentInflow;
@@ -116,15 +119,15 @@ export function getTwinRecommendations(
     if (targetInflow > 0) {
       crowdReductionPct = Math.max(0, Math.round(((targetInflow - candInflow) / targetInflow) * 100));
     }
-    
+
     // Distance / travel time delta
     const distanceDeltaKm = candidate.distanceKmFromHub - targetDestination.distanceKmFromHub;
     const sign = distanceDeltaKm >= 0 ? '+' : '';
     const travelTimeDeltaText = `${sign}${Math.round(distanceDeltaKm * 1.2)} mins / ${sign}${distanceDeltaKm} km`;
-    
+
     // Active promotion if any
     const activePromo = promotions.find(p => p.destinationId === candidate.id);
-    
+
     return {
       destination: candidate,
       similarityScore: Number(cosineSim.toFixed(2)),
@@ -136,12 +139,140 @@ export function getTwinRecommendations(
       activePromo
     };
   });
-  
+
   // Sort by highest Utility Score descending
   scoredCandidates.sort((a, b) => b.utilityScore - a.utilityScore);
-  
-  // Return top 2 recommendations
-  return scoredCandidates.slice(0, 2);
+
+  return scoredCandidates;
+}
+
+/**
+ * Convenience wrapper over rankTwinCandidates returning only the top 2 —
+ * used by UI surfaces (e.g. SpotPage) that just want the best alternatives.
+ */
+export function getTwinRecommendations(
+  targetDestination: Destination,
+  allDestinations: Destination[],
+  customPreferences?: [number, number, number, number],
+  promotions: Promotion[] = []
+): TwinRecommendation[] {
+  return rankTwinCandidates(targetDestination, allDestinations, customPreferences, promotions).slice(0, 2);
+}
+
+/**
+ * Great-circle distance (km) between two [lat, lng] points.
+ */
+export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Road-winding correction factor applied to straight-line haversine distances
+// to approximate real Western Ghats road/ghat travel distance.
+const ROAD_WINDING_FACTOR = 1.3;
+
+export interface RoundTripResult {
+  orderedSpots: Destination[];
+  totalDistanceKm: number;
+}
+
+/**
+ * Greedy nearest-neighbor round-trip ordering of the given spots, starting
+ * from the user's location (real coordinates when known) and returning to it.
+ * Falls back to each spot's pre-computed `distanceKmFromHub` for the first
+ * leg when the user's live coordinates aren't available (geolocation denied).
+ */
+export function orderRoundTrip(spots: Destination[], userCoords: [number, number] | null): RoundTripResult {
+  if (spots.length === 0) return { orderedSpots: [], totalDistanceKm: 0 };
+
+  const distFromStart = (spot: Destination): number => {
+    if (userCoords) {
+      return haversineKm(userCoords[0], userCoords[1], spot.coordinates[0], spot.coordinates[1]) * ROAD_WINDING_FACTOR;
+    }
+    return spot.distanceKmFromHub;
+  };
+
+  const remaining = [...spots];
+  remaining.sort((a, b) => distFromStart(a) - distFromStart(b));
+
+  const ordered: Destination[] = [];
+  let totalDistance = 0;
+
+  let current = remaining.shift()!;
+  ordered.push(current);
+  totalDistance += distFromStart(current);
+
+  while (remaining.length > 0) {
+    let nearestIdx = 0;
+    let nearestDist = Infinity;
+    remaining.forEach((cand, idx) => {
+      const d = haversineKm(current.coordinates[0], current.coordinates[1], cand.coordinates[0], cand.coordinates[1]) * ROAD_WINDING_FACTOR;
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearestIdx = idx;
+      }
+    });
+    current = remaining.splice(nearestIdx, 1)[0];
+    totalDistance += nearestDist;
+    ordered.push(current);
+  }
+
+  // Return leg back to the start
+  totalDistance += distFromStart(current);
+
+  return { orderedSpots: ordered, totalDistanceKm: Math.round(totalDistance) };
+}
+
+// Private-car passenger-km emission factor (kg CO2e/km), matching the
+// backend's conventional baseline in app/services/carbon_service.py.
+const CARBON_FACTOR_KG_PER_KM = 0.192;
+
+/**
+ * Estimated CO2e (kg) for a round-trip road distance, single traveler.
+ */
+export function estimateRouteCarbonKg(totalDistanceKm: number): number {
+  return Number((totalDistanceKm * CARBON_FACTOR_KG_PER_KM).toFixed(1));
+}
+
+export interface TripTimelineDay {
+  dayNumber: number;
+  date: string;
+  spots: Destination[];
+}
+
+/**
+ * Spreads an ordered list of spots evenly across the given number of days.
+ */
+export function buildTripTimeline(orderedSpots: Destination[], startDateStr: string, totalDays: number): TripTimelineDay[] {
+  const days: TripTimelineDay[] = [];
+  const safeDays = Math.max(1, totalDays);
+  let idx = 0;
+
+  for (let d = 0; d < safeDays; d++) {
+    const date = new Date(startDateStr);
+    date.setDate(date.getDate() + d);
+    const dateStr = date.toISOString().split('T')[0];
+
+    const daySpots: Destination[] = [];
+    const remainingDays = safeDays - d;
+    const remainingSpots = orderedSpots.length - idx;
+    if (remainingSpots > 0) {
+      const countToday = Math.ceil(remainingSpots / remainingDays);
+      for (let k = 0; k < countToday && idx < orderedSpots.length; k++) {
+        daySpots.push(orderedSpots[idx]);
+        idx++;
+      }
+    }
+
+    days.push({ dayNumber: d + 1, date: dateStr, spots: daySpots });
+  }
+
+  return days;
 }
 
 /**
