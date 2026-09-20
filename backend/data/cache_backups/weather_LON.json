@@ -2,12 +2,12 @@
   "cache_key": "weather:LON",
   "destination_id": "LON",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.631063",
-  "expires_at": "2026-09-13T20:48:37.631063",
+  "fetched_at": "2026-09-20T00:39:30.707767",
+  "expires_at": "2026-09-20T01:09:30.707767",
   "payload": {
-    "temperature_c": 21.4,
-    "rain_mm": 0.1,
-    "wind_kmh": 8.3,
+    "temperature_c": 22.1,
+    "rain_mm": 0.0,
+    "wind_kmh": 5.4,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"

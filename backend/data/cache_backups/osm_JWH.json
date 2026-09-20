@@ -2,10 +2,10 @@
   "cache_key": "osm:JWH",
   "destination_id": "JWH",
   "api_source": "osm",
-  "fetched_at": "2026-09-13T18:47:11.911289",
-  "expires_at": "2026-09-14T18:47:11.911289",
+  "fetched_at": "2026-09-19T23:39:00.163964",
+  "expires_at": "2026-09-20T23:39:00.163964",
   "payload": {
-    "osm_poi_nodes": 18,
-    "osm_status": "cached_estimate"
+    "osm_poi_nodes": 12,
+    "osm_status": "live_verified"
   }
 }

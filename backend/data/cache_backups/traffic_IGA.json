@@ -2,11 +2,11 @@
   "cache_key": "traffic:IGA",
   "destination_id": "IGA",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:51.681986",
-  "expires_at": "2026-09-13T20:58:51.681986",
+  "fetched_at": "2026-09-20T00:39:30.528040",
+  "expires_at": "2026-09-20T00:59:30.528040",
   "payload": {
-    "delay_factor": 1.11,
-    "current_speed_kmh": 28.0,
+    "delay_factor": 1.0,
+    "current_speed_kmh": 31.0,
     "free_flow_speed_kmh": 31.0,
     "source": "TomTom Live Traffic API",
     "status": "connected"

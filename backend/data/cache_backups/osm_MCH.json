@@ -2,10 +2,10 @@
   "cache_key": "osm:MCH",
   "destination_id": "MCH",
   "api_source": "osm",
-  "fetched_at": "2026-09-13T18:47:11.915364",
-  "expires_at": "2026-09-14T18:47:11.915364",
+  "fetched_at": "2026-09-19T23:39:00.310748",
+  "expires_at": "2026-09-20T23:39:00.310748",
   "payload": {
-    "osm_poi_nodes": 18,
-    "osm_status": "cached_estimate"
+    "osm_poi_nodes": 12,
+    "osm_status": "live_verified"
   }
 }

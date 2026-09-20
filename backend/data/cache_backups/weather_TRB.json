@@ -2,13 +2,13 @@
   "cache_key": "weather:TRB",
   "destination_id": "TRB",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.766889",
-  "expires_at": "2026-09-13T20:48:37.766889",
+  "fetched_at": "2026-09-20T00:39:30.712436",
+  "expires_at": "2026-09-20T01:09:30.712436",
   "payload": {
-    "temperature_c": 21.0,
-    "rain_mm": 0.2,
-    "wind_kmh": 15.9,
-    "hazard_score": 0.1,
+    "temperature_c": 20.7,
+    "rain_mm": 0.0,
+    "wind_kmh": 4.4,
+    "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

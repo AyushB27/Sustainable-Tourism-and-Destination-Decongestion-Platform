@@ -2,8 +2,8 @@
   "cache_key": "osm:LON",
   "destination_id": "LON",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T21:11:03.421373",
-  "expires_at": "2026-09-13T21:11:03.421373",
+  "fetched_at": "2026-09-19T23:39:01.965426",
+  "expires_at": "2026-09-20T23:39:01.965426",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

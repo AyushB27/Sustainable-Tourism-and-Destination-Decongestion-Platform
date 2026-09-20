@@ -2,8 +2,8 @@
   "cache_key": "traffic:MCH",
   "destination_id": "MCH",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:51.865846",
-  "expires_at": "2026-09-13T20:58:51.865846",
+  "fetched_at": "2026-09-20T00:39:31.481856",
+  "expires_at": "2026-09-20T00:59:31.481856",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 50.0,

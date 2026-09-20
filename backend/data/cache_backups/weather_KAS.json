@@ -2,12 +2,12 @@
   "cache_key": "weather:KAS",
   "destination_id": "KAS",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.639812",
-  "expires_at": "2026-09-13T20:48:37.639812",
+  "fetched_at": "2026-09-20T00:39:30.711719",
+  "expires_at": "2026-09-20T01:09:30.711719",
   "payload": {
-    "temperature_c": 25.9,
+    "temperature_c": 26.0,
     "rain_mm": 0.0,
-    "wind_kmh": 4.4,
+    "wind_kmh": 5.4,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"

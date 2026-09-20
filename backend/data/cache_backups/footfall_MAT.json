@@ -2,8 +2,8 @@
   "cache_key": "footfall:MAT",
   "destination_id": "MAT",
   "api_source": "footfall",
-  "fetched_at": "2026-09-13T19:17:55.863026",
-  "expires_at": "2026-09-14T01:17:55.863026",
+  "fetched_at": "2026-09-19T23:38:59.895034",
+  "expires_at": "2026-09-20T05:38:59.895034",
   "payload": {
     "footfall_factor": 0.7,
     "live_busyness_pct": 5,
@@ -15,6 +15,6 @@
     "destination_name": "Matheran Eco-Sensitive Zone",
     "profile_name": "Heritage Eco Trail",
     "venue_id": "ven_6f39545031476b54345f5852676b6445596457484a79674a496843",
-    "day_name": "Sunday"
+    "day_name": "Saturday"
   }
 }

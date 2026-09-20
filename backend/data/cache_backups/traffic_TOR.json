@@ -2,8 +2,8 @@
   "cache_key": "traffic:TOR",
   "destination_id": "TOR",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:52.094381",
-  "expires_at": "2026-09-13T20:58:52.094381",
+  "fetched_at": "2026-09-20T00:39:32.206055",
+  "expires_at": "2026-09-20T00:59:32.206055",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 31.0,

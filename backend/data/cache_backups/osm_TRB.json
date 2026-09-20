@@ -2,8 +2,8 @@
   "cache_key": "osm:TRB",
   "destination_id": "TRB",
   "api_source": "osm",
-  "fetched_at": "2026-09-13T18:47:11.885153",
-  "expires_at": "2026-09-14T18:47:11.885153",
+  "fetched_at": "2026-09-19T23:39:00.652202",
+  "expires_at": "2026-09-20T23:39:00.652202",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

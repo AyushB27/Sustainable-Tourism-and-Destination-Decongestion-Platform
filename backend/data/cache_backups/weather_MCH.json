@@ -2,13 +2,13 @@
   "cache_key": "weather:MCH",
   "destination_id": "MCH",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.789018",
-  "expires_at": "2026-09-13T20:48:37.789018",
+  "fetched_at": "2026-09-20T00:39:30.712949",
+  "expires_at": "2026-09-20T01:09:30.712949",
   "payload": {
-    "temperature_c": 23.7,
+    "temperature_c": 23.1,
     "rain_mm": 0.0,
-    "wind_kmh": 12.9,
-    "hazard_score": 0.08,
+    "wind_kmh": 6.8,
+    "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

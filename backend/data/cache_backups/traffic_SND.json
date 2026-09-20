@@ -2,8 +2,8 @@
   "cache_key": "traffic:SND",
   "destination_id": "SND",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:51.853429",
-  "expires_at": "2026-09-13T20:58:51.853429",
+  "fetched_at": "2026-09-20T00:39:31.365723",
+  "expires_at": "2026-09-20T00:59:31.365723",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 31.0,

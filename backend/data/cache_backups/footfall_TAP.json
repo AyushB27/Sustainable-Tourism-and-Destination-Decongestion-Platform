@@ -2,8 +2,8 @@
   "cache_key": "footfall:TAP",
   "destination_id": "TAP",
   "api_source": "footfall",
-  "fetched_at": "2026-09-13T19:17:55.823656",
-  "expires_at": "2026-09-14T01:17:55.823656",
+  "fetched_at": "2026-09-19T23:38:59.807156",
+  "expires_at": "2026-09-20T05:38:59.807156",
   "payload": {
     "footfall_factor": 0.7,
     "live_busyness_pct": 5,
@@ -15,6 +15,6 @@
     "destination_name": "Tapola Eco Valley",
     "profile_name": "Serene Agro-Tourism Hub",
     "venue_id": "ven_6f39545031476b54345f5852676b6445596457484a79674a496843",
-    "day_name": "Sunday"
+    "day_name": "Saturday"
   }
 }

@@ -2,8 +2,8 @@
   "cache_key": "traffic:VEL",
   "destination_id": "VEL",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:51.699306",
-  "expires_at": "2026-09-13T20:43:51.699306",
+  "fetched_at": "2026-09-20T00:42:33.161645",
+  "expires_at": "2026-09-20T00:47:33.161645",
   "payload": {
     "delay_factor": 1.15,
     "current_speed_kmh": 52.0,

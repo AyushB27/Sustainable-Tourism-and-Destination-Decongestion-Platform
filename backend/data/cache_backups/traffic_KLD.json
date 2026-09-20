@@ -2,8 +2,8 @@
   "cache_key": "traffic:KLD",
   "destination_id": "KLD",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:52.120123",
-  "expires_at": "2026-09-13T20:58:52.120123",
+  "fetched_at": "2026-09-20T00:39:31.319702",
+  "expires_at": "2026-09-20T00:59:31.319702",
   "payload": {
     "delay_factor": 1.0,
     "current_speed_kmh": 46.0,

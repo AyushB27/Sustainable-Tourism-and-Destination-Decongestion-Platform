@@ -2,8 +2,8 @@
   "cache_key": "osm:MAT",
   "destination_id": "MAT",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T21:11:03.437603",
-  "expires_at": "2026-09-13T21:11:03.437603",
+  "fetched_at": "2026-09-19T23:39:00.821921",
+  "expires_at": "2026-09-20T23:39:00.821921",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

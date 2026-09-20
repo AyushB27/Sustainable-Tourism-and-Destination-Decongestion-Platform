@@ -2,12 +2,12 @@
   "cache_key": "traffic:TMH",
   "destination_id": "TMH",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:38:52.076953",
-  "expires_at": "2026-09-13T20:58:52.076953",
+  "fetched_at": "2026-09-20T00:39:32.200738",
+  "expires_at": "2026-09-20T00:59:32.200738",
   "payload": {
     "delay_factor": 1.0,
-    "current_speed_kmh": 38.0,
-    "free_flow_speed_kmh": 38.0,
+    "current_speed_kmh": 32.0,
+    "free_flow_speed_kmh": 32.0,
     "source": "TomTom Live Traffic API",
     "status": "connected"
   }

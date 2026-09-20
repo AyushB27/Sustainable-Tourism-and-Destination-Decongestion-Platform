@@ -2,12 +2,12 @@
   "cache_key": "footfall:MAH",
   "destination_id": "MAH",
   "api_source": "footfall",
-  "fetched_at": "2026-09-13T19:17:55.726260",
-  "expires_at": "2026-09-14T01:17:55.726260",
+  "fetched_at": "2026-09-19T23:38:59.656329",
+  "expires_at": "2026-09-20T05:38:59.656329",
   "payload": {
-    "footfall_factor": 1.44,
-    "live_busyness_pct": 72,
-    "raw_busyness_pct": 75,
+    "footfall_factor": 0.7,
+    "live_busyness_pct": 5,
+    "raw_busyness_pct": 0,
     "calibration_factor": 0.96,
     "source": "BestTime Live API",
     "status": "connected",
@@ -15,6 +15,6 @@
     "destination_name": "Mahabaleshwar Plateau",
     "profile_name": "Hill Station Vantage Corridor",
     "venue_id": "ven_454e4e686e4a7046453659526b6f775a6c3673525158614a496843",
-    "day_name": "Sunday"
+    "day_name": "Saturday"
   }
 }

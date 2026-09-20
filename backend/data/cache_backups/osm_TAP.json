@@ -2,10 +2,10 @@
   "cache_key": "osm:TAP",
   "destination_id": "TAP",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T21:11:02.541587",
-  "expires_at": "2026-09-13T21:11:02.541587",
+  "fetched_at": "2026-09-19T23:39:00.606286",
+  "expires_at": "2026-09-20T23:39:00.606286",
   "payload": {
-    "osm_poi_nodes": 12,
-    "osm_status": "live_verified"
+    "osm_poi_nodes": 18,
+    "osm_status": "cached_estimate"
   }
 }

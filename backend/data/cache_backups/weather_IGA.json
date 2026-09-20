@@ -2,13 +2,13 @@
   "cache_key": "weather:IGA",
   "destination_id": "IGA",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.576665",
-  "expires_at": "2026-09-13T20:48:37.576665",
+  "fetched_at": "2026-09-20T00:42:33.187653",
+  "expires_at": "2026-09-20T01:12:33.187653",
   "payload": {
-    "temperature_c": 21.6,
-    "rain_mm": 0.3,
-    "wind_kmh": 14.4,
-    "hazard_score": 0.1,
+    "temperature_c": 22.3,
+    "rain_mm": 0.0,
+    "wind_kmh": 1.3,
+    "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

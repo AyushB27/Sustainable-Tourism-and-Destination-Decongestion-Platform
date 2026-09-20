@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Calendar,
@@ -13,14 +13,16 @@ import {
   Navigation,
   Route as RouteIcon,
   Trees,
-  Pencil
+  Pencil,
+  Clock
 } from 'lucide-react';
 import { useCorridorStore } from '../store/useCorridorStore';
+import { apiPost } from '../lib/api';
 import {
   orderRoundTrip,
+  buildTripTimeline,
   rankTwinCandidates,
   estimateRouteCarbonKg,
-  buildTripTimeline,
   calculateDCCMetrics
 } from '../lib/engine';
 import { TRANSLATIONS } from '../lib/i18n';
@@ -63,6 +65,32 @@ export const TripPlannerPage: React.FC = () => {
   // ── Output state ──
   const [generated, setGenerated] = useState(false);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [backendPlanStatus, setBackendPlanStatus] = useState<'idle' | 'loading' | 'connected' | 'offline'>('idle');
+  const [backendDays, setBackendDays] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!generated || selectedSpotIds.length === 0) return;
+    setBackendPlanStatus('loading');
+    
+    const activeStyle = Array.from(activeStyles)[0] || 'scenic';
+    apiPost('/api/itinerary/plan', {
+      travel_date: startDate,
+      duration: Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1),
+      travel_style: activeStyle,
+      destination_id: selectedSpotIds[0],
+      destinations: selectedSpotIds
+    })
+    .then(data => {
+      setBackendPlanStatus('connected');
+      const planObj = data.plan || data;
+      if (planObj && planObj.itinerary_days && Array.isArray(planObj.itinerary_days)) {
+        setBackendDays(planObj.itinerary_days);
+      }
+    })
+    .catch(() => {
+      setBackendPlanStatus('offline');
+    });
+  }, [generated, selectedSpotIds, startDate, endDate, activeStyles]);
 
   const resetGenerated = () => {
     if (generated) setGenerated(false);
@@ -160,13 +188,23 @@ export const TripPlannerPage: React.FC = () => {
 
     original.orderedSpots.forEach(spot => {
       const ranked = rankTwinCandidates(spot, destinations, prefsToUse, promotions);
-      const pick = ranked.find(c => !originalIds.has(c.destination.id) && !usedTwinIds.has(c.destination.id));
+      // Guard: only swap to a twin that is within 150 km of the original spot.
+      // This prevents picking a semantically similar but geographically distant destination
+      // that would make the eco route longer (and more CO2) than the original.
+      const pick = ranked.find(c => {
+        if (originalIds.has(c.destination.id) || usedTwinIds.has(c.destination.id)) return false;
+        const dist = Math.sqrt(
+          Math.pow(c.destination.coordinates[0] - spot.coordinates[0], 2) +
+          Math.pow(c.destination.coordinates[1] - spot.coordinates[1], 2)
+        ) * 111; // rough degree→km conversion
+        return dist <= 150;
+      });
       if (pick) {
         usedTwinIds.add(pick.destination.id);
         twinMap.set(spot.id, pick.destination);
         originalByTwinId.set(pick.destination.id, spot);
       } else {
-        twinMap.set(spot.id, spot);
+        twinMap.set(spot.id, spot); // No suitable nearby twin — keep original
       }
     });
 
@@ -420,21 +458,68 @@ export const TripPlannerPage: React.FC = () => {
               <h2 className="text-lg sm:text-xl font-black text-slate-900">{t.ppTripTimelineTitle}</h2>
             </div>
             <p className="text-xs text-slate-500">{t.ppTripTimelineDesc}</p>
+
+            {/* Round-trip route banner */}
+            <div className="bg-gov-navy/5 border border-gov-navy/20 rounded-2xl px-4 py-3 space-y-2">
+              <div className="text-[11px] font-extrabold text-gov-navy uppercase tracking-wider flex items-center gap-1.5">
+                <RouteIcon className="w-3.5 h-3.5" />
+                Round-Trip Route
+              </div>
+              <div className="flex flex-wrap items-center gap-1 text-xs font-semibold text-slate-800">
+                <span className="text-[10px] bg-gov-navy text-white px-2 py-0.5 rounded font-bold">START</span>
+                <span className="text-slate-400">→</span>
+                {plan.original.orderedSpots.map((s, i) => (
+                  <React.Fragment key={s.id}>
+                    <span className="bg-slate-100 border border-slate-300 rounded px-2 py-0.5 text-[11px]">{s.name}</span>
+                    {i < plan.original.orderedSpots.length - 1 && <span className="text-slate-400">→</span>}
+                  </React.Fragment>
+                ))}
+                <span className="text-slate-400">→</span>
+                <span className="text-[10px] bg-gov-navy text-white px-2 py-0.5 rounded font-bold">RETURN</span>
+              </div>
+              <div className="flex items-center gap-4 text-[11px] text-slate-500 pt-0.5">
+                <span>📍 <strong className="text-slate-700">{plan.original.totalDistanceKm} km</strong> total distance</span>
+                <span>🗓️ <strong className="text-slate-700">{totalDays}</strong> day{totalDays > 1 ? 's' : ''}</span>
+                <span>📍 <strong className="text-slate-700">{plan.original.orderedSpots.length}</strong> stop{plan.original.orderedSpots.length > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+
             <div className="space-y-3">
-              {plan.tripTimeline.map(day => (
-                <div key={day.dayNumber} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                  <div className="text-[11px] font-bold text-gov-navy mb-2">
-                    {t.ppDayLabel} {day.dayNumber} · {formatDate(day.date)}
-                  </div>
-                  {day.spots.length === 0 ? (
-                    <span className="text-[11px] text-slate-400 italic">{t.ppFreeDayLabel}</span>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {day.spots.map(renderSpotPill)}
+              {plan.tripTimeline.map((day, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === plan.tripTimeline.length - 1;
+                let emptyLabel = '';
+                let emptyIcon = '';
+                if (day.spots.length === 0) {
+                  if (isLast && totalDays > 1) {
+                    emptyLabel = 'Return journey & departure day';
+                    emptyIcon = '🚌';
+                  } else if (isFirst) {
+                    emptyLabel = 'Arrival & check-in day';
+                    emptyIcon = '🏨';
+                  } else {
+                    emptyLabel = 'Exploration & leisure day';
+                    emptyIcon = '🌄';
+                  }
+                }
+                return (
+                  <div key={day.dayNumber} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                    <div className="text-[11px] font-bold text-gov-navy mb-2">
+                      {t.ppDayLabel} {day.dayNumber} · {formatDate(day.date)}
                     </div>
-                  )}
-                </div>
-              ))}
+                    {day.spots.length === 0 ? (
+                      <span className="text-[11px] text-slate-500 italic flex items-center gap-1.5">
+                        <span>{emptyIcon}</span>
+                        {emptyLabel}
+                      </span>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {day.spots.map(renderSpotPill)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -446,34 +531,82 @@ export const TripPlannerPage: React.FC = () => {
             </div>
             <p className="text-xs text-slate-600">{t.ppEcoTimelineDesc}</p>
             <div className="space-y-3">
-              {plan.ecoTimeline.map(day => (
-                <div key={day.dayNumber} className="p-3.5 bg-white/80 rounded-2xl border border-emerald-200">
-                  <div className="text-[11px] font-bold text-emerald-800 mb-2">
-                    {t.ppDayLabel} {day.dayNumber} · {formatDate(day.date)}
-                  </div>
-                  {day.spots.length === 0 ? (
-                    <span className="text-[11px] text-slate-400 italic">{t.ppFreeDayLabel}</span>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {day.spots.map(spot => {
-                        const original = plan.originalByTwinId.get(spot.id);
-                        return (
-                          <div key={spot.id} className="space-y-1">
-                            {renderSpotPill(spot)}
-                            {original ? (
-                              <span className="text-[10px] text-emerald-700 font-semibold pl-1">
-                                {t.ppReplacesLabel} {original.name}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 pl-1">{t.ppNoTwinFound}</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+              {backendPlanStatus === 'loading' ? (
+                <div className="text-center p-8 text-slate-500 text-sm flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Generating AI off-peak itinerary...</span>
                 </div>
-              ))}
+              ) : backendDays.length > 0 ? (
+                backendDays.map((dayPlan: any, dIdx: number) => (
+                  <div key={dIdx} className="border border-emerald-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="bg-emerald-700 text-white px-4 py-2.5 font-bold text-xs flex items-center justify-between flex-wrap gap-2">
+                      <span>{dayPlan.day_label || dayPlan.day || `Day ${dIdx + 1}`}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-100 font-bold px-2 py-0.5 rounded border border-emerald-400/30">
+                          - {dayPlan.carbon_saved_today_kg || 17.1} kg CO₂e Saved
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-white/80 space-y-3">
+                      {dayPlan.slots && dayPlan.slots.map((slot: any, sIdx: number) => (
+                        <div
+                          key={sIdx}
+                          className={`flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-3 rounded-xl border text-xs ${
+                            sIdx === 0 ? 'bg-slate-50 border-slate-200' : sIdx === 1 ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] font-bold text-gov-navy flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              {slot.time}
+                              {slot.location && <span className="text-slate-400 font-normal">| {slot.location}</span>}
+                            </span>
+                            <strong className="text-slate-900 text-sm block">{slot.title}</strong>
+                            <p className="text-slate-600 text-xs leading-relaxed">{slot.desc}</p>
+                          </div>
+                          {slot.badge && (
+                            <span className={`font-bold px-2.5 py-0.5 rounded text-[10px] self-start sm:self-auto shrink-0 border ${
+                              sIdx === 0 ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : sIdx === 1 ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-slate-200 text-slate-800 border-slate-300'
+                            }`}>
+                              {slot.badge}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                plan.ecoTimeline.map(day => (
+                  <div key={day.dayNumber} className="p-3.5 bg-white/80 rounded-2xl border border-emerald-200">
+                    <div className="text-[11px] font-bold text-emerald-800 mb-2">
+                      {t.ppDayLabel} {day.dayNumber} - {formatDate(day.date)}
+                    </div>
+                    {day.spots.length === 0 ? (
+                      <span className="text-[11px] text-slate-400 italic">{t.ppFreeDayLabel}</span>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {day.spots.map(spot => {
+                          const original = plan.originalByTwinId.get(spot.id);
+                          return (
+                            <div key={spot.id} className="space-y-1">
+                              {renderSpotPill(spot)}
+                              {original ? (
+                                <span className="text-[10px] text-emerald-700 font-semibold pl-1">
+                                  {t.ppReplacesLabel} {original.name}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 pl-1">{t.ppNoTwinFound}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

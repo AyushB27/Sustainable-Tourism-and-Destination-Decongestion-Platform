@@ -2,13 +2,13 @@
   "cache_key": "weather:TOR",
   "destination_id": "TOR",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.766171",
-  "expires_at": "2026-09-13T20:48:37.766171",
+  "fetched_at": "2026-09-20T00:39:30.711605",
+  "expires_at": "2026-09-20T01:09:30.711605",
   "payload": {
-    "temperature_c": 17.0,
+    "temperature_c": 17.6,
     "rain_mm": 0.0,
-    "wind_kmh": 12.3,
-    "hazard_score": 0.07,
+    "wind_kmh": 5.4,
+    "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

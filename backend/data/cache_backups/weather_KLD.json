@@ -2,12 +2,12 @@
   "cache_key": "weather:KLD",
   "destination_id": "KLD",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.791329",
-  "expires_at": "2026-09-13T20:48:37.791329",
+  "fetched_at": "2026-09-20T00:39:30.712870",
+  "expires_at": "2026-09-20T01:09:30.712870",
   "payload": {
-    "temperature_c": 23.9,
-    "rain_mm": 0.1,
-    "wind_kmh": 6.9,
+    "temperature_c": 24.6,
+    "rain_mm": 0.0,
+    "wind_kmh": 0.8,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"

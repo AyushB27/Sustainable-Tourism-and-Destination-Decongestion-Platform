@@ -2,8 +2,8 @@
   "cache_key": "osm:SND",
   "destination_id": "SND",
   "api_source": "osm",
-  "fetched_at": "2026-09-13T18:47:13.333368",
-  "expires_at": "2026-09-14T18:47:13.333368",
+  "fetched_at": "2026-09-19T23:39:01.996529",
+  "expires_at": "2026-09-20T23:39:01.996529",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

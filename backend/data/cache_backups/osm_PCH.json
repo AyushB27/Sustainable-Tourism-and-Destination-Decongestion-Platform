@@ -2,8 +2,8 @@
   "cache_key": "osm:PCH",
   "destination_id": "PCH",
   "api_source": "osm",
-  "fetched_at": "2026-09-13T18:47:11.925079",
-  "expires_at": "2026-09-14T18:47:11.925079",
+  "fetched_at": "2026-09-19T23:39:01.980915",
+  "expires_at": "2026-09-20T23:39:01.980915",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

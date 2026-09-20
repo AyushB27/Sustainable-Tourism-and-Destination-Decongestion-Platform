@@ -2,12 +2,12 @@
   "cache_key": "weather:SND",
   "destination_id": "SND",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.788842",
-  "expires_at": "2026-09-13T20:48:37.788842",
+  "fetched_at": "2026-09-20T00:39:30.713395",
+  "expires_at": "2026-09-20T01:09:30.713395",
   "payload": {
-    "temperature_c": 27.4,
+    "temperature_c": 26.6,
     "rain_mm": 0.0,
-    "wind_kmh": 7.0,
+    "wind_kmh": 4.0,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"

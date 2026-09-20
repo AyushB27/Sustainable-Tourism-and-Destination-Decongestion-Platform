@@ -2,8 +2,8 @@
   "cache_key": "osm:ALB",
   "destination_id": "ALB",
   "api_source": "osm",
-  "fetched_at": "2026-09-12T21:11:01.929873",
-  "expires_at": "2026-09-13T21:11:01.929873",
+  "fetched_at": "2026-09-19T23:39:00.820767",
+  "expires_at": "2026-09-20T23:39:00.820767",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

@@ -2,13 +2,13 @@
   "cache_key": "weather:MAH",
   "destination_id": "MAH",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.773270",
-  "expires_at": "2026-09-13T20:48:37.773270",
+  "fetched_at": "2026-09-20T00:39:30.714178",
+  "expires_at": "2026-09-20T01:09:30.714178",
   "payload": {
-    "temperature_c": 16.9,
-    "rain_mm": 0.1,
-    "wind_kmh": 9.8,
-    "hazard_score": 0.06,
+    "temperature_c": 16.7,
+    "rain_mm": 0.0,
+    "wind_kmh": 2.3,
+    "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
   }

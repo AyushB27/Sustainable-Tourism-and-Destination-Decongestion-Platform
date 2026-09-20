@@ -2,8 +2,8 @@
   "cache_key": "osm:AMB",
   "destination_id": "AMB",
   "api_source": "osm",
-  "fetched_at": "2026-09-13T18:47:11.910517",
-  "expires_at": "2026-09-14T18:47:11.910517",
+  "fetched_at": "2026-09-19T23:39:01.229684",
+  "expires_at": "2026-09-20T23:39:01.229684",
   "payload": {
     "osm_poi_nodes": 18,
     "osm_status": "cached_estimate"

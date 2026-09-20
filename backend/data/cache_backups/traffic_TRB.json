@@ -2,12 +2,12 @@
   "cache_key": "traffic:TRB",
   "destination_id": "TRB",
   "api_source": "traffic",
-  "fetched_at": "2026-09-13T20:28:48.061452",
-  "expires_at": "2026-09-13T20:48:48.061452",
+  "fetched_at": "2026-09-20T00:39:31.630853",
+  "expires_at": "2026-09-20T00:59:31.630853",
   "payload": {
     "delay_factor": 1.0,
-    "current_speed_kmh": 24.0,
-    "free_flow_speed_kmh": 24.0,
+    "current_speed_kmh": 23.0,
+    "free_flow_speed_kmh": 23.0,
     "source": "TomTom Live Traffic API",
     "status": "connected"
   }

@@ -108,9 +108,24 @@ export function rankTwinCandidates(
     const candMetrics = calculateDCCMetrics(candidate);
     const cosineSim = calculateCosineSimilarity(sourceVector, candidate.features);
 
-    // Utility = (0.60 * Cosine Sim) + (0.40 * [1.0 - Candidate DCC Score])
     const candidateDcc = candMetrics.dccScore;
-    const utility = (0.60 * cosineSim) + (0.40 * Math.max(0, 1.0 - candidateDcc));
+
+    // Geographic proximity score: how close the twin is to the original destination.
+    // Uses direct haversine distance between the two spots (not from hub).
+    // ProximityScore = 1 / (1 + distKm / 100) — decays smoothly as distance grows.
+    // A twin 0 km away  → score ≈ 1.0 (ideal)
+    // A twin 100 km away → score ≈ 0.5
+    // A twin 300 km away → score ≈ 0.25 (heavily penalized)
+    const directDistKm = haversineKm(
+      targetDestination.coordinates[0], targetDestination.coordinates[1],
+      candidate.coordinates[0], candidate.coordinates[1]
+    );
+    const proximityScore = 1 / (1 + directDistKm / 100);
+
+    // Utility = (0.45 * Cosine Sim) + (0.35 * [1 - Crowd]) + (0.20 * Proximity)
+    // This ensures we pick a NEARBY, less-crowded, similar destination — not just any
+    // low-crowd spot regardless of how far away it is.
+    const utility = (0.45 * cosineSim) + (0.35 * Math.max(0, 1.0 - candidateDcc)) + (0.20 * proximityScore);
 
     // Crowd reduction delta %
     const targetInflow = targetDestination.currentInflow;

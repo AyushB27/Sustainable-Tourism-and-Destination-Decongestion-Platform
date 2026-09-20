@@ -2,12 +2,12 @@
   "cache_key": "weather:PCH",
   "destination_id": "PCH",
   "api_source": "weather",
-  "fetched_at": "2026-09-13T20:18:37.693532",
-  "expires_at": "2026-09-13T20:48:37.693532",
+  "fetched_at": "2026-09-20T00:42:33.201967",
+  "expires_at": "2026-09-20T01:12:33.201967",
   "payload": {
-    "temperature_c": 18.7,
+    "temperature_c": 18.4,
     "rain_mm": 0.0,
-    "wind_kmh": 7.3,
+    "wind_kmh": 3.9,
     "hazard_score": 0.05,
     "source": "Open-Meteo Live API",
     "status": "connected"
